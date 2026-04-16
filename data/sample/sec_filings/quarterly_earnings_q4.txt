@@ -1,0 +1,74 @@
+ACME FINANCIAL HOLDINGS, INC.
+Fourth Quarter 2024 Earnings Release
+
+FINANCIAL HIGHLIGHTS
+
+Q4 2024 Results:
+- Net Revenue: $10.8B (up 12% YoY, up 5% QoQ)
+- Net Income: $2.6B (up 18% YoY)
+- Earnings Per Share (Diluted): $3.64
+- Return on Equity: 15.2%
+- Return on Tangible Common Equity: 18.1%
+- Efficiency Ratio: 62.4%
+
+Full Year 2024 Results:
+- Net Revenue: $38.2B (up 10% YoY)
+- Net Income: $9.1B (up 14% YoY)
+- Earnings Per Share (Diluted): $12.78
+- Dividends Per Share: $3.40
+
+SEGMENT PERFORMANCE — Q4 2024
+
+Institutional Securities:
+- Net Revenue: $5.4B (up 18% YoY)
+- Investment Banking Revenue: $2.1B (up 25% YoY)
+  - Advisory: $890M (up 30% driven by 12 completed transactions >$1B)
+  - Equity Underwriting: $620M (up 35% driven by tech and healthcare IPOs)
+  - Debt Underwriting: $590M (up 12% on leveraged finance activity)
+- Sales & Trading Revenue: $3.3B (up 14% YoY)
+  - Equities: $1.8B (up 20% on higher derivatives and prime brokerage volumes)
+  - FICC: $1.5B (up 8% led by credit products and rates trading)
+
+Wealth Management:
+- Net Revenue: $3.1B (up 8% YoY)
+- Client Assets: $4.2T (up 15% YoY driven by net new assets and market appreciation)
+- Net New Assets: $48B in Q4, $180B full year
+- Fee-based Asset Flows: $32B in Q4
+- Pre-tax Margin: 28.5%
+
+Asset Management:
+- Net Revenue: $1.4B (up 6% YoY)
+- Assets Under Management: $680B
+- Long-term Net Flows: $12B in Q4
+- Performance Fees: $180M
+
+Commercial Banking:
+- Net Revenue: $0.9B (up 3% YoY)
+- Average Loans: $185B
+- Net Charge-offs: $320M (annualized rate of 0.69%)
+- CRE Exposure: $42B (watchlist exposure of $3.8B)
+
+CAPITAL AND LIQUIDITY
+
+- CET1 Capital Ratio: 13.2% (regulatory minimum with buffers: 10.6%)
+- Tier 1 Leverage Ratio: 6.8%
+- Supplementary Leverage Ratio: 5.4%
+- Liquidity Coverage Ratio: 118%
+- Total Loss-Absorbing Capacity (TLAC): 28.5% of RWA
+
+CAPITAL RETURN
+
+- Share Repurchases: $2.0B in Q4 ($7.5B full year)
+- Common Dividends: $0.85/share in Q4 ($3.40 full year)
+- Total Capital Returned to Shareholders: $12.3B in 2024
+
+CREDIT QUALITY
+
+- Provision for Credit Losses: $520M in Q4
+- Allowance for Credit Losses: $4.2B (coverage ratio of 2.1x non-performing loans)
+- Non-Performing Assets: $2.0B (0.17% of total assets)
+- Net Charge-offs: $380M in Q4
+
+OUTLOOK
+
+Management expects continued momentum in investment banking as the M&A pipeline remains robust heading into 2025. Wealth management is expected to benefit from secular trends in fee-based advisory. Net interest income may face headwinds from potential rate cuts. The CRE portfolio remains an area of focus with active risk management.

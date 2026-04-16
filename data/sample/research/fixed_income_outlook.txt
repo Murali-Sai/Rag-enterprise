@@ -1,0 +1,85 @@
+ACME FINANCIAL HOLDINGS — FIXED INCOME RESEARCH
+GLOBAL RATES AND CREDIT OUTLOOK
+DATE: January 20, 2025
+
+MACRO OVERVIEW
+
+The Federal Reserve is expected to continue its easing cycle in 2025, with markets pricing 75bps of cumulative cuts by year-end. The terminal rate is projected at 3.50-3.75%. Inflation has moderated to 2.4% (core PCE) but remains above the 2% target.
+
+US TREASURY OUTLOOK:
+
+10-Year Yield Forecast:
+- Q1 2025: 4.10-4.30% (range-bound as markets digest rate path)
+- Q2 2025: 3.90-4.10% (dovish Fed pivot)
+- Q3 2025: 3.70-3.90% (rate cuts accelerate)
+- Q4 2025: 3.50-3.80% (terminal rate approach)
+- Year-end target: 3.65%
+
+Yield Curve:
+- 2s10s spread: Currently +25bps, expected to steepen to +80bps by year-end
+- 5s30s spread: Currently +45bps, expected to reach +65bps
+- Recommendation: Overweight 5-10 year duration; underweight short end
+- Curve steepener: Receive 2Y, pay 10Y (target: +50bps widening)
+
+INVESTMENT GRADE CREDIT:
+
+Spread Outlook: Constructive
+- Current IG OAS: 95bps (vs. 10-year median of 120bps)
+- Year-end target: 85-100bps
+- Technicals: Strong demand from insurance companies and pension funds
+- Supply: Expect $1.4T in IG issuance (down 5% from record 2024)
+- Fundamentals: Corporate leverage stable at 2.8x, interest coverage healthy at 8.5x
+
+Sector Recommendations:
+- Overweight: Banks (benefit from steeper curve), Utilities (defensive, rate-sensitive)
+- Market Weight: Technology (solid fundamentals, tight spreads), Healthcare
+- Underweight: Consumer Discretionary (weakening spending), CRE-exposed REITs
+
+HIGH YIELD CREDIT:
+
+Spread Outlook: Neutral
+- Current HY OAS: 310bps (near post-GFC tights)
+- Year-end target: 325-375bps
+- Default rate forecast: 3.5% in 2025 (up from 2.8% in 2024)
+- Maturity wall: $185B maturing in 2025-2026, manageable but rising
+- CCC-rated exposure: Selective approach; avoid commodity and retail sectors
+
+Trade Ideas:
+1. Overweight BB-rated over CCC-rated (quality bias)
+2. Favored sectors: Cable/Telecom (stable cash flows), Software (recurring revenue)
+3. Avoid: Retail (structural headwinds), Healthcare services (regulatory risk)
+
+STRUCTURED PRODUCTS:
+
+Agency MBS:
+- Current spread: +145bps to interpolated Treasury
+- Recommendation: Overweight — attractive carry, limited credit risk
+- Prepayment risk: Low in current rate environment
+- Preferred coupons: 5.5% and 6.0% (best convexity profile)
+
+CLOs:
+- AAA CLO spread: +130bps (attractive vs. IG corporates)
+- Recommendation: Overweight AAA and AA tranches
+- Underlying loan credit quality: Stable, default rate below structural protections
+- Warehousing activity: Robust, supporting new CLO formation
+
+CMBS:
+- Recommendation: Underweight
+- Office sector exposure: Significant risk from remote work trends
+- Delinquency rate: 6.2% and rising (primarily office)
+- Selective approach: Favor industrial and multifamily collateral
+
+EMERGING MARKET DEBT:
+
+EM Hard Currency:
+- EMBI+ spread: 330bps
+- Recommendation: Neutral
+- Favored: Brazil (fiscal consolidation), India (growth premium), Indonesia
+- Avoid: Turkey (policy uncertainty), Argentina (despite recent reforms, execution risk)
+
+EM Local Currency:
+- Recommendation: Overweight select markets
+- Carry opportunity: Brazil (Selic at 12.25%), Mexico (11.25%)
+- FX view: USD likely to weaken modestly as Fed cuts — supportive for EM local
+
+DISCLAIMER: This report is provided for institutional investor use only. It does not constitute investment advice or a solicitation. Fixed income investments are subject to interest rate risk, credit risk, and liquidity risk.

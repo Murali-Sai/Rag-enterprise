@@ -1,0 +1,108 @@
+ACME FINANCIAL HOLDINGS — TRADING DESK PROCEDURES AND CONTROLS
+
+1. PRE-TRADE CONTROLS
+
+1.1 Order Validation
+- All orders validated against pre-trade risk limits before execution
+- Fat finger checks: Orders exceeding 5x average daily volume or $50M notional require manual confirmation
+- Price reasonableness checks: Reject orders deviating >5% from last traded price
+- Credit limit checks: Real-time counterparty exposure validation
+- Restricted list check: Automated screening against compliance restricted list
+
+1.2 Trading Limits
+Daily P&L Stop-Loss Limits:
+- Desk Level: Varies by desk ($5M - $25M)
+- Individual Trader: $1M - $5M (based on seniority and mandate)
+- Monthly Stop-Loss: 3x daily limit
+- Quarterly Stop-Loss: 5x daily limit
+
+Position Limits:
+- Gross Notional: Per desk, reviewed quarterly
+- Net Delta: Per trader, monitored in real-time
+- Concentration: No single position >10% of desk notional
+- End-of-day inventory limits for market-making desks
+
+1.3 Approved Products
+- All products must go through New Product Approval (NPA) process
+- Approved Product List maintained by Risk Management
+- Complex/exotic products require enhanced review and additional capital
+- Structured products: Pre-approval from Structuring Compliance
+
+2. TRADE EXECUTION
+
+2.1 Best Execution
+- Obligation to seek best execution for all client orders
+- Factors: Price, speed, likelihood of execution, settlement, size
+- Venue analysis: Quarterly review of execution quality across venues
+- Time-stamping: All order events logged with microsecond precision
+
+2.2 Order Handling
+- Client orders executed promptly and fairly
+- Priority: Client orders before proprietary orders
+- Information barriers between market-making and proprietary activities
+- Block trades: Fair allocation per allocation policy
+- Aggregation: Permitted if beneficial to all participating accounts
+
+2.3 Electronic Trading
+- Algorithmic trading subject to additional controls
+- Kill switch capability: Ability to cancel all open orders within 1 second
+- Maximum order rate: 1,000 orders/second per trading system
+- Automated market quality checks: Spread, depth, volatility monitoring
+- Quarterly review of algorithm performance and behavior
+
+3. POST-TRADE PROCESSES
+
+3.1 Trade Confirmation
+- T+0: All trades confirmed by end of business day
+- Electronic confirmations via DTCC CTM, Markitwire, or bilateral
+- Unconfirmed trades escalated after T+1
+- Aging report reviewed daily by Operations and Trading
+
+3.2 Settlement
+- Equities: T+1 settlement (US, effective May 2024)
+- Fixed Income: T+1 or T+2 depending on product
+- OTC Derivatives: Per ISDA Master Agreement
+- FX Spot: T+2 (CLS settlement for major pairs)
+- Settlement fails tracked daily; penalties per CSDR (EU) and SEC Rule 15c6-1
+
+3.3 Reconciliation
+- Daily position reconciliation: Front office vs. back office vs. custodian
+- Daily cash reconciliation: Nostro accounts reconciled by 10 AM
+- P&L reconciliation: Trading P&L vs. official P&L reconciled daily
+- Breaks >$100K escalated to desk head and Operations management
+
+4. TRADE SURVEILLANCE
+
+4.1 Monitored Behaviors
+- Spoofing and layering
+- Wash trading
+- Front-running and information misuse
+- Cross-product manipulation
+- Marking the close / marking the open
+- Window dressing
+- Insider trading indicators
+
+4.2 Surveillance Systems
+- Trade surveillance system: NICE Actimize SURVEIL-X
+- Communication surveillance: Voice, email, chat, Bloomberg messages
+- Cross-market correlation analysis
+- Pattern detection using machine learning models
+- Alert triage: T+1 for critical, T+5 for standard
+
+5. END-OF-DAY PROCEDURES
+
+5.1 Daily Checklist
+- All trades booked and confirmed
+- P&L explained and signed off by desk head
+- Position limits verified (no overnight breaches)
+- Risk reports reviewed (VaR, Greeks, stress)
+- New issue allocations completed
+- Trade breaks resolved or escalated
+- Restricted list violations checked and cleared
+- Manager sign-off on daily risk report by 6:30 PM
+
+5.2 Reporting
+- Daily P&L report to desk head and division management
+- Daily risk report to Market Risk Management
+- Trade blotter submitted to Compliance
+- Position report to Operations for settlement processing

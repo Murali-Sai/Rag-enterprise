@@ -1,0 +1,102 @@
+ACME FINANCIAL HOLDINGS — CREDIT RISK MANAGEMENT POLICY
+
+1. PURPOSE AND SCOPE
+
+This policy governs the identification, measurement, monitoring, and mitigation of credit risk arising from lending activities, derivatives trading, securities financing transactions, and counterparty exposures across all business segments.
+
+2. CREDIT RISK APPETITE
+
+The Board has established the following credit risk appetite metrics:
+- Maximum single-name exposure: 5% of Tier 1 Capital ($3.4B)
+- Maximum industry concentration: 15% of total credit exposure
+- Expected loss rate (through-the-cycle): < 75 bps
+- Non-performing loan ratio target: < 1.5%
+- Allowance coverage ratio: minimum 1.5x NPL
+
+3. CREDIT RATING FRAMEWORK
+
+3.1 Internal Rating Scale
+- Rating 1-3: Investment Grade (Probability of Default < 0.5%)
+- Rating 4-5: Non-Investment Grade (PD 0.5% - 3.0%)
+- Rating 6-7: Substandard (PD 3.0% - 10.0%)
+- Rating 8: Doubtful (PD 10.0% - 50.0%)
+- Rating 9: Loss (PD > 50.0%)
+- Rating 10: Default
+
+3.2 Rating Methodology
+- Corporate obligors: Quantitative scorecard (financial ratios, cash flow analysis) combined with qualitative assessment (industry, management, competitive position)
+- Financial institutions: Peer analysis, regulatory standing, funding profile
+- Sovereign: Macro indicators, fiscal metrics, political risk assessment
+- Retail: Behavioral scoring, bureau data, payment history
+
+4. CREDIT APPROVAL AUTHORITY
+
+4.1 Delegated Authority Limits
+- Relationship Manager: up to $5M
+- Credit Officer: up to $25M
+- Senior Credit Officer: up to $100M
+- Regional Credit Committee: up to $500M
+- Enterprise Credit Committee: up to $1B
+- Board Risk Committee: above $1B
+
+4.2 Required Documentation
+- Credit Application Memo (CAM)
+- Financial Statement Analysis (minimum 3 years)
+- Industry and Peer Analysis
+- Collateral Valuation (if applicable)
+- Environmental and Social Risk Assessment
+- Compliance and KYC Clearance
+
+5. PORTFOLIO MANAGEMENT
+
+5.1 Concentration Limits
+- Top 10 Exposures: Maximum 20% of total exposure
+- Single Country (non-US): Maximum 10% of total exposure
+- Single Industry: Maximum 15% of total exposure
+- Commercial Real Estate: Maximum 12% of total exposure (currently at 10.9%)
+
+5.2 Current Portfolio Composition (as of Q4 2024)
+- Investment Grade: 72% of total exposure
+- Non-Investment Grade: 23%
+- Substandard and Below: 5%
+- Geographic: US 65%, Europe 18%, Asia-Pacific 12%, Other 5%
+- Sector: Financial Institutions 22%, Technology 14%, Healthcare 11%, Energy 9%, CRE 11%, Consumer 10%, Industrial 8%, Other 15%
+
+6. EARLY WARNING AND WATCHLIST
+
+6.1 Early Warning Indicators
+- Financial covenant breach or near-breach
+- Credit rating downgrade (internal or external)
+- Significant decline in market-implied credit spreads
+- Material adverse change in obligor's business
+- Industry-wide stress events
+
+6.2 Watchlist Categories
+- Watch: Enhanced monitoring, quarterly review
+- Substandard: Active remediation plan required
+- Doubtful: Workout strategy, specific reserve required
+- Loss: Write-off recommendation
+
+7. LOSS GIVEN DEFAULT (LGD) AND RECOVERY
+
+- Senior Secured: Expected LGD 25-35%
+- Senior Unsecured: Expected LGD 45-55%
+- Subordinated: Expected LGD 65-75%
+- Recovery process managed by Special Situations Group
+- Average recovery rate (historical): 58% for corporate exposures
+
+8. REGULATORY CAPITAL
+
+- Standardized Approach: Used for regulatory reporting
+- Advanced IRB: Used for internal risk management
+- Risk-Weighted Assets (Credit Risk): $485B
+- Expected Loss (EL): $2.8B annually
+- Unexpected Loss (UL): Covered by CET1 capital allocation
+
+9. CURRENT EXPECTED CREDIT LOSSES (CECL)
+
+- Methodology: Discounted cash flow for individually assessed loans; probability-weighted forecast for pooled loans
+- Macroeconomic Scenarios: Baseline (50% weight), Downside (30%), Severe Downside (15%), Upside (5%)
+- Allowance for Credit Losses: $4.2B
+- Day 1 Provision for New Originations: Based on lifetime expected loss
+- Qualitative Adjustment: Up to 15% of modeled reserve for emerging risks

@@ -1,0 +1,142 @@
+[
+    {
+        "question": "What was Apple's total net revenue for its most recent fiscal year?",
+        "ground_truth": "Sourced from Apple's 10-K Item 7 MD&A. The exact figure will be populated from the actual downloaded filing.",
+        "department": "sec_filings",
+        "access_roles": ["research", "trading", "admin"],
+        "source_filing": "AAPL 10-K"
+    },
+    {
+        "question": "What are Apple's main risk factors related to supply chain?",
+        "ground_truth": "Sourced from Apple's 10-K Item 1A Risk Factors. Apple identifies supply chain concentration, component sourcing, and manufacturing disruption risks.",
+        "department": "sec_filings",
+        "access_roles": ["research", "risk", "admin"],
+        "source_filing": "AAPL 10-K"
+    },
+    {
+        "question": "How does Apple describe its business segments?",
+        "ground_truth": "Sourced from Apple's 10-K Item 1 Business. Apple reports on products (iPhone, Mac, iPad, Wearables) and services segments.",
+        "department": "sec_filings",
+        "access_roles": ["research", "admin"],
+        "source_filing": "AAPL 10-K"
+    },
+    {
+        "question": "What is JPMorgan's total assets and CET1 capital ratio?",
+        "ground_truth": "Sourced from JPMorgan's 10-K. JPM is the largest US bank by assets. CET1 ratio reported in capital management section.",
+        "department": "sec_filings",
+        "access_roles": ["risk", "compliance", "admin"],
+        "source_filing": "JPM 10-K"
+    },
+    {
+        "question": "What are JPMorgan's primary credit risk factors?",
+        "ground_truth": "Sourced from JPMorgan's 10-K Item 1A Risk Factors. Includes consumer credit, wholesale credit, commercial real estate, and market conditions.",
+        "department": "sec_filings",
+        "access_roles": ["risk", "compliance", "admin"],
+        "source_filing": "JPM 10-K"
+    },
+    {
+        "question": "How does JPMorgan describe its lines of business?",
+        "ground_truth": "Sourced from JPMorgan's 10-K Item 1. Business segments include Consumer & Community Banking, Corporate & Investment Bank, Commercial Banking, and Asset & Wealth Management.",
+        "department": "sec_filings",
+        "access_roles": ["research", "trading", "admin"],
+        "source_filing": "JPM 10-K"
+    },
+    {
+        "question": "What was Tesla's automotive revenue and total revenue?",
+        "ground_truth": "Sourced from Tesla's 10-K Item 7 MD&A. Automotive segment is the largest revenue contributor.",
+        "department": "sec_filings",
+        "access_roles": ["research", "trading", "admin"],
+        "source_filing": "TSLA 10-K"
+    },
+    {
+        "question": "What risk factors does Tesla identify related to production and manufacturing?",
+        "ground_truth": "Sourced from Tesla's 10-K Item 1A Risk Factors. Tesla identifies Gigafactory production ramp risks, supply chain dependencies, and new model launch risks.",
+        "department": "sec_filings",
+        "access_roles": ["research", "risk", "admin"],
+        "source_filing": "TSLA 10-K"
+    },
+    {
+        "question": "What is Microsoft's revenue from its Intelligent Cloud segment?",
+        "ground_truth": "Sourced from Microsoft's 10-K Item 7. Intelligent Cloud includes Azure, server products, and enterprise services.",
+        "department": "sec_filings",
+        "access_roles": ["research", "trading", "admin"],
+        "source_filing": "MSFT 10-K"
+    },
+    {
+        "question": "What cybersecurity and AI-related risk factors does Microsoft disclose?",
+        "ground_truth": "Sourced from Microsoft's 10-K Item 1A Risk Factors. Includes AI governance risks, cybersecurity threats, and competitive risks.",
+        "department": "sec_filings",
+        "access_roles": ["research", "risk", "admin"],
+        "source_filing": "MSFT 10-K"
+    },
+    {
+        "question": "What are Goldman Sachs' principal business segments?",
+        "ground_truth": "Sourced from Goldman Sachs' 10-K Item 1. Segments include Global Banking & Markets, Asset & Wealth Management, and Platform Solutions.",
+        "department": "sec_filings",
+        "access_roles": ["research", "trading", "admin"],
+        "source_filing": "GS 10-K"
+    },
+    {
+        "question": "What market risk disclosures does Goldman Sachs provide including VaR?",
+        "ground_truth": "Sourced from Goldman Sachs' 10-K Item 7A. Goldman reports Value-at-Risk metrics, stress testing results, and sensitivity analysis.",
+        "department": "sec_filings",
+        "access_roles": ["risk", "trading", "admin"],
+        "source_filing": "GS 10-K"
+    },
+    {
+        "question": "Compare the risk factor disclosures between JPMorgan and Goldman Sachs regarding credit risk.",
+        "ground_truth": "Sourced from JPM and GS 10-K Item 1A Risk Factors. Both are major banks with credit exposure but JPM has larger consumer lending while GS is more institutional.",
+        "department": "sec_filings",
+        "access_roles": ["risk", "admin"],
+        "source_filing": "JPM 10-K, GS 10-K"
+    },
+    {
+        "question": "How do Apple and Microsoft compare in terms of their cloud and services businesses?",
+        "ground_truth": "Sourced from AAPL and MSFT 10-K Item 1/Item 7. Apple Services includes App Store, iCloud, Apple Music. Microsoft Intelligent Cloud includes Azure.",
+        "department": "sec_filings",
+        "access_roles": ["research", "admin"],
+        "source_filing": "AAPL 10-K, MSFT 10-K"
+    },
+    {
+        "question": "What regulatory risks do JPMorgan and Goldman Sachs face?",
+        "ground_truth": "Sourced from JPM and GS 10-K Item 1A. Both face Basel III capital requirements, Dodd-Frank compliance, CCAR stress testing, and enhanced prudential standards.",
+        "department": "sec_filings",
+        "access_roles": ["compliance", "risk", "admin"],
+        "source_filing": "JPM 10-K, GS 10-K"
+    },
+    {
+        "question": "What does Tesla say about competition in the electric vehicle market?",
+        "ground_truth": "Sourced from Tesla's 10-K Item 1A Risk Factors. Tesla faces increasing competition from traditional automakers entering the EV market.",
+        "department": "sec_filings",
+        "access_roles": ["research", "admin"],
+        "source_filing": "TSLA 10-K"
+    },
+    {
+        "question": "What is JPMorgan's provision for credit losses?",
+        "ground_truth": "Sourced from JPMorgan's 10-K Item 7 MD&A. The provision reflects expected credit losses under the CECL accounting standard.",
+        "department": "sec_filings",
+        "access_roles": ["risk", "compliance", "admin"],
+        "source_filing": "JPM 10-K"
+    },
+    {
+        "question": "How does Microsoft describe its AI strategy and investments?",
+        "ground_truth": "Sourced from Microsoft's 10-K Item 1 and Item 7. Microsoft discusses Azure AI services, Copilot integration, and OpenAI partnership.",
+        "department": "sec_filings",
+        "access_roles": ["research", "admin"],
+        "source_filing": "MSFT 10-K"
+    },
+    {
+        "question": "What are the quantitative disclosures about market risk for Goldman Sachs?",
+        "ground_truth": "Sourced from Goldman Sachs' 10-K Item 7A. Includes VaR by risk category, stress test scenarios, and sensitivity metrics.",
+        "department": "sec_filings",
+        "access_roles": ["risk", "trading", "admin"],
+        "source_filing": "GS 10-K"
+    },
+    {
+        "question": "What legal proceedings are disclosed by JPMorgan?",
+        "ground_truth": "Sourced from JPMorgan's 10-K Item 3 Legal Proceedings and contingencies note. Covers regulatory investigations and litigation matters.",
+        "department": "sec_filings",
+        "access_roles": ["compliance", "admin"],
+        "source_filing": "JPM 10-K"
+    }
+]

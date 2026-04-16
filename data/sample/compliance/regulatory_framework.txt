@@ -1,0 +1,125 @@
+ACME FINANCIAL HOLDINGS — REGULATORY COMPLIANCE FRAMEWORK
+
+1. REGULATORY LANDSCAPE
+
+ACME Financial Holdings is subject to oversight by multiple regulatory authorities:
+
+1.1 Primary Regulators
+- Federal Reserve Board (FRB): Consolidated supervision of the bank holding company
+- Office of the Comptroller of the Currency (OCC): Supervision of the national bank subsidiary
+- Securities and Exchange Commission (SEC): Regulation of broker-dealer and investment adviser subsidiaries
+- Commodity Futures Trading Commission (CFTC): Regulation of swap dealer activities
+- Financial Industry Regulatory Authority (FINRA): Self-regulatory oversight of broker-dealer
+
+1.2 Key Regulatory Frameworks
+- Bank Holding Company Act / Regulation Y
+- Dodd-Frank Wall Street Reform and Consumer Protection Act
+- Volcker Rule (Section 619 of Dodd-Frank)
+- Basel III Capital and Liquidity Requirements
+- Bank Secrecy Act / Anti-Money Laundering (BSA/AML)
+- Securities Exchange Act of 1934
+- Investment Advisers Act of 1940
+- Gramm-Leach-Bliley Act (Privacy)
+- Community Reinvestment Act (CRA)
+
+2. VOLCKER RULE COMPLIANCE
+
+2.1 Prohibited Activities
+- Proprietary trading in securities, derivatives, and commodity futures
+- Ownership interests in covered funds (hedge funds, private equity funds)
+- Certain transactions with covered funds (extensions of credit, guarantees)
+
+2.2 Permitted Activities
+- Market making: Inventory positions that are near-term customer demand driven
+- Underwriting: Positions related to distribution of securities
+- Hedging: Risk-mitigating hedging activity directly related to identified risks
+- Trading in government obligations (US Treasuries, agency securities)
+- Foreign exchange facilitating customer transactions
+
+2.3 Compliance Program
+- Metrics-based monitoring of trading desk inventory, revenue, and risk
+- Daily reporting of RENTD (Reasonably Expected Near-Term Demand) metrics
+- Quarterly CEO attestation to Federal Reserve
+- Independent testing by Compliance and Internal Audit
+
+3. ANTI-MONEY LAUNDERING (AML) AND SANCTIONS
+
+3.1 Customer Due Diligence (CDD)
+- Standard CDD: All new accounts — identity verification, beneficial ownership
+- Enhanced Due Diligence (EDD): High-risk customers — PEPs, high-risk jurisdictions, correspondent banks
+- Ongoing monitoring: Transaction monitoring, periodic reviews
+
+3.2 KYC Requirements
+- Customer Identification Program (CIP): Government-issued ID, verification
+- Beneficial Ownership: 25% ownership threshold identification
+- Source of Funds / Source of Wealth: Required for EDD customers
+- Periodic Review: Annual for high-risk, biennial for medium, triennial for standard
+
+3.3 Sanctions Compliance
+- OFAC screening: All customers, counterparties, and transactions
+- Real-time screening of wire transfers
+- Sanctions list updates within 24 hours of publication
+- Escalation: Any potential match reviewed within 4 hours
+
+3.4 Suspicious Activity Reporting
+- Transaction monitoring system covers $2.1T in annual transaction volume
+- Alert disposition: Within 30 days of generation
+- SAR filing: Within 30 days of determination (60 days with extension)
+- 2024 Statistics: 12,500 alerts generated, 2,800 investigations, 850 SARs filed
+
+4. CONFLICTS OF INTEREST
+
+4.1 Information Barriers (Chinese Walls)
+- Physical separation between Investment Banking and Research
+- Physical separation between Investment Banking and Sales & Trading
+- Above-the-wall lists maintained for active engagements
+- Wall crossings require Compliance approval and are logged
+
+4.2 Personal Trading
+- Pre-clearance required for all personal securities transactions
+- 30-day holding period for equity positions
+- Restricted list: No trading in securities of companies on the restricted list
+- Quarterly holdings reporting and annual certification
+
+4.3 Material Non-Public Information (MNPI)
+- MNPI may not be used for trading or shared outside information barriers
+- Employees receiving MNPI must notify Compliance immediately
+- Grey list maintained for securities where MNPI may exist
+- Trading surveillance monitors for potential insider trading patterns
+
+5. CONDUCT RISK
+
+5.1 Market Conduct
+- No market manipulation (spoofing, layering, wash trading)
+- Best execution obligation for client orders
+- Fair pricing of OTC derivatives
+- Trade reporting: All reportable transactions within regulatory timeframes
+
+5.2 Sales Practices
+- Suitability assessment before recommending products
+- Reg BI (Best Interest) compliance for retail recommendations
+- Clear and fair disclosure of fees, risks, and conflicts
+- Product governance: New product approval process with risk assessment
+
+6. DATA PRIVACY AND PROTECTION
+
+- Gramm-Leach-Bliley Act: Privacy notices, opt-out rights, safeguarding requirements
+- GDPR: For EU client data — consent management, data subject rights, DPO appointed
+- CCPA/CPRA: For California resident data
+- Data Classification: Restricted, Confidential, Internal, Public
+- Encryption: AES-256 for data at rest, TLS 1.3 for data in transit
+- Data Retention: Per regulatory requirements (7 years for trade records, 5 years for communications)
+
+7. REGULATORY EXAMINATIONS AND REPORTING
+
+7.1 Regular Filings
+- FR Y-9C (Consolidated Financial Statements): Quarterly
+- FFIEC 101 (Basel III Advanced Approaches): Quarterly
+- CCAR/DFAST Submissions: Annual
+- SEC Form 10-K/10-Q: Annual and Quarterly
+- FOCUS Report (Broker-Dealer): Monthly
+
+7.2 Examination Readiness
+- Dedicated Regulatory Affairs team managing 15+ concurrent examinations
+- MRA (Matters Requiring Attention) tracking: Currently 12 open MRAs
+- MRIA (Matters Requiring Immediate Attention): 2 open, both with remediation plans

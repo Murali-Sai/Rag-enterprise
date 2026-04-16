@@ -1,0 +1,116 @@
+ACME FINANCIAL HOLDINGS — AML/KYC PROCEDURES MANUAL
+
+1. CUSTOMER ONBOARDING PROCEDURES
+
+1.1 Account Opening
+Step 1: Collect Customer Identification Program (CIP) documents
+  - Individuals: Government-issued photo ID (passport, driver's license), date of birth, SSN/TIN, residential address
+  - Entities: Certificate of incorporation, articles of organization, EIN, registered address, operating agreement
+  - Trusts: Trust agreement, identification of trustees and beneficiaries
+
+Step 2: Beneficial Ownership Identification
+  - Identify all individuals owning 25% or more of the legal entity
+  - Identify one individual with significant management control
+  - Collect CIP documentation for all identified beneficial owners
+
+Step 3: Risk Rating Assignment
+  - Low Risk: US-based individuals, publicly traded companies, regulated financial institutions
+  - Medium Risk: Private companies, non-US persons from standard-risk jurisdictions
+  - High Risk: PEPs, MSBs, non-US entities from high-risk jurisdictions, shell companies, cryptocurrency businesses
+
+Step 4: Screening
+  - OFAC/SDN list screening
+  - Global sanctions screening (EU, UK, UN)
+  - PEP database screening
+  - Adverse media screening
+  - Negative news check
+
+Step 5: Enhanced Due Diligence (if High Risk)
+  - Source of funds documentation
+  - Source of wealth documentation
+  - Senior management approval required
+  - Expected transaction activity profiling
+  - Annual review cycle
+
+2. TRANSACTION MONITORING
+
+2.1 Automated Monitoring System
+- Platform: Actimize NICE
+- Transaction Types Monitored:
+  - Wire transfers (domestic and international)
+  - ACH transactions
+  - Check deposits
+  - Securities transactions
+  - Cash transactions above $10,000 (CTR filing)
+  - Structured transactions below $10,000 (potential structuring)
+
+2.2 Alert Typologies
+- Rapid movement of funds (pass-through activity)
+- Transactions inconsistent with customer profile
+- Transactions involving high-risk jurisdictions (FATF grey/black list)
+- Unusual wire transfer patterns
+- Round-dollar transactions
+- Layering patterns in securities trading
+- Funnel accounts
+- Cash structuring patterns
+- Shell company indicators
+- Trade-based money laundering indicators
+
+2.3 Alert Disposition Process
+- Level 1 Analyst: Initial review and triage (5 business days)
+- Level 2 Analyst: Detailed investigation (15 business days)
+- Level 3 / SAR Decision: Determination and filing (10 business days)
+- Quality Assurance: 10% random sample review by QA team
+
+3. SUSPICIOUS ACTIVITY REPORTING
+
+3.1 SAR Filing Requirements
+- File within 30 calendar days of initial detection
+- Extension to 60 days if no suspect identified
+- Continuing activity: Subsequent SARs every 90 days
+- Joint SARs with FinCEN for cases involving multiple institutions
+
+3.2 SAR Content
+- Subject information (if known)
+- Suspicious activity type (money laundering, fraud, structuring, terrorist financing, etc.)
+- Narrative: Clear description of the suspicious activity, including dates, amounts, and patterns
+- Supporting documentation retained for 5 years from filing date
+
+3.3 SAR Confidentiality
+- SARs are strictly confidential
+- No disclosure to the subject of the SAR (tipping off prohibition)
+- Limited internal access on a need-to-know basis
+- Safe harbor protection for good-faith filings
+
+4. SANCTIONS COMPLIANCE
+
+4.1 Real-Time Screening
+- All wire transfers screened against OFAC SDN list in real time
+- Potential matches generate automatic holds
+- Compliance team reviews within 4 hours
+- True matches: Block transaction, file blocking report with OFAC within 10 business days
+- False positives: Release with documentation
+
+4.2 Prohibited Jurisdictions
+- Comprehensively sanctioned: Cuba, Iran, North Korea, Syria, Crimea region
+- Sectoral sanctions: Russia, Venezuela (specific sectors)
+- Enhanced screening: High-risk jurisdictions per FATF recommendations
+
+5. RECORDKEEPING
+
+- CIP records: 5 years after account closure
+- Transaction records: 5 years from date of transaction
+- SAR records: 5 years from filing date
+- Wire transfer records (>$3,000): 5 years
+- CTR records: 5 years from filing date
+- Training records: 5 years
+- All records must be retrievable within 48 hours of regulatory request
+
+6. TRAINING
+
+- All employees: Annual AML awareness training (mandatory)
+- Customer-facing staff: Enhanced AML training including red flags and escalation procedures
+- Compliance team: Specialized training on typologies, investigations, and regulatory updates
+- Board of Directors: Annual AML risk briefing
+- Training completion rate target: 100% within 30 days of assignment
+- 2024 completion rate: 99.2%

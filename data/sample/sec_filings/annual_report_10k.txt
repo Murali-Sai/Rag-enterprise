@@ -1,0 +1,66 @@
+ACME FINANCIAL HOLDINGS, INC.
+FORM 10-K — ANNUAL REPORT
+For the Fiscal Year Ended December 31, 2024
+Filed with the Securities and Exchange Commission
+
+PART I
+
+Item 1. Business
+
+ACME Financial Holdings, Inc. ("ACME" or the "Company") is a global financial services firm and a bank holding company. The Company's principal activities include investment banking, sales and trading of securities and derivatives, asset management, prime brokerage, and commercial banking.
+
+The Company operates through four principal business segments:
+1. Institutional Securities — includes investment banking (M&A advisory, equity and debt underwriting), sales and trading (equities, FICC), and research
+2. Wealth Management — includes financial advisory and brokerage services to individual investors
+3. Asset Management — includes management of pooled vehicles, separate accounts, and fund of funds
+4. Commercial Banking — includes corporate lending, commercial real estate, and treasury services
+
+Revenue by Segment (FY 2024):
+- Institutional Securities: $18.2B (48% of total revenue)
+- Wealth Management: $11.5B (30%)
+- Asset Management: $5.1B (13%)
+- Commercial Banking: $3.4B (9%)
+
+Total Net Revenue: $38.2B
+Net Income: $9.1B
+Return on Equity (ROE): 14.8%
+Return on Tangible Common Equity (ROTCE): 17.2%
+
+Item 1A. Risk Factors
+
+Market Risk: The Company is exposed to market risk from changes in interest rates, equity prices, foreign exchange rates, and commodity prices. The Company's daily Value-at-Risk (VaR) averaged $62 million during 2024.
+
+Credit Risk: As of December 31, 2024, the Company's total credit exposure was $385 billion. Non-performing assets represented 0.8% of total assets. The allowance for credit losses was $4.2 billion, representing a coverage ratio of 2.1x.
+
+Liquidity Risk: The Company maintained a Liquidity Coverage Ratio (LCR) of 118%, exceeding the regulatory minimum of 100%. The Net Stable Funding Ratio (NSFR) was 112%.
+
+Operational Risk: The Company faces operational risk from internal processes, people, systems, and external events. Operational risk capital under Basel III Advanced Approach was $12.4 billion.
+
+Regulatory Risk: The Company is subject to extensive regulation by federal and state agencies including the Federal Reserve, OCC, SEC, CFTC, and FINRA. Basel III capital requirements mandate a minimum CET1 ratio of 4.5% plus applicable buffers. The Company's CET1 ratio was 13.2% as of year-end.
+
+Item 7. Management's Discussion and Analysis
+
+Capital Markets Revenue:
+Total trading revenue was $14.8B, driven by strong performance in Equities (+15% YoY) and FICC (+8% YoY). The equities division benefited from higher client activity in derivatives and prime brokerage. FICC performance was led by credit products and macro trading.
+
+Investment Banking:
+Advisory revenue was $3.2B, reflecting a recovery in M&A volumes. Equity underwriting revenue of $2.1B increased 22% driven by IPO activity. Debt underwriting revenue was $2.8B, supported by leveraged finance and investment-grade issuance.
+
+Net Interest Income:
+Net interest income was $8.4B, up 5% YoY. Net interest margin was 2.15%, compared to 2.08% in the prior year. The increase was primarily driven by higher rates on the lending portfolio, partially offset by higher deposit costs.
+
+Provision for Credit Losses:
+The provision for credit losses was $1.8B, up from $1.2B in the prior year. The increase reflected deterioration in the commercial real estate portfolio and a modest increase in consumer credit delinquencies.
+
+Compensation and Benefits:
+Total compensation and benefits expense was $15.6B, representing a compensation ratio of 40.8% of net revenue. The ratio decreased from 42.1% in the prior year, reflecting operating leverage.
+
+Item 8. Financial Statements
+
+Consolidated Balance Sheet (in billions):
+Total Assets: $1,180B
+Total Deposits: $412B
+Long-term Debt: $218B
+Total Shareholders' Equity: $68.5B
+Book Value Per Share: $96.40
+Tangible Book Value Per Share: $82.15

@@ -1,0 +1,103 @@
+ACME FINANCIAL HOLDINGS — MARKET RISK MANAGEMENT FRAMEWORK
+
+1. OVERVIEW
+
+The Market Risk Management Framework establishes the policies, methodologies, and governance structure for identifying, measuring, monitoring, and controlling market risk across all trading and banking book positions.
+
+2. RISK GOVERNANCE
+
+2.1 Three Lines of Defense
+- First Line: Front Office / Business Units — own and manage risk-taking
+- Second Line: Market Risk Management (independent) — sets limits, monitors, and challenges
+- Third Line: Internal Audit — provides independent assurance
+
+2.2 Committee Structure
+- Board Risk Committee: Quarterly review of risk appetite and framework
+- Enterprise Risk Committee (ERC): Monthly review of risk metrics and breaches
+- Market Risk Committee (MRC): Weekly review of trading book risk
+- Desk-Level Risk Reviews: Daily P&L and risk metric review
+
+3. VALUE-AT-RISK (VaR)
+
+3.1 Methodology
+- Model: Historical Simulation VaR
+- Confidence Level: 99% (1-day) and 99% (10-day)
+- Lookback Period: 2 years of historical data, with equal weighting
+- Holding Period: 1-day for trading book, 10-day for regulatory capital
+
+3.2 VaR Limits
+- Firm-wide 99% 1-day VaR Limit: $100M
+- Average Daily VaR (2024): $62M
+- Maximum Daily VaR (2024): $89M (occurred during March volatility event)
+- Minimum Daily VaR (2024): $41M
+
+3.3 VaR by Risk Factor (Average 2024):
+- Interest Rate Risk: $28M
+- Equity Risk: $22M
+- Credit Spread Risk: $18M
+- Foreign Exchange Risk: $12M
+- Commodity Risk: $8M
+- Diversification Benefit: ($26M)
+- Total VaR: $62M
+
+4. STRESS TESTING
+
+4.1 Regulatory Stress Tests
+- CCAR/DFAST: Annual submission to Federal Reserve
+- Scenarios: Baseline, Adverse, Severely Adverse
+- 2024 DFAST Results (Severely Adverse):
+  - Projected Losses: $18.2B over 9 quarters
+  - Minimum CET1 Ratio: 8.4% (vs. 4.5% minimum)
+  - Pre-provision Net Revenue (Stressed): $12.8B
+
+4.2 Internal Stress Tests
+- Historical Scenarios: 2008 Financial Crisis, 2020 COVID, 2022 Rate Shock, 2023 Banking Crisis
+- Hypothetical Scenarios: Geopolitical shock, inflation spiral, liquidity freeze, cyber event
+- Reverse Stress Tests: Identify scenarios that would breach capital thresholds
+
+4.3 Sensitivity Analysis
+- DV01 (Dollar Value of 1bp): $8.2M across the yield curve
+- CS01 (Credit Spread 01): $5.1M
+- Equity Delta: $42M per 1% move in S&P 500
+- Vega: $12M per 1 vol point across equity surfaces
+
+5. RISK LIMITS FRAMEWORK
+
+5.1 Limit Hierarchy
+- Board Risk Appetite → Firm-Level Limits → Division Limits → Desk Limits → Trader Limits
+- All limits are hard limits; breaches require immediate escalation
+
+5.2 Limit Types
+- VaR Limits (1-day and 10-day)
+- Stress Loss Limits (per scenario)
+- Sensitivity Limits (DV01, CS01, delta, vega, gamma)
+- Notional Limits (gross and net)
+- Concentration Limits (single name, sector, geography)
+- Loss Limits (daily, monthly, quarterly stop-loss)
+
+5.3 Breach Escalation
+- Level 1 (Warning at 80%): Notification to desk head and risk manager
+- Level 2 (Soft Breach at 100%): Escalation to division head; plan to remediate within 2 days
+- Level 3 (Hard Breach at 120%): Immediate escalation to CRO; forced position reduction
+
+6. COUNTERPARTY CREDIT RISK
+
+6.1 Exposure Measurement
+- Current Exposure: Mark-to-market value of derivatives portfolio
+- Potential Future Exposure (PFE): 97.5th percentile at 1-year horizon
+- Credit Valuation Adjustment (CVA): $890M as of year-end
+- Wrong-Way Risk: Monitored through correlation analysis between exposure and counterparty credit
+
+6.2 Collateral Management
+- Variation Margin: Daily exchange under CSA agreements
+- Initial Margin: Calculated using ISDA SIMM methodology
+- Eligible Collateral: Cash (USD, EUR, GBP, JPY), US Treasuries, G7 sovereign bonds
+- Rehypothecation: Permitted up to 140% of client debit balances
+
+7. MODEL RISK MANAGEMENT
+
+- All pricing and risk models subject to independent validation
+- Annual model inventory review covering 850+ models
+- Model Risk Rating: Tier 1 (critical), Tier 2 (significant), Tier 3 (standard)
+- Tier 1 models validated annually; Tier 2 every 18 months; Tier 3 every 2 years
+- Model limitations documented and communicated to users
