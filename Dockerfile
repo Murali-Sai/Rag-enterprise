@@ -38,5 +38,4 @@ USER appuser
 
 EXPOSE 8000
 
-COPY scripts/start.sh /app/scripts/start.sh
-CMD ["sh", "/app/scripts/start.sh"]
+CMD ["python", "scripts/start.py"]
