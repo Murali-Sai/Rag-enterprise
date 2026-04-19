@@ -10,16 +10,16 @@ from src.auth.repository import create_user, init_db
 from src.common.exceptions import AuthenticationError
 
 DEMO_USERS = [
-    {"username": "admin_user", "password": "admin1234!", "roles": ["admin"]},
-    {"username": "trader_desk", "password": "trade1234!", "roles": ["trading"]},
-    {"username": "risk_analyst", "password": "risk12345!", "roles": ["risk"]},
-    {"username": "compliance_officer", "password": "compl1234!", "roles": ["compliance"]},
-    {"username": "research_analyst", "password": "research1!", "roles": ["research"]},
-    {"username": "wealth_advisor", "password": "wealth123!", "roles": ["wealth_management"]},
-    {"username": "ops_manager", "password": "ops1234567!", "roles": ["operations"]},
-    {"username": "external_auditor", "password": "audit1234!", "roles": ["auditor"]},
-    {"username": "senior_md", "password": "senior123!", "roles": ["trading", "risk"]},
-    {"username": "viewer_user", "password": "viewer123!", "roles": ["viewer"]},
+    {"username": "admin_user", "password": "admin1234!", "role_names": ["admin"]},
+    {"username": "trader_desk", "password": "trade1234!", "role_names": ["trading"]},
+    {"username": "risk_analyst", "password": "risk12345!", "role_names": ["risk"]},
+    {"username": "compliance_officer", "password": "compl1234!", "role_names": ["compliance"]},
+    {"username": "research_analyst", "password": "research1!", "role_names": ["research"]},
+    {"username": "wealth_advisor", "password": "wealth123!", "role_names": ["wealth_management"]},
+    {"username": "ops_manager", "password": "ops1234567!", "role_names": ["operations"]},
+    {"username": "external_auditor", "password": "audit1234!", "role_names": ["auditor"]},
+    {"username": "senior_md", "password": "senior123!", "role_names": ["trading", "risk"]},
+    {"username": "viewer_user", "password": "viewer123!", "role_names": ["viewer"]},
 ]
 
 
@@ -30,7 +30,7 @@ async def seed() -> None:
     for user_data in DEMO_USERS:
         try:
             user = await create_user(**user_data)
-            print(f"Created user: {user.username} (roles: {user_data['roles']})")
+            print(f"Created user: {user.username} (roles: {user_data['role_names']})")
         except AuthenticationError as e:
             print(f"Skipped {user_data['username']}: {e}")
 
@@ -50,7 +50,7 @@ async def seed() -> None:
         "viewer": "SEC Filings only",
     }
     for u in DEMO_USERS:
-        roles = u["roles"]
+        roles = u["role_names"]
         access = role_access.get(roles[0], "Custom")
         print(f"  {u['username']:<20} {u['password']:<15} {str(roles):<25} {access}")
 
