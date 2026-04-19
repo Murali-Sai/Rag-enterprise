@@ -24,13 +24,12 @@ env/
 *.swo
 .claude/
 
-# Data
-# NOTE: data/edgar/ and chroma_data/ ARE committed — prebuilt index for Railway deploy.
-# The auth SQLite DB is NOT committed (rebuilt on startup via seed_users.py).
+# Data — rebuilt at runtime (download_filings.py + ingest_edgar.py)
+data/edgar/*.html
+data/edgar/*.json
+chroma_data/
 rag_enterprise.db
 *.sqlite
-
-# (chroma_data/ is intentionally tracked — do not ignore)
 
 # Jupyter
 .ipynb_checkpoints/
