@@ -1,5 +1,7 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
+> **Live Demo**: [web-production-337e5.up.railway.app](https://web-production-337e5.up.railway.app/docs) &nbsp;|&nbsp; Try it: `POST /api/auth/login` then `POST /api/query`
+
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 
 Unlike typical RAG demos with synthetic documents, this system downloads, parses, and indexes **actual annual reports** from Apple, JPMorgan, Tesla, Microsoft, and Goldman Sachs.
@@ -60,15 +62,16 @@ Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chu
 | Data Source | SEC EDGAR API (real 10-K filings) |
 | Filing Parser | BeautifulSoup + regex section extraction |
 | LLM (Primary) | Groq (llama-3.3-70b) — Free tier |
-| LLM (Fallback) | Google Gemini 2.0 Flash — Free tier |
+| LLM (Fallback) | Google Gemini 2.5 Flash / OpenAI gpt-4o-mini |
 | Embeddings | sentence-transformers/all-MiniLM-L6-v2 (local, free) |
-| Vector Store | ChromaDB (dev) / OpenSearch Serverless (prod) |
+| Vector Store | ChromaDB (prebuilt index committed for zero-build deploys) |
 | API | FastAPI with async lifespan |
 | Auth | JWT + SQLAlchemy + bcrypt |
 | Financial Guardrails | MNPI detection, investment advice blocking, disclaimer injection |
 | Audit Trail | Append-only JSONL (SEC 17a-4 / FINRA 4511) |
 | Evaluation | RAGAS (Faithfulness, Relevancy, Precision, Recall) |
-| Infrastructure | Terraform + AWS ECS Fargate |
+| Deployment | Railway (Nixpacks) — live demo |
+| Infrastructure | Terraform + AWS ECS Fargate (reference architecture) |
 | CI/CD | GitHub Actions |
 
 ## Quick Start
@@ -81,7 +84,7 @@ Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chu
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/rag-enterprise.git
+git clone https://github.com/Murali-Sai/Rag-enterprise.git
 cd rag-enterprise
 pip install -e ".[dev,eval]"
 
@@ -269,7 +272,7 @@ rag-enterprise/
 │   └── ingest_samples.py               # Ingest sample domain documents
 ├── tests/                               # Unit + integration tests
 ├── evaluation/                          # RAGAS pipeline + 20 filing-grounded Q&A
-├── data/edgar/                          # Downloaded 10-K filings (gitignored)
+├── data/edgar/                          # Downloaded 10-K filings (committed for deploy)
 ├── data/sample/                         # Domain documents (risk, compliance, etc.)
 ├── infra/terraform/                     # AWS ECS + OpenSearch IaC
 └── .github/workflows/                   # CI/CD pipelines
@@ -309,11 +312,37 @@ make lint          # Lint + type check
 
 ## Deployment
 
-```bash
-# Docker
-docker-compose up -d --build
+### Live Demo (Railway)
 
-# AWS (Terraform)
+The app is deployed at **https://web-production-337e5.up.railway.app** via Railway with a Dockerfile builder. Try it:
+
+```bash
+# Health check
+curl https://web-production-337e5.up.railway.app/health
+
+# Login as research analyst
+curl -X POST https://web-production-337e5.up.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"research_analyst","password":"research1!"}'
+
+# Query (use the token from login response)
+curl -X POST https://web-production-337e5.up.railway.app/api/query \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"What was Apple total revenue in fiscal year 2024?","top_k":10}'
+```
+
+Or explore the interactive API docs: [/docs](https://web-production-337e5.up.railway.app/docs)
+
+### Local (Docker)
+
+```bash
+docker-compose up -d --build
+```
+
+### AWS (Terraform — reference architecture)
+
+```bash
 cd infra/terraform
 terraform init
 terraform apply -var-file=environments/dev.tfvars
