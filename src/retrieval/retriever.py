@@ -1,5 +1,6 @@
 from langchain_core.documents import Document
 
+from src.auth.rbac import get_accessible_departments
 from src.common.logging import get_logger
 from src.config import settings
 from src.retrieval.vector_store import VectorStoreBase, get_vector_store
@@ -10,9 +11,9 @@ logger = get_logger(__name__)
 class RBACRetriever:
     """Retriever that filters documents based on user roles.
 
-    Documents are stored with access_roles metadata (comma-separated).
-    This retriever builds a ChromaDB where-filter so only documents
-    matching the user's roles are returned.
+    Uses the RBAC department mapping to build a ChromaDB where-filter
+    so only documents from accessible departments are returned.
+    Information barriers (Chinese Walls) are enforced via get_accessible_departments().
     """
 
     def __init__(
@@ -29,14 +30,18 @@ class RBACRetriever:
         if "admin" in self.user_roles:
             return None  # Admin sees everything
 
-        # ChromaDB $or filter: match any role the user has
-        # Documents store access_roles as comma-separated string,
-        # so we use $contains to check if any user role is in the string
-        role_conditions = [{"access_roles": {"$contains": role}} for role in self.user_roles]
+        # Get departments this user can access (with Chinese Wall enforcement)
+        accessible = get_accessible_departments(self.user_roles)
 
-        if len(role_conditions) == 1:
-            return role_conditions[0]
-        return {"$or": role_conditions}
+        if not accessible:
+            # No accessible departments — return impossible filter
+            return {"department": {"$eq": "__none__"}}
+
+        # ChromaDB $in filter on the department metadata field
+        dept_list = sorted(accessible)
+        if len(dept_list) == 1:
+            return {"department": {"$eq": dept_list[0]}}
+        return {"department": {"$in": dept_list}}
 
     def retrieve(self, query: str) -> list[Document]:
         role_filter = self._build_role_filter()
