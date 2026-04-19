@@ -19,7 +19,12 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code + prebuilt data
+# Install system deps for lxml (used by EDGAR parser)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxml2 libxslt1.1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy application code
 COPY . .
 
 # Prevent transformers from trying to load TensorFlow / Keras
@@ -30,9 +35,9 @@ ENV TRANSFORMERS_NO_ADVISORY_WARNINGS=1
 ENV HF_HOME=/app/.cache/huggingface
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 
-# Create non-root user with writable cache dir
+# Create non-root user with writable dirs
 RUN groupadd -r appuser && useradd -r -g appuser appuser \
-    && mkdir -p /app/.cache/huggingface \
+    && mkdir -p /app/.cache/huggingface /app/data/edgar /app/chroma_data /app/audit_logs \
     && chown -R appuser:appuser /app
 USER appuser
 
