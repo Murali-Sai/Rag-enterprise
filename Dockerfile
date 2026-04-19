@@ -26,14 +26,16 @@ COPY . .
 ENV USE_TF=0
 ENV TRANSFORMERS_NO_ADVISORY_WARNINGS=1
 
-# Create non-root user
+# HuggingFace cache must be writable (appuser has no home dir by default)
+ENV HF_HOME=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+
+# Create non-root user with writable cache dir
 RUN groupadd -r appuser && useradd -r -g appuser appuser \
+    && mkdir -p /app/.cache/huggingface \
     && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"
-
-CMD ["sh", "-c", "python scripts/seed_users.py && uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "python scripts/seed_users.py && echo '=== Seed complete, starting uvicorn ===' && exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"]
