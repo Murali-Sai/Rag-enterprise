@@ -38,4 +38,5 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python scripts/seed_users.py && echo '=== Seed complete, starting uvicorn ===' && exec uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info"]
+COPY scripts/start.sh /app/scripts/start.sh
+CMD ["sh", "/app/scripts/start.sh"]
