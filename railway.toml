@@ -1,11 +1,8 @@
 [build]
-builder = "NIXPACKS"
-# Install CPU-only PyTorch first (saves ~2GB vs CUDA version), then install the project
-installCommand = "pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install ."
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-# Run DB migrations + seed users, then start the FastAPI server
-startCommand = "python scripts/seed_users.py && uvicorn src.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
