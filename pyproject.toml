@@ -12,13 +12,13 @@ dependencies = [
     "pydantic>=2.9.0",
     "pydantic-settings>=2.5.0",
 
-    # LangChain
-    "langchain>=0.3.0",
-    "langchain-core>=0.3.0",
-    "langchain-community>=0.3.0",
-    "langchain-groq>=0.2.0",
-    "langchain-google-genai>=2.0.0",
-    "langchain-huggingface>=0.1.0",
+    # LangChain (pin to 0.3.x — 1.x has breaking API changes)
+    "langchain>=0.3.0,<1.0",
+    "langchain-core>=0.3.0,<1.0",
+    "langchain-community>=0.3.0,<1.0",
+    "langchain-groq>=0.2.0,<1.0",
+    "langchain-google-genai>=2.0.0,<3.0",
+    "langchain-huggingface>=0.1.0,<1.0",
 
     # Embeddings
     "sentence-transformers>=3.0.0",
