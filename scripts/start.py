@@ -6,13 +6,15 @@ import sys
 
 
 def run_step(name: str, args: list[str]) -> None:
-    """Run a script, warn on failure but continue."""
-    print(f"=== {name} ===", flush=True)
-    result = subprocess.run(args)
+    """Run a script, capture output, warn on failure but continue."""
+    print(f"\n{'=' * 60}", flush=True)
+    print(f"  {name}", flush=True)
+    print(f"{'=' * 60}", flush=True)
+    result = subprocess.run(args, capture_output=False)
     if result.returncode != 0:
-        print(f"WARNING: {name} exited with code {result.returncode} — continuing", flush=True)
+        print(f"WARNING: {name} exited with code {result.returncode} — continuing\n", flush=True)
     else:
-        print(f"=== {name} complete ===", flush=True)
+        print(f"OK: {name} complete\n", flush=True)
 
 
 def main() -> None:
@@ -21,15 +23,27 @@ def main() -> None:
     # 1. Download SEC filings from EDGAR API
     run_step("Downloading SEC filings", [py, "scripts/download_filings.py"])
 
-    # 2. Ingest filings into ChromaDB vector store
-    run_step("Ingesting filings", [py, "scripts/ingest_edgar.py", "--from-disk"])
+    # 2. Verify files exist
+    from pathlib import Path
 
-    # 3. Seed demo users
-    run_step("Seeding users", [py, "scripts/seed_users.py"])
+    edgar_dir = Path("data/edgar")
+    html_files = list(edgar_dir.rglob("*.html"))
+    print(f"Filing HTML files found on disk: {len(html_files)}", flush=True)
+    for f in html_files:
+        print(f"  {f} ({f.stat().st_size // 1024} KB)", flush=True)
 
-    # 4. Start uvicorn
+    # 3. Ingest filings into ChromaDB vector store
+    if html_files:
+        run_step("Ingesting filings into ChromaDB", [py, "scripts/ingest_edgar.py", "--from-disk"])
+    else:
+        print("WARNING: No filing HTML files found — skipping ingestion", flush=True)
+
+    # 4. Seed demo users
+    run_step("Seeding demo users", [py, "scripts/seed_users.py"])
+
+    # 5. Start uvicorn
     port = os.environ.get("PORT", "8000")
-    print(f"=== Starting uvicorn on port {port} ===", flush=True)
+    print(f"\n=== Starting uvicorn on port {port} ===", flush=True)
     os.execvp(
         "uvicorn",
         ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", port, "--log-level", "info"],

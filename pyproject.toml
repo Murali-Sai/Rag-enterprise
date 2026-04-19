@@ -95,6 +95,7 @@ ignore = ["S101", "S105", "B008", "UP042", "S104", "N818"]
 "src/common/schemas.py" = ["E501"]
 "src/edgar/loader.py" = ["E501"]
 "tests/**" = ["E501"]
+"scripts/**" = ["S603", "S606", "S607"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

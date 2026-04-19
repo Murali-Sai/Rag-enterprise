@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 5
 
     # SEC EDGAR
-    edgar_user_agent: str = "RAGEnterprise research@example.com"
+    edgar_user_agent: str = "RAGEnterprise murali140824@gmail.com"
     edgar_rate_limit: int = 10
     edgar_data_dir: str = "./data/edgar"
 
