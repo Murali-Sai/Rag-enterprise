@@ -32,9 +32,7 @@ class RBACRetriever:
         # ChromaDB $or filter: match any role the user has
         # Documents store access_roles as comma-separated string,
         # so we use $contains to check if any user role is in the string
-        role_conditions = [
-            {"access_roles": {"$contains": role}} for role in self.user_roles
-        ]
+        role_conditions = [{"access_roles": {"$contains": role}} for role in self.user_roles]
 
         if len(role_conditions) == 1:
             return role_conditions[0]

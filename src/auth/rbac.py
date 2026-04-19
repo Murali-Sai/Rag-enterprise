@@ -9,8 +9,12 @@ logger = get_logger(__name__)
 ROLE_ACCESS_MAP: dict[str, set[str]] = {
     # Senior management / admin — full access across all barriers
     "admin": {
-        "sec_filings", "risk_management", "compliance",
-        "research", "trading", "general",
+        "sec_filings",
+        "risk_management",
+        "compliance",
+        "research",
+        "trading",
+        "general",
     },
     # Front Office: Trading — access to trading procedures, risk, and public filings
     "trading": {"trading", "risk_management", "sec_filings", "general"},
@@ -77,10 +81,7 @@ def filter_documents_by_access(
 
     accessible = get_accessible_departments(user_roles)
 
-    filtered = [
-        doc for doc in documents
-        if doc.metadata.get("department", "general") in accessible
-    ]
+    filtered = [doc for doc in documents if doc.metadata.get("department", "general") in accessible]
 
     logger.info(
         "rbac_filter_applied",

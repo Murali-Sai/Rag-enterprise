@@ -23,6 +23,7 @@ async def readiness_check() -> ReadinessResponse:
     # Check vector store
     try:
         from src.retrieval.vector_store import get_vector_store
+
         get_vector_store()
         vector_store_status = "connected"
     except Exception:
@@ -31,6 +32,7 @@ async def readiness_check() -> ReadinessResponse:
     # Check database
     try:
         from src.auth.repository import async_session
+
         async with async_session() as session:
             await session.execute("SELECT 1")  # type: ignore[arg-type]
         db_status = "connected"

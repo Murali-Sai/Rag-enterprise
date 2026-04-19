@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
 from src.api.deps import get_current_user, require_role
 from src.auth.models import User
-from src.auth.rbac import check_department_access
 from src.common.schemas import DocumentIngestResponse
 from src.ingestion.loaders import get_supported_extensions
 from src.ingestion.pipeline import ingest_document

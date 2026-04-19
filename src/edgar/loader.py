@@ -10,7 +10,6 @@ from pathlib import Path
 from langchain_core.documents import Document
 
 from src.common.logging import get_logger
-from src.config import settings
 from src.edgar.client import COMPANY_REGISTRY, EdgarClient
 from src.edgar.parser import FilingSection, parse_10k_sections
 
@@ -74,7 +73,9 @@ async def load_edgar_filing(
     client = EdgarClient()
     try:
         filings = await client.get_company_filings(
-            ticker, filing_type, count=filing_index + 1,
+            ticker,
+            filing_type,
+            count=filing_index + 1,
         )
 
         if not filings or filing_index >= len(filings):
@@ -116,7 +117,9 @@ async def load_multiple_filings(
                 continue
 
             filings = await client.get_company_filings(
-                ticker, filing_type, count=count_per_company,
+                ticker,
+                filing_type,
+                count=count_per_company,
             )
 
             for filing in filings:

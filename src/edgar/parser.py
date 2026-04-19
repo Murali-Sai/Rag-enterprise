@@ -32,12 +32,12 @@ PRIORITY_SECTIONS = {"1", "1a", "7", "7a", "8"}
 # Regex to match section headers — handles many real-world formatting variants:
 # "Item 1.", "ITEM 1A.", "Item 1A -", "Item 7.", "ITEM\n7", etc.
 ITEM_PATTERN = re.compile(
-    r'(?:^|\n)\s*(?:<[^>]*>\s*)*'       # Optional HTML tags before
-    r'(?:ITEM|Item|item)\s*'              # "Item" keyword
-    r'(\d+[aAbB]?)\s*'                   # Section number (1, 1a, 7, etc.)
-    r'[\.\:\-—–\s]*'                     # Separator (., :, -, —)
-    r'([A-Z][A-Za-z\s,&\'-]{5,80}?)'    # Section title
-    r'\s*(?:</[^>]*>)*',                  # Optional closing HTML tags
+    r"(?:^|\n)\s*(?:<[^>]*>\s*)*"  # Optional HTML tags before
+    r"(?:ITEM|Item|item)\s*"  # "Item" keyword
+    r"(\d+[aAbB]?)\s*"  # Section number (1, 1a, 7, etc.)
+    r"[\.\:\-—–\s]*"  # Separator (., :, -, —)
+    r"([A-Z][A-Za-z\s,&\'-]{5,80}?)"  # Section title
+    r"\s*(?:</[^>]*>)*",  # Optional closing HTML tags
     re.MULTILINE,
 )
 
@@ -72,12 +72,14 @@ def parse_10k_sections(
     if not matches:
         logger.warning("no_sections_found", text_length=len(text))
         # Fallback: return entire document as single section
-        return [FilingSection(
-            section_id="full",
-            section_name="Full Filing",
-            content=_clean_text(text[:100000]),  # Cap at 100K chars
-            char_count=min(len(text), 100000),
-        )]
+        return [
+            FilingSection(
+                section_id="full",
+                section_name="Full Filing",
+                content=_clean_text(text[:100000]),  # Cap at 100K chars
+                char_count=min(len(text), 100000),
+            )
+        ]
 
     sections: list[FilingSection] = []
     target_sections = PRIORITY_SECTIONS if priority_only else set(SECTION_10K.keys())
@@ -101,12 +103,14 @@ def parse_10k_sections(
 
         section_name = SECTION_10K.get(section_num, match.group(2).strip())
 
-        sections.append(FilingSection(
-            section_id=f"item_{section_num}",
-            section_name=section_name,
-            content=content,
-            char_count=len(content),
-        ))
+        sections.append(
+            FilingSection(
+                section_id=f"item_{section_num}",
+                section_name=section_name,
+                content=content,
+                char_count=len(content),
+            )
+        )
 
         logger.info(
             "section_extracted",

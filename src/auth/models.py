@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Integer, String, Table, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -23,9 +23,7 @@ class Role(Base):
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(String(200), default="")
 
-    users: Mapped[list["User"]] = relationship(
-        "User", secondary=user_roles, back_populates="roles"
-    )
+    users: Mapped[list["User"]] = relationship("User", secondary=user_roles, back_populates="roles")
 
 
 class User(Base):
@@ -34,13 +32,9 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
-    roles: Mapped[list[Role]] = relationship(
-        "Role", secondary=user_roles, back_populates="users"
-    )
+    roles: Mapped[list[Role]] = relationship("Role", secondary=user_roles, back_populates="users")
 
     @property
     def role_names(self) -> set[str]:

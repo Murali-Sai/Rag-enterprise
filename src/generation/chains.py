@@ -1,6 +1,5 @@
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 
 from src.common.logging import get_logger
 from src.generation.llm_factory import get_llm

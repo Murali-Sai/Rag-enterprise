@@ -8,7 +8,6 @@ from src.edgar.parser import (
     parse_10k_sections,
 )
 
-
 SAMPLE_10K_HTML = """
 <html>
 <head><title>10-K Filing</title></head>
@@ -131,6 +130,7 @@ class TestCleanText:
 class TestTableToText:
     def test_basic_table(self):
         from bs4 import BeautifulSoup
+
         html = "<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>"
         soup = BeautifulSoup(html, "lxml")
         table = soup.find("table")

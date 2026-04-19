@@ -1,8 +1,8 @@
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.config import settings
 from src.common.logging import get_logger
+from src.config import settings
 
 logger = get_logger(__name__)
 

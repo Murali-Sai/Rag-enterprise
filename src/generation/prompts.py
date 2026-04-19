@@ -21,7 +21,9 @@ Question: {question}
 
 Answer:"""
 
-rag_prompt = ChatPromptTemplate.from_messages([
-    ("system", RAG_SYSTEM_PROMPT),
-    ("human", RAG_USER_PROMPT),
-])
+rag_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", RAG_SYSTEM_PROMPT),
+        ("human", RAG_USER_PROMPT),
+    ]
+)

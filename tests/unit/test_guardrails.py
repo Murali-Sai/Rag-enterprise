@@ -2,9 +2,9 @@ import pytest
 
 from src.common.exceptions import GuardrailViolation
 from src.guardrails.input_validator import validate_input
-from src.guardrails.prompt_injection import detect_prompt_injection
-from src.guardrails.pii_detector import detect_pii, redact_pii
 from src.guardrails.output_safety import check_output_safety
+from src.guardrails.pii_detector import detect_pii, redact_pii
+from src.guardrails.prompt_injection import detect_prompt_injection
 
 
 class TestInputValidator:
@@ -105,7 +105,9 @@ class TestPIIDetector:
 
 class TestOutputSafety:
     def test_safe_output(self):
-        result = check_output_safety("Based on the documents, the PTO policy allows 20 days per year.")
+        result = check_output_safety(
+            "Based on the documents, the PTO policy allows 20 days per year."
+        )
         assert result.is_safe is True
         assert len(result.flags) == 0
 

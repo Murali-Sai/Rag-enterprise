@@ -1,7 +1,7 @@
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from src.config import settings
 from src.common.logging import get_logger
+from src.config import settings
 
 logger = get_logger(__name__)
 

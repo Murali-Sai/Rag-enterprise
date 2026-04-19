@@ -87,7 +87,14 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "S", "B", "A", "C4", "SIM"]
-ignore = ["S101", "S105"]
+ignore = ["S101", "S105", "B008", "UP042", "S104", "N818"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/main.py" = ["E501"]
+"src/generation/prompts.py" = ["E501"]
+"src/common/schemas.py" = ["E501"]
+"src/edgar/loader.py" = ["E501"]
+"tests/**" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

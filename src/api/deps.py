@@ -20,7 +20,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
     user = await get_user_by_id(int(payload["sub"]))
     if user is None:
@@ -43,4 +43,5 @@ def require_role(required_role: str):  # noqa: ANN201
                 detail=f"Role '{required_role}' required",
             )
         return user
+
     return _check

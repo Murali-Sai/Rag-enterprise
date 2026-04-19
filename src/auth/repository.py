@@ -1,7 +1,7 @@
+from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
-from passlib.context import CryptContext
 
 from src.auth.models import Base, Role, User
 from src.common.exceptions import AuthenticationError
@@ -94,7 +94,5 @@ async def get_user_by_id(user_id: int) -> User | None:
 
 async def list_users() -> list[User]:
     async with async_session() as session:
-        result = await session.execute(
-            select(User).options(selectinload(User.roles))
-        )
+        result = await session.execute(select(User).options(selectinload(User.roles)))
         return list(result.scalars().all())

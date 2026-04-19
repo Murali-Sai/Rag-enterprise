@@ -6,7 +6,7 @@ append-only audit trail. This is critical for regulatory compliance
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.common.logging import get_logger
@@ -37,7 +37,7 @@ def log_query_audit(
 
     entry = {
         "event_type": "rag_query",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "user_id": user_id,
         "username": username,
         "user_roles": user_roles,
@@ -50,7 +50,7 @@ def log_query_audit(
     }
 
     # Append to daily audit log file
-    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
     log_file = AUDIT_LOG_DIR / f"audit_{date_str}.jsonl"
 
     with open(log_file, "a") as f:
@@ -79,7 +79,7 @@ def log_document_access(
 
     entry = {
         "event_type": "document_access",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "user_id": user_id,
         "username": username,
         "user_roles": user_roles,
@@ -89,7 +89,7 @@ def log_document_access(
         "access_granted": access_granted,
     }
 
-    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
     log_file = AUDIT_LOG_DIR / f"audit_{date_str}.jsonl"
 
     with open(log_file, "a") as f:
@@ -106,13 +106,13 @@ def log_auth_event(
 
     entry = {
         "event_type": "auth_event",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "username": username,
         "event": event,
         "ip_address": ip_address,
     }
 
-    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date_str = datetime.now(UTC).strftime("%Y-%m-%d")
     log_file = AUDIT_LOG_DIR / f"audit_{date_str}.jsonl"
 
     with open(log_file, "a") as f:

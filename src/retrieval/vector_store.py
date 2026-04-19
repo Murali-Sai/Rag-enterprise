@@ -10,8 +10,7 @@ logger = get_logger(__name__)
 
 class VectorStoreBase(ABC):
     @abstractmethod
-    def add_documents(self, documents: list[Document]) -> list[str]:
-        ...
+    def add_documents(self, documents: list[Document]) -> list[str]: ...
 
     @abstractmethod
     def similarity_search(
@@ -19,12 +18,10 @@ class VectorStoreBase(ABC):
         query: str,
         k: int = 5,
         filter_dict: dict | None = None,
-    ) -> list[Document]:
-        ...
+    ) -> list[Document]: ...
 
     @abstractmethod
-    def delete(self, ids: list[str]) -> None:
-        ...
+    def delete(self, ids: list[str]) -> None: ...
 
 
 class ChromaVectorStore(VectorStoreBase):

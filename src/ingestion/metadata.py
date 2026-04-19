@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from langchain_core.documents import Document
@@ -16,13 +16,15 @@ def enrich_metadata(
 ) -> list[Document]:
     enriched = []
     for i, doc in enumerate(documents):
-        doc.metadata.update({
-            "source_file": Path(source_file).name,
-            "department": department,
-            "access_roles": ",".join(access_roles),  # Stored as comma-separated for ChromaDB
-            "ingested_at": datetime.now(timezone.utc).isoformat(),
-            "chunk_index": i,
-        })
+        doc.metadata.update(
+            {
+                "source_file": Path(source_file).name,
+                "department": department,
+                "access_roles": ",".join(access_roles),  # Stored as comma-separated for ChromaDB
+                "ingested_at": datetime.now(UTC).isoformat(),
+                "chunk_index": i,
+            }
+        )
         enriched.append(doc)
 
     logger.info(

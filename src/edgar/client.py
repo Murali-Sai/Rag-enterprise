@@ -97,13 +97,15 @@ class EdgarClient:
         filings: list[FilingMetadata] = []
         for i, form in enumerate(forms):
             if form == filing_type and len(filings) < count:
-                filings.append(FilingMetadata(
-                    accession_number=accessions[i],
-                    filing_date=dates[i],
-                    primary_document=primary_docs[i],
-                    form_type=form,
-                    description=descriptions[i] if i < len(descriptions) else "",
-                ))
+                filings.append(
+                    FilingMetadata(
+                        accession_number=accessions[i],
+                        filing_date=dates[i],
+                        primary_document=primary_docs[i],
+                        form_type=form,
+                        description=descriptions[i] if i < len(descriptions) else "",
+                    )
+                )
 
         logger.info("filings_found", ticker=ticker, count=len(filings))
         return filings
@@ -157,15 +159,20 @@ class EdgarClient:
 
             # Save metadata alongside
             meta_path = filepath.with_suffix(".json")
-            meta_path.write_text(json.dumps({
-                "ticker": ticker.upper(),
-                "cik": COMPANY_REGISTRY[ticker.upper()]["cik"],
-                "company_name": COMPANY_REGISTRY[ticker.upper()]["name"],
-                "form_type": filing.form_type,
-                "filing_date": filing.filing_date,
-                "accession_number": filing.accession_number,
-                "primary_document": filing.primary_document,
-            }, indent=2))
+            meta_path.write_text(
+                json.dumps(
+                    {
+                        "ticker": ticker.upper(),
+                        "cik": COMPANY_REGISTRY[ticker.upper()]["cik"],
+                        "company_name": COMPANY_REGISTRY[ticker.upper()]["name"],
+                        "form_type": filing.form_type,
+                        "filing_date": filing.filing_date,
+                        "accession_number": filing.accession_number,
+                        "primary_document": filing.primary_document,
+                    },
+                    indent=2,
+                )
+            )
 
             logger.info("filing_saved", path=str(filepath), size_kb=len(html) // 1024)
             saved_paths.append(filepath)

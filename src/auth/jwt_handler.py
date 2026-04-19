@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 
-from src.config import settings
 from src.common.exceptions import AuthenticationError
+from src.config import settings
 
 
 def create_access_token(user_id: int, username: str, roles: list[str]) -> str:
@@ -11,8 +11,8 @@ def create_access_token(user_id: int, username: str, roles: list[str]) -> str:
         "sub": str(user_id),
         "username": username,
         "roles": roles,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expiry_minutes),
-        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(UTC) + timedelta(minutes=settings.jwt_expiry_minutes),
+        "iat": datetime.now(UTC),
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
@@ -25,7 +25,7 @@ def decode_access_token(token: str) -> dict:
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except jwt.ExpiredSignatureError:
-        raise AuthenticationError("Token has expired")
-    except jwt.InvalidTokenError:
-        raise AuthenticationError("Invalid token")
+    except jwt.ExpiredSignatureError as e:
+        raise AuthenticationError("Token has expired") from e
+    except jwt.InvalidTokenError as e:
+        raise AuthenticationError("Invalid token") from e

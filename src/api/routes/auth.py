@@ -14,7 +14,7 @@ async def register(request: UserCreate) -> UserResponse:
     try:
         user = await create_user(request.username, request.password, request.roles)
     except AuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
 
     return UserResponse(
         id=user.id,
@@ -28,11 +28,11 @@ async def register(request: UserCreate) -> UserResponse:
 async def login(request: TokenRequest) -> TokenResponse:
     try:
         user = await authenticate_user(request.username, request.password)
-    except AuthenticationError:
+    except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
-        )
+        ) from e
 
     token = create_access_token(
         user_id=user.id,
