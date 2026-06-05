@@ -1,4 +1,4 @@
-.PHONY: install dev test lint format eval docker-up docker-down seed ingest demo download-filings ingest-edgar
+.PHONY: install dev test lint format eval docker-up docker-down seed ingest demo download-filings ingest-edgar mcp mcp-http
 
 install:
 	pip install -e ".[dev,eval]"
@@ -28,6 +28,13 @@ seed:
 
 ingest:
 	python scripts/ingest_samples.py
+
+# MCP server (Model Context Protocol — exposes RAG tools to LLM clients)
+mcp:
+	python -m src.mcp_server.server
+
+mcp-http:
+	python -m src.mcp_server.server --http --port 8001
 
 # SEC EDGAR commands
 download-filings:

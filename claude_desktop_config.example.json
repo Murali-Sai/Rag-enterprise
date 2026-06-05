@@ -1,0 +1,16 @@
+{
+  "_comment": "Example Claude Desktop config for the SEC EDGAR RAG MCP server. Copy the 'sec-edgar-rag' block into your real config and adjust the absolute paths + API key. Config location: macOS ~/Library/Application Support/Claude/claude_desktop_config.json | Windows %APPDATA%/Claude/claude_desktop_config.json",
+  "mcpServers": {
+    "sec-edgar-rag": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server.server"],
+      "cwd": "/absolute/path/to/rag-enterprise",
+      "env": {
+        "PYTHONPATH": "/absolute/path/to/rag-enterprise",
+        "LLM_PROVIDER": "gemini",
+        "GOOGLE_API_KEY": "your_gemini_api_key_here",
+        "CHROMA_PERSIST_DIR": "/absolute/path/to/rag-enterprise/chroma_data"
+      }
+    }
+  }
+}

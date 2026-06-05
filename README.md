@@ -239,6 +239,32 @@ Every query generates an audit log entry:
 }
 ```
 
+## MCP Server (Model Context Protocol)
+
+The RAG pipeline is also exposed as an **MCP server**, so any MCP-compatible LLM client (Claude Desktop, Cursor, etc.) can invoke the tools natively — no REST calls, no copying tokens. The same RBAC department filtering, Chinese Wall information barriers, and financial-compliance guardrails used by the REST API are preserved.
+
+### Tools exposed
+
+| Tool | Description |
+|---|---|
+| `query_sec_filings(question, role)` | RAG query over real 10-K filings, RBAC-scoped to the role |
+| `compare_companies(ticker_a, ticker_b, topic, role)` | Cross-company comparison (e.g. JPM vs GS credit risk) |
+| `list_indexed_companies()` | List indexed companies and queryable 10-K sections |
+| `describe_access(role)` | Show a role's accessible departments + active Chinese Walls |
+
+### Run it
+
+```bash
+make mcp          # stdio transport (for Claude Desktop / Cursor)
+make mcp-http     # streamable-HTTP transport on :8001 (for remote clients)
+```
+
+### Connect to Claude Desktop
+
+Copy the `sec-edgar-rag` block from [`claude_desktop_config.example.json`](claude_desktop_config.example.json) into your Claude Desktop config (adjust the absolute paths and API key), then restart Claude Desktop. You can then ask Claude *"What was Apple's revenue in FY2024?"* and it will call `query_sec_filings` and answer from the real filing — with a `research` role walled off from trading/compliance documents.
+
+Architecturally this turns the project into a **reusable AI capability**: the domain work (real SEC filings, RBAC, guardrails) is consumed by *any* agent via the open MCP standard, not just this app's own UI.
+
 ## Project Structure
 
 ```
@@ -264,6 +290,7 @@ rag-enterprise/
 │   │   └── retriever.py                 # RBAC-filtered retriever
 │   ├── generation/                      # LLM factory, RAG chain, finance prompts
 │   ├── guardrails/                      # MNPI, prompt injection, PII, compliance
+│   ├── mcp_server/                      # << NEW: MCP server exposing RAG as tools
 │   └── common/                          # Logging, exceptions, schemas
 ├── scripts/
 │   ├── download_filings.py              # Download 10-K filings from EDGAR API
