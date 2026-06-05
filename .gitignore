@@ -24,9 +24,9 @@ env/
 *.swo
 .claude/
 
-# Data — rebuilt at runtime (download_filings.py + ingest_edgar.py)
-data/edgar/*.html
-data/edgar/*.json
+# Data — downloaded fresh at Docker build time (download_filings.py)
+data/edgar/**/*.html
+data/edgar/**/*.json
 chroma_data/
 rag_enterprise.db
 *.sqlite
