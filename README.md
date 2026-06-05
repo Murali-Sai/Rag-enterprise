@@ -1,6 +1,6 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
-> **Live Demo**: [web-production-337e5.up.railway.app](https://web-production-337e5.up.railway.app/docs) &nbsp;|&nbsp; Try it: `POST /api/auth/login` then `POST /api/query`
+> **Live Demo**: [rag-enterprise-laa65asupq-uc.a.run.app](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;|&nbsp; Interactive demo on the landing page, or explore the [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
 
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 
@@ -339,27 +339,27 @@ make lint          # Lint + type check
 
 ## Deployment
 
-### Live Demo (Railway)
+### Live Demo (Google Cloud Run)
 
-The app is deployed at **https://web-production-337e5.up.railway.app** via Railway with a Dockerfile builder. Try it:
+The app is deployed on **Google Cloud Run** at **https://rag-enterprise-laa65asupq-uc.a.run.app**. The SEC filing index (~6,400 chunks) is baked into the Docker image at build time, so the service scales to zero and cold-starts instantly. Try it:
 
 ```bash
 # Health check
-curl https://web-production-337e5.up.railway.app/health
+curl https://rag-enterprise-laa65asupq-uc.a.run.app/health
 
-# Login as research analyst
-curl -X POST https://web-production-337e5.up.railway.app/api/auth/login \
+# Login as research analyst -> returns a JWT
+curl -X POST https://rag-enterprise-laa65asupq-uc.a.run.app/auth/token \
   -H "Content-Type: application/json" \
   -d '{"username":"research_analyst","password":"research1!"}'
 
-# Query (use the token from login response)
-curl -X POST https://web-production-337e5.up.railway.app/api/query \
+# Query (use the access_token from the login response)
+curl -X POST https://rag-enterprise-laa65asupq-uc.a.run.app/query \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"query":"What was Apple total revenue in fiscal year 2024?","top_k":10}'
+  -d '{"question":"What was Apple total net revenue in fiscal year 2024?"}'
 ```
 
-Or explore the interactive API docs: [/docs](https://web-production-337e5.up.railway.app/docs)
+Or use the **interactive demo on the landing page** (pick a role, ask a question), or explore the [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs).
 
 ### Local (Docker)
 

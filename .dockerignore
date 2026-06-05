@@ -18,8 +18,8 @@ docker-compose.yml
 # Local generated state — the image bakes a fresh index at build time.
 # Excluding these prevents copying stale data (and double-ingestion).
 chroma_data/
-data/edgar/*.html
-data/edgar/*.json
+data/edgar/**/*.html
+data/edgar/**/*.json
 .cache/
 *.db
 *.sqlite

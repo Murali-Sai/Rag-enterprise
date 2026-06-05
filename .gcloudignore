@@ -17,8 +17,8 @@ __pycache__
 
 # Local generated state — image bakes a fresh index at build time
 chroma_data/
-data/edgar/*.html
-data/edgar/*.json
+data/edgar/**/*.html
+data/edgar/**/*.json
 .cache/
 *.db
 *.sqlite
