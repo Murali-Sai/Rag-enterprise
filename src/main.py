@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 from src.api.middleware import setup_middleware
 from src.api.router import api_router
@@ -11,6 +12,31 @@ from src.common.logging import get_logger, setup_logging
 from src.config import settings
 
 logger = get_logger(__name__)
+
+# On-brand favicon: gradient rounded square with an ascending bar chart
+# (matches the landing-page palette). Served as inline SVG — no binary asset.
+FAVICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+    '<stop offset="0" stop-color="#60a5fa"/>'
+    '<stop offset=".5" stop-color="#a78bfa"/>'
+    '<stop offset="1" stop-color="#f472b6"/>'
+    "</linearGradient></defs>"
+    '<rect width="32" height="32" rx="7" fill="url(#g)"/>'
+    '<rect x="7.5" y="17" width="4" height="8" rx="1.2" fill="#fff"/>'
+    '<rect x="14" y="12" width="4" height="13" rx="1.2" fill="#fff"/>'
+    '<rect x="20.5" y="8" width="4" height="17" rx="1.2" fill="#fff"/>'
+    "</svg>"
+)
+
+SWAGGER_UI_PARAMETERS = {
+    "docExpansion": "list",
+    "defaultModelsExpandDepth": 0,
+    "persistAuthorization": True,
+    "filter": True,
+    "syntaxHighlight.theme": "monokai",
+    "tryItOutEnabled": True,
+}
 
 # ── Tag metadata for Swagger UI grouping ──────────────────────
 tags_metadata = [
@@ -103,17 +129,9 @@ app = FastAPI(
     description=DESCRIPTION,
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None,  # served via custom route below (to set a branded favicon)
+    redoc_url=None,
     openapi_tags=tags_metadata,
-    swagger_ui_parameters={
-        "docExpansion": "list",
-        "defaultModelsExpandDepth": 0,
-        "persistAuthorization": True,
-        "filter": True,
-        "syntaxHighlight.theme": "monokai",
-        "tryItOutEnabled": True,
-    },
     license_info={"name": "MIT", "url": "https://opensource.org/licenses/MIT"},
     contact={
         "name": "Murali Sai",
@@ -123,6 +141,34 @@ app = FastAPI(
 
 setup_middleware(app)
 app.include_router(api_router)
+
+
+# ── Favicon (inline SVG, no static files) ────────────────────
+@app.get("/favicon.svg", include_in_schema=False)
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> Response:
+    return Response(content=FAVICON_SVG, media_type="image/svg+xml")
+
+
+# ── Branded API docs (Swagger UI + ReDoc with custom favicon) ─
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui() -> HTMLResponse:
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} — API Docs",
+        swagger_favicon_url="/favicon.svg",
+        init_oauth=app.swagger_ui_init_oauth,
+        swagger_ui_parameters=SWAGGER_UI_PARAMETERS,
+    )
+
+
+@app.get("/redoc", include_in_schema=False)
+async def custom_redoc() -> HTMLResponse:
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} — API Reference",
+        redoc_favicon_url="/favicon.svg",
+    )
 
 
 # ── Landing page (root path) ─────────────────────────────────
@@ -135,6 +181,7 @@ async def root() -> HTMLResponse:
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>RAG Enterprise — SEC EDGAR Filing Analyzer</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
