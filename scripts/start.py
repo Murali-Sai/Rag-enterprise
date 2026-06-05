@@ -1,15 +1,22 @@
-"""Startup script: download filings, ingest, seed users, then launch uvicorn."""
+"""Startup script.
+
+On Cloud Run (and any platform where the SEC filing index is baked into the
+Docker image at build time), the vector store already exists, so startup just
+seeds demo users and launches uvicorn — keeping cold starts fast.
+
+If the index is missing (e.g. a platform that didn't bake it at build time),
+it falls back to downloading + ingesting filings at runtime.
+"""
 
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run_step(name: str, args: list[str]) -> None:
-    """Run a script, capture output, warn on failure but continue."""
-    print(f"\n{'=' * 60}", flush=True)
-    print(f"  {name}", flush=True)
-    print(f"{'=' * 60}", flush=True)
+    """Run a script, warn on failure but continue."""
+    print(f"\n{'=' * 60}\n  {name}\n{'=' * 60}", flush=True)
     result = subprocess.run(args, capture_output=False)
     if result.returncode != 0:
         print(f"WARNING: {name} exited with code {result.returncode} — continuing\n", flush=True)
@@ -20,29 +27,21 @@ def run_step(name: str, args: list[str]) -> None:
 def main() -> None:
     py = sys.executable
 
-    # 1. Download SEC filings from EDGAR API
-    run_step("Downloading SEC filings", [py, "scripts/download_filings.py"])
-
-    # 2. Verify files exist
-    from pathlib import Path
-
-    edgar_dir = Path("data/edgar")
-    html_files = list(edgar_dir.rglob("*.html"))
-    print(f"Filing HTML files found on disk: {len(html_files)}", flush=True)
-    for f in html_files:
-        print(f"  {f} ({f.stat().st_size // 1024} KB)", flush=True)
-
-    # 3. Ingest filings into ChromaDB vector store
-    if html_files:
-        run_step("Ingesting filings into ChromaDB", [py, "scripts/ingest_edgar.py", "--from-disk"])
+    # The index is baked at build time (see Dockerfile). Only ingest at runtime
+    # if it's missing — keeps Cloud Run cold starts fast.
+    chroma_ready = Path("chroma_data/chroma.sqlite3").exists()
+    if chroma_ready:
+        print("Vector store already present (baked into image) — skipping ingest.", flush=True)
     else:
-        print("WARNING: No filing HTML files found — skipping ingestion", flush=True)
+        print("Vector store not found — downloading + ingesting filings now.", flush=True)
+        run_step("Downloading SEC filings", [py, "scripts/download_filings.py"])
+        run_step("Ingesting filings into ChromaDB", [py, "scripts/ingest_edgar.py", "--from-disk"])
 
-    # 4. Seed demo users
+    # Seed demo users (fast; SQLite). Ignores errors if users already exist.
     run_step("Seeding demo users", [py, "scripts/seed_users.py"])
 
-    # 5. Start uvicorn
-    port = os.environ.get("PORT", "8000")
+    # Cloud Run injects PORT (8080). Default to 8080 for local parity.
+    port = os.environ.get("PORT", "8080")
     print(f"\n=== Starting uvicorn on port {port} ===", flush=True)
     os.execvp(
         "uvicorn",

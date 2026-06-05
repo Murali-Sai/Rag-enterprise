@@ -58,7 +58,7 @@ def log_query_audit(
 
     logger.info(
         "audit_log_written",
-        event="rag_query",
+        audit_event="rag_query",
         user=username,
         barriers=len(information_barriers_applied),
         flags=len(guardrail_flags),

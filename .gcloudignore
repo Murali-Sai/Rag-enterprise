@@ -1,0 +1,31 @@
+# Controls what `gcloud run deploy --source .` uploads to Cloud Build.
+# (When present, this replaces .gitignore for upload filtering.)
+
+.git
+.github
+.claude
+.venv
+__pycache__
+*.pyc
+.mypy_cache
+.pytest_cache
+.ruff_cache
+
+# Secrets — never upload
+.env
+.env.*
+
+# Local generated state — image bakes a fresh index at build time
+chroma_data/
+data/edgar/*.html
+data/edgar/*.json
+.cache/
+*.db
+*.sqlite
+audit_logs/
+
+# Not needed in the build
+infra/
+tests/
+evaluation/results/
+docker-compose.yml
