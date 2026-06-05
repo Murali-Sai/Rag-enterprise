@@ -91,7 +91,15 @@ def _run_rag(question: str, role: str) -> str:
         return f"No relevant documents found within your access level.{barrier_note}"
 
     # Grounded generation
-    answer = query_with_context(question, documents)
+    try:
+        answer = query_with_context(question, documents)
+    except Exception as e:
+        logger.error("mcp_llm_generation_failed", error=str(e), error_type=type(e).__name__)
+        return (
+            f"Retrieved {len(documents)} relevant filing chunks, but answer "
+            f"generation failed ({type(e).__name__}). The LLM provider may be "
+            "misconfigured — check LLM_PROVIDER and the API key."
+        )
 
     # Financial compliance guardrails on the output
     compliance = check_financial_compliance(query=question, response=answer, user_roles=user_roles)

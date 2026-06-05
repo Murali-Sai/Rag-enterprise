@@ -4,6 +4,7 @@ from src.api.audit import log_query_audit
 from src.api.deps import get_current_user, get_rbac_retriever
 from src.auth.models import User
 from src.auth.rbac import get_information_barriers_for_user
+from src.common.logging import get_logger
 from src.common.schemas import QueryRequest, QueryResponse, SourceDocument
 from src.generation.chains import query_with_context
 from src.guardrails.financial_compliance import (
@@ -17,6 +18,7 @@ from src.guardrails.prompt_injection import detect_prompt_injection
 from src.retrieval.retriever import RBACRetriever
 
 router = APIRouter(tags=["Query"])
+logger = get_logger(__name__)
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -66,7 +68,31 @@ async def query_documents(
         )
 
     # Generate answer
-    answer = query_with_context(clean_question, documents)
+    try:
+        answer = query_with_context(clean_question, documents)
+    except Exception as e:
+        logger.error("llm_generation_failed", error=str(e), error_type=type(e).__name__)
+        return QueryResponse(
+            answer=(
+                "Retrieved relevant filings, but answer generation failed "
+                f"({type(e).__name__}). The LLM provider may be misconfigured — "
+                "check the LLM_PROVIDER and API key environment variables."
+            ),
+            sources=[
+                SourceDocument(
+                    content=doc.page_content[:200],
+                    source=doc.metadata.get("source_file", "Unknown"),
+                    department=doc.metadata.get("department", "Unknown"),
+                    ticker=doc.metadata.get("ticker"),
+                    filing_type=doc.metadata.get("filing_type"),
+                    filing_date=doc.metadata.get("filing_date"),
+                    section_name=doc.metadata.get("section_name"),
+                )
+                for doc in documents
+            ],
+            query=request.question,
+            guardrail_flags=[*guardrail_flags, "llm_generation_error"],
+        )
 
     # Output guardrails
     output_check = check_output_safety(answer)

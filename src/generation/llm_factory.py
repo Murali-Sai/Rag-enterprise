@@ -6,8 +6,51 @@ from src.config import LLMProvider, settings
 logger = get_logger(__name__)
 
 
-def create_llm(provider: LLMProvider | None = None) -> BaseChatModel:
+def _provider_has_key(provider: LLMProvider) -> bool:
+    """Return True if the API key for the given provider is configured."""
+    return {
+        LLMProvider.GROQ: bool(settings.groq_api_key),
+        LLMProvider.GEMINI: bool(settings.google_api_key),
+        LLMProvider.OPENAI: bool(settings.openai_api_key),
+        LLMProvider.HUGGINGFACE: bool(settings.huggingface_api_key),
+    }.get(provider, False)
+
+
+def _resolve_provider(provider: LLMProvider | None) -> LLMProvider:
+    """Pick a usable provider.
+
+    Prefer the explicitly configured provider, but if its API key is missing,
+    fall back to whichever provider actually has a key. This makes deployment
+    robust to LLM_PROVIDER / API-key mismatches (a common foot-gun).
+    """
     provider = provider or settings.llm_provider
+    if _provider_has_key(provider):
+        return provider
+
+    # Fallback priority: Gemini -> Groq -> OpenAI -> HuggingFace
+    for candidate in (
+        LLMProvider.GEMINI,
+        LLMProvider.GROQ,
+        LLMProvider.OPENAI,
+        LLMProvider.HUGGINGFACE,
+    ):
+        if _provider_has_key(candidate):
+            logger.warning(
+                "llm_provider_fallback",
+                requested=provider.value,
+                using=candidate.value,
+                reason="no API key for requested provider",
+            )
+            return candidate
+
+    raise ValueError(
+        "No LLM API key configured. Set one of GROQ_API_KEY, GOOGLE_API_KEY, "
+        "OPENAI_API_KEY, or HUGGINGFACE_API_KEY (and optionally LLM_PROVIDER)."
+    )
+
+
+def create_llm(provider: LLMProvider | None = None) -> BaseChatModel:
+    provider = _resolve_provider(provider)
 
     if provider == LLMProvider.GROQ:
         from langchain_groq import ChatGroq
