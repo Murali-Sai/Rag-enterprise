@@ -23,6 +23,9 @@ class VectorStoreBase(ABC):
     @abstractmethod
     def delete(self, ids: list[str]) -> None: ...
 
+    @abstractmethod
+    def get_all_documents(self, filter_dict: dict | None = None) -> list[Document]: ...
+
 
 class ChromaVectorStore(VectorStoreBase):
     def __init__(self) -> None:
@@ -38,7 +41,14 @@ class ChromaVectorStore(VectorStoreBase):
         logger.info("chroma_initialized", persist_dir=settings.chroma_persist_dir)
 
     def add_documents(self, documents: list[Document]) -> list[str]:
+        # Imported lazily — bm25 imports this module for its type hints.
+        from src.retrieval.bm25 import reset_bm25_cache
+
         ids = self._store.add_documents(documents)
+        # BM25 indexes are in-memory snapshots of the corpus; without this the
+        # lexical half of hybrid search would keep serving a stale corpus while
+        # dense search already sees the new documents.
+        reset_bm25_cache()
         logger.info("documents_added", count=len(ids))
         return ids
 
@@ -66,6 +76,28 @@ class ChromaVectorStore(VectorStoreBase):
 
     def delete(self, ids: list[str]) -> None:
         self._store.delete(ids)
+
+    def get_all_documents(self, filter_dict: dict | None = None) -> list[Document]:
+        """Fetch whole documents (no vector search) for building a BM25 index.
+
+        Takes the same where-filter dense retrieval uses, so the lexical index
+        is built over exactly the documents the caller is allowed to see —
+        RBAC stays enforced at the database level rather than being re-applied
+        to a global index afterwards.
+        """
+        kwargs: dict = {"include": ["documents", "metadatas"]}
+        if filter_dict:
+            kwargs["where"] = filter_dict
+        raw = self._store.get(**kwargs)
+
+        contents = raw.get("documents") or []
+        metadatas = raw.get("metadatas") or []
+        documents = [
+            Document(page_content=content, metadata=dict(metadata or {}))
+            for content, metadata in zip(contents, metadatas, strict=False)
+        ]
+        logger.info("corpus_fetched", count=len(documents), filtered=filter_dict is not None)
+        return documents
 
     @property
     def store(self):  # noqa: ANN201

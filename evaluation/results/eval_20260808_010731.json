@@ -1,0 +1,241 @@
+{
+  "timestamp": "20260808_010731",
+  "config": {
+    "hybrid_search_enabled": true,
+    "rerank_enabled": false,
+    "rerank_model": null,
+    "retrieval_top_k": 5,
+    "rerank_candidate_k": null,
+    "generation_provider": "openai",
+    "judge_provider": "openai",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "scores": {
+    "faithfulness": 0.657490316700843,
+    "answer_relevancy": 0.5745324539724889,
+    "context_precision": 0.5419444444132476,
+    "context_recall": 0.375
+  },
+  "results": [
+    {
+      "question": "What was Apple's total net revenue for its most recent fiscal year?",
+      "answer": "I don't have enough information in the available documents to answer this question.",
+      "contexts": [
+        "Apple Inc. | 2025 Form 10-K | 47\nThe following tables show net sales for 2025, 2024 and 2023 and long-lived assets as of September 27, 2025 and September 28, 2024 for countries that individually accounted for 10% or more of the respective totals, as well as aggregate amounts for the remaining countries (in millions):",
+        "crease in our effective tax rate for fiscal year 2025 compared to fiscal year 2024 was due to changes in the mix of our earnings and tax expenses between the U.S. and foreign countries. The decrease in our effective tax rate for fiscal year 2024 compared to fiscal year 2023 was primarily due to tax benefits from tax law changes, including the delay of the effective date of final foreign tax credit regulations.\nThe components of the deferred income tax assets and liabilities were as follows:",
+        "Apple Inc. | 2025 Form 10-K | 35\nThe following table shows disaggregated net sales, as well as the portion of total net sales that was previously deferred, for 2025, 2024 and 2023 (in millions):",
+        "Reportable Segments\nFiscal Year 2025 Compared with Fiscal Year 2024\n \nProductivity and Business Processes\n \nRevenue increased $14.0 billion or 13%.\n\u2022",
+        "Apple Inc. | 2025 Form 10-K | 23\nGross Margin\nProducts and Services gross margin and gross margin percentage for 2025, 2024 and 2023 were as follows (dollars in millions):"
+      ]
+    },
+    {
+      "question": "What are Apple's main risk factors related to supply chain?",
+      "answer": "According to Apple's 2025 10-K, the main risk factors related to the supply chain include:\n\n1. **Supply Shortages and Price Increases**: Apple is subject to significant risks of supply shortages and price increases that can materially adversely affect its business, results of operations, financial condition, and stock price (Document 1).\n\n2. **Interruptions to Supply and Distribution**: The company's operations, supply chain, and sales and distribution channels may experience interruptions, leading to delays in the supply of current products and the offering of existing services, as well as delays in the production ramps of new products and development of new services (Document 2).\n\n3. **Changes in International Trade Restrictions**: Adapting the company's business and supply chain to comply with new or changed restrictions on international trade can be expensive, time-consuming, and disruptive to its business and results of operations (Document 4).\n\n4. **Operational Interruptions**: The company's and its suppliers' operations, retail stores, and facilities are at risk of interruption due to various factors, including industrial accidents, cybersecurity attacks, and public health issues (Document 5). \n\nThese factors collectively pose significant risks to Apple's supply chain and overall business operations.",
+      "contexts": [
+        "Therefore, the Company remains subject to significant risks of supply shortages and price increases that can materially adversely affect its business, results of operations, financial condition and stock price.\nApple Inc. | 2025 Form 10-K | 8\nThe Company\u2019s products and services may be affected from time to time by design and manufacturing defects that could materially adversely affect the Company\u2019s business and result in harm to the Company\u2019s reputation.",
+        "Company\u2019s operations, supply chain and sales and distribution channels, resulting in interruptions to the supply of current products and offering of existing services, and delays in production ramps of new products and development of new services.",
+        "If the Company is unable to compete successfully, its business, reputation, results of operations, financial condition and stock price can be materially adversely affected.\nApple Inc. | 2025 Form 10-K | 7\nBusiness Risks\nTo remain competitive and stimulate customer demand, the Company must successfully manage frequent introductions and transitions of products and services.",
+        ". Changing the Company\u2019s business and supply chain in accordance with new or changed restrictions on international trade can be expensive, time-consuming and disruptive to the Company\u2019s business and results of operations",
+        ". In addition, the Company\u2019s and its suppliers\u2019 operations, retail stores and facilities are subject to the risk of interruption by fire, power shortages, nuclear power plant accidents and other industrial accidents, terrorist attacks and other hostile acts, ransomware and other cybersecurity attacks, labor disputes, public health issues and other events beyond the Company\u2019s control."
+      ]
+    },
+    {
+      "question": "How does Apple describe its business segments?",
+      "answer": "According to Apple's 2025 10-K, the company describes its business segments as including various services such as Apple Fitness+, Apple Music, Apple News+, and Apple TV, as well as payment services like Apple Card and Apple Pay. These segments reflect the diverse range of products and services offered by Apple, focusing on both entertainment and financial services (Source: AAPL_10-K_2025-10-31, Section: Business).",
+      "contexts": [
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nSegment Assets and Operating Results \nBeginning with the fourth quarter of 2025, we made certain changes to our segments as we continued to narrow our strategic focus with respect to consumer-related activities within Platform Solutions. Prior periods are presented on a comparable basis. See \u201cBusiness \u2014 Our Business Segments\u201d in Part I, Item 1 of this Form 10-K for further information.\nSegment Assets.",
+        "\u00ae\n, a game service; Apple Fitness+\n\u00ae\n, a personalized fitness service; Apple Music\n\u00ae\n, which offers users a curated listening experience with on-demand radio stations; Apple News+\n\u00ae\n, a news and magazine service; and Apple TV\n\u00ae\n, which offers exclusive original content and live sports.\nPayment Services\nThe Company offers payment services, including Apple Card\n\u00ae\n, a co-branded credit card, and Apple Pay\n\u00ae\n, a cashless payment service.\nSegments",
+        "three\n business segments: Global Banking & Markets, Asset & Wealth Management and Platform Solutions. These business segments are determined and organized based on products and services provided, and the types of customers and counterparties served. See Note 1 for a description of the firm\u2019s business segments, including changes made during 2025.",
+        "three\n business segments.\n\u2022\nRevenues and expenses directly associated with each segment are included in determining pre-tax earnings for the respective segment. \n\u2022\nNet revenues in the firm\u2019s segments include allocations of interest income and interest expense based on the funding generated by, or the funding and liquidity requirements of, the respective segments. Net interest is included in segment net revenues as it is consistent with how management assesses segment performance. \n\u2022",
+        "Apple Inc. | 2025 Form 10-K | 23\nGross Margin\nProducts and Services gross margin and gross margin percentage for 2025, 2024 and 2023 were as follows (dollars in millions):"
+      ]
+    },
+    {
+      "question": "What is JPMorgan's total assets and CET1 capital ratio?",
+      "answer": "I don't have enough information in the available documents to answer this question.",
+      "contexts": [
+        "As of December\n2025 | 2024\nCET1 capital ratio | 12.0 | % | 11.9 | %\nTier 1 capital ratio | 14.8 | % | 14.7 | %\nTotal capital ratio | 18.5 | % | 18.4 | %\n\nThe table below presents information about GSIB\u2019s risk-based capital ratios.",
+        "As of December\n2025 | 2024\nCET1 capital ratio | 10.4 | % | 10.3 | %\nTier 1 capital ratio | 12.4 | % | 12.3 | %\nTotal capital ratio | 15.0 | % | 15.0 | %\n\nThe table below presents information about GSBE\u2019s risk-based capital ratios.",
+        "JPMorganChase is subject to various regulatory capital requirements, and the amount of capital that it is required to hold under those requirements could increase at any given time due to factors such as:",
+        "$ in millions | Standardized | Advanced\nYear Ended December 2025\nCET1 capital\nBeginning balance | $ | 103,065 | $ | 103,065\nChange in:\nCommon shareholders\u2019 equity | 1,076 | 1,076\nImpact of CECL transition | (276) | (276)\nDeduction for goodwill | (85) | (85)\nDeduction for identifiable intangible assets | (4) | (4)\nOther adjustments | 521 | 521\nEnding balance | $ | 104,297 | $ | 104,297\nTier 1 capital\nBeginning balance | $ | 115,647 | $ | 115,647\nChange in:\nCET1 capital | 1,232 | 1,232",
+        "As of December\n$ in millions | 2025 | 2024\nCommon shareholders\u2019 equity | $ | 109,819 | $ | 108,743\nImpact of CECL transition | \u2013 | 276\nDeduction for goodwill | (5,244) | (5,159)\nDeduction for identifiable intangible assets | (642) | (638)\nOther adjustments | 364 | (157)\nCET1 capital | 104,297 | 103,065\nPreferred stock | 15,153 | 13,253\nDeduction for investments in covered funds | (504) | (669)\nOther adjustments | (3) | (2)\nTier 1 capital | $ | 118,943 | $ | 115,647\nStandardized Tier 2 and Total capital"
+      ]
+    },
+    {
+      "question": "What are JPMorgan's primary credit risk factors?",
+      "answer": "JPMorgan's primary credit risk factors include:\n\n1. **Concentrations of Credit Risk**: JPMorgan Chase could incur significant losses arising from concentrations of credit and market risk, particularly if clients or counterparties engage in similar or related businesses, operate in the same geographic region, or are otherwise grouped together (Document 3).\n\n2. **Rating Downgrades**: Any downgrade in credit ratings could increase the credit spreads charged by market participants for taking credit risk on JPMorgan Chase & Co. and its subsidiaries, adversely affecting the value of their debt and other obligations (Document 2).\n\nThese factors could materially and adversely affect JPMorgan Chase\u2019s business, results of operations, financial condition, and overall capital position (Document 1).",
+      "contexts": [
+        ". Any of the risk factors discussed below could by itself, or combined with other factors, materially and adversely affect JPMorganChase\u2019s business, results of operations, financial condition, capital position, liquidity, competitive position or reputation, including by materially increasing expenses or decreasing revenues, which could result in material losses or a decrease in earnings.",
+        "Any rating downgrade could also increase the credit spreads charged by market participants for taking credit risk on JPMorgan Chase & Co. and its subsidiaries. This could, in turn, adversely affect the value of debt and other obligations of JPMorgan Chase & Co. and its subsidiaries.\nCapital\nJPMorganChase\u2019s ability to distribute capital to shareholders, and to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+        "JPMorganChase could incur significant losses arising from concentrations of credit and market risk.\nJPMorganChase could be exposed to greater credit and market risk if groupings of its clients or counterparties, or obligors on securities and other financial instruments:\n\u2022\nengage in similar or related businesses or in related industries\n\u2022\noperate in the same geographic region, or\n\u2022",
+        "JPMorgan Chase Bank, N.A. and its subsidiaries are subject to restrictions imposed by federal law on extensions of credit to, investments in stock or securities of, and derivatives, securities lending and certain other transactions with, JPMorgan Chase & Co. and certain other affiliates. These restrictions prevent JPMorgan Chase & Co. and other affiliates from borrowing from JPMorgan Chase Bank, N.A",
+        "The following discussion sets forth the material risk factors that could affect JPMorganChase\u2019s financial condition and operations. Readers should not consider any descriptions of these factors to be a complete set of all potential risks that could affect the Firm"
+      ]
+    },
+    {
+      "question": "How does JPMorgan describe its lines of business?",
+      "answer": "JPMorgan Chase describes its lines of business as operating in highly competitive environments, which indicates that the company faces significant competition across its various services and products (Source: JPM_10-K_2026-02-13, Section: Business).",
+      "contexts": [
+        "JPMorganChase\u2019s ability to operate its businesses efficiently and profitably, to offer products and services that meet the expectations of its clients and customers,",
+        "Any rating downgrade could also increase the credit spreads charged by market participants for taking credit risk on JPMorgan Chase & Co. and its subsidiaries. This could, in turn, adversely affect the value of debt and other obligations of JPMorgan Chase & Co. and its subsidiaries.\nCapital\nJPMorganChase\u2019s ability to distribute capital to shareholders, and to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+        "JPMorganChase and its subsidiaries and affiliates operate in highly competitive environments",
+        "JPMorgan Chase Bank, N.A. and its subsidiaries are subject to restrictions imposed by federal law on extensions of credit to, investments in stock or securities of, and derivatives, securities lending and certain other transactions with, JPMorgan Chase & Co. and certain other affiliates. These restrictions prevent JPMorgan Chase & Co. and other affiliates from borrowing from JPMorgan Chase Bank, N.A",
+        "JPMorganChase does business, to comply with applicable law\n\u2022\nnatural disasters, severe weather conditions or the effects of climate change \n\u2022\naccidents such as explosions or structural failures\n\u2022\nhealth emergencies, or\n\u2022\nevents arising from any outbreak or escalation of civil unrest, hostilities, terrorist acts or other violence or criminal activity."
+      ]
+    },
+    {
+      "question": "What was Tesla's automotive revenue and total revenue?",
+      "answer": "For the year ended December 31, 2025, Tesla's automotive revenue was $82,056 million. The total revenue for the same period was $94,827 million (according to TSLA's 2026 10-K, Section: Financial Statements and Supplementary Data).",
+      "contexts": [
+        "Note 15 \u2013 \nRelated Party Transactions\nTesla periodically does business with certain entities with which its CEO and directors are affiliated, such as xAI, SpaceX, The Boring Company and Redwood Materials, in accordance with our Related Person Transactions Policy. During the year ended December 31, 2025, we recognized $\n\n million of revenues and $",
+        "Gross margin for total automotive decreased from 18.4% to 17.8% in the year ended December 31, 2025 as compared to the year ended December 31, 2024 primarily due to a decrease in regulatory credits revenue as well as the changes in automotive sales revenue and cost of automotive sales revenue, as discussed above.",
+        "Year Ended December 31,\n2025 | 2024 | 2023\nAutomotive segment\nRevenues | $ | 82,056 | $ | 87,604 | $ | 90,738\nCost of revenues (1) | $ | 68,764 | $ | 72,794 | $ | 74,219\nGross profit | $ | 13,292 | $ | 14,810 | $ | 16,519\nEnergy generation and storage segment\nRevenues | $ | 12,771 | $ | 10,086 | $ | 6,035\nCost of revenues (2) | $ | 8,969 | $ | 7,446 | $ | 4,894\nGross profit | $ | 3,802 | $ | 2,640 | $ | 1,141",
+        "Automotive leasing revenue includes the amortization of revenue for vehicles under direct operating lease agreements and lease buyout revenue. Additionally, automotive leasing revenue includes direct sales-type leasing programs where we recognize all revenue associated with the sales-type lease upon delivery to the customer.",
+        "Services and other | 12,530 | 10,534 | 8,319 | 1,996 | 19 | % | 2,215 | 27 | %\nTotal automotive & services and other segment revenue | 82,056 | 87,604 | 90,738 | (5,548) | (6) | % | (3,134) | (3) | %\nEnergy generation and storage segment revenue | 12,771 | 10,086 | 6,035 | 2,685 | 27 | % | 4,051 | 67 | %\nTotal revenues | $ | 94,827 | $ | 97,690 | $ | 96,773 | $ | (2,863) | (3) | % | $ | 917 | 1 | %"
+      ]
+    },
+    {
+      "question": "What risk factors does Tesla identify related to production and manufacturing?",
+      "answer": "Tesla identifies several risk factors related to production and manufacturing in its 2026 10-K filing. These include:\n\n1. **Development and Production Delays**: Tesla may experience issues or delays in developing, launching, and ramping the production of its products, services, and features, which could impact its ability to grow the business (Document 1).\n\n2. **Manufacturing Cost Control**: There is a risk that Tesla may be unable to control its manufacturing costs, which could affect profitability (Document 1).\n\n3. **Defects in Products**: Over time, defects that were not detected or controlled prior to the original sale or installation of products may manifest, potentially leading to issues that could not have been reasonably addressed beforehand (Document 3).\n\n4. **Supply Chain Management**: As production scales and diversifies, Tesla will need to accurately forecast, purchase, warehouse, and transport components at high volumes to its manufacturing facilities and servicing locations internationally, which presents logistical challenges (Document 5).\n\nThese factors highlight the complexities and uncertainties Tesla faces in its manufacturing and production processes.",
+      "contexts": [
+        "Risks Related to Our Ability to Grow Our Business\nWe may experience issues or delays in developing, launching and ramping the production of our products, services and features, or we may be unable to control our manufacturing costs.",
+        ". In particular, Tesla\u2019s products, business, results of operations, and statements and actions of Tesla and its management are subject to significant amounts of commentary by a range of third parties. Such attention can include criticism, which may be exaggerated or unfounded, such as speculation regarding the sufficiency or stability of our management team, and has incited protests, some escalating to violence targeting our operations, products and personnel",
+        ". While we attempt to identify and address or remedy defects we identify pre-production and sale, over time-in-use, defects we were unable to detect or control for may manifest that could not have reasonably been addressed prior to original sale or installations.",
+        "costs of future claims for certain Tesla vehicle models; and, (iii) the audit effort involved the use of professionals with specialized skill and knowledge",
+        "As the scale and variants of our production increases, we will also need to accurately forecast, purchase, warehouse and transport components at high volumes to our manufacturing facilities and servicing locations internationally"
+      ]
+    },
+    {
+      "question": "What is Microsoft's revenue from its Intelligent Cloud segment?",
+      "answer": "I don't have enough information in the available documents to answer this question.",
+      "contexts": [
+        "Fiscal Year 2025 Compared with Fiscal Year 2024\nRevenue increased $36.6 billion or 15% with growth across each of our segments. Intelligent Cloud revenue increased driven by Azure. Productivity and Business Processes revenue increased driven by Microsoft 365 Commercial cloud. More Personal Computing revenue increased driven by Gaming and Search and news advertising.\nCost of revenue increased $13.7 billion or 19% driven by growth in Microsoft Cloud.",
+        "Highlights from fiscal year 2025 compared with fiscal year 2024 included:\n\u2022\nMicrosoft Cloud revenue increased 23% to $168.9 billion.\n\u2022\nMicrosoft 365 Commercial products and cloud services revenue increased 14% driven by Microsoft 365 Commercial cloud revenue growth of 15%.\n\u2022\nMicrosoft 365 Consumer products and cloud services revenue increased 11% driven by Microsoft 365 Consumer cloud revenue growth of 11%.\n\u2022\nLinkedIn revenue increased 9%.\n\u2022",
+        "Intelligent Cloud\nOur Intelligent Cloud segment consists of our public, private, and hybrid server products and cloud services that power modern business and developers. This segment primarily comprises:\n\u2022",
+        "Microsoft 365 Commercial products and cloud services revenue increased $10.8 billion or 14%. Microsoft 365 Commercial cloud revenue grew 15% with Microsoft 365 Commercial seat growth of 6% driven by small and medium businesses and frontline worker offerings, as well as growth in revenue per user",
+        "Our Microsoft Cloud revenue, which includes Microsoft 365 Commercial cloud, Azure and other cloud services, the commercial portion of LinkedIn, and Dynamics 365, was $\n168.9\n billion, $\n137.7\n billion, and $\n111.6\n billion in fiscal years 2025, 2024, and 2023, respectively. These amounts are included in Microsoft 365 Commercial products and cloud services, Server products and cloud services, LinkedIn, and Dynamics products and cloud services in the table above."
+      ]
+    },
+    {
+      "question": "What cybersecurity and AI-related risk factors does Microsoft disclose?",
+      "answer": "Microsoft discloses several cybersecurity and AI-related risk factors in its 2025 10-K filing. Specifically, it mentions that new AI technologies may increase the frequency and severity of cybersecurity attacks (Document 2). Additionally, Microsoft notes that the potential replacement of the recently rescinded AI Diffusion Rule and other potential AI-related rulemakings could adversely affect its business, strategy, and operations (Document 3). \n\nIn terms of cybersecurity threats, Microsoft describes risks from such threats, including previous cybersecurity incidents, in the \"Risk Factors\" section (Part I, Item 1A). However, as of the date of the filing, Microsoft does not believe that any risks from cybersecurity threats have materially affected or are reasonably likely to materially affect its results of operations or financial condition (Document 4).",
+      "contexts": [
+        "AI is fundamentally transforming productivity for every individual, organization, and industry. Microsoft's AI offerings span every layer of the technology stack, enabling transformative outcomes across sectors and unlocking opportunity for every country, community, and individual.\n \nWe believe AI should be as empowering as it is powerful, and we\u2019re committed to designing and deploying AI responsibly with safety and security from the outset.\nWhat We Offer",
+        ". In addition, new AI technologies may increase the frequency and severity of cybersecurity attacks. See \u201cRisk Factors\u201d in Part I, Item 1A of this Form 10-K for further information about information and cybersecurity risk.",
+        ". The potential replacement of the recently rescinded AI Diffusion Rule and other potential AI-related rulemakings could adversely affect Microsoft\u2019s business, strategy, and operations",
+        "We describe the risks from cybersecurity threats, including previous cybersecurity incidents, in section \u201cRisk Factors\u201d (Part I, Item 1A of this Form 10-K). As of the date of this Form 10-K, we do not believe any risks from cybersecurity threats have materially affected or are reasonably likely to materially affect us, including our results of operations or financial condition.",
+        "\u2022\nJPMorganChase does not have control over the cybersecurity of the systems of the numerous clients, customers, counterparties and third-party service providers with which it does business.\nThe cybersecurity risks that JPMorganChase faces could be intensified by factors such as:\n\u2022\nincreased volume and complexity of cyber attacks during periods of heightened geopolitical tensions\n\u2022"
+      ]
+    },
+    {
+      "question": "What are Goldman Sachs' principal business segments?",
+      "answer": "According to Goldman Sachs' 2026 10-K, the firm manages and reports its activities in three principal business segments. However, the specific names of these segments are not provided in the available documents. For detailed information on the business segments, please refer to the relevant section in the filing (Item 7 MD&A).",
+      "contexts": [
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES",
+        "Our principal subsidiaries operating in Europe include: Goldman Sachs International (GSI), Goldman Sachs International Bank (GSIB), Goldman Sachs Asset Management International (GSAMI), Goldman Sachs Bank Europe SE (GSBE), Goldman Sachs Asset Management B.V., and Goldman Sachs Paris Inc. et Cie (GSPIC).",
+        "Our principal subsidiaries operating in the U.S. include GS Bank USA, Goldman Sachs & Co. LLC (GS&Co.), J. Aron & Company LLC (J. Aron) and Goldman Sachs Asset Management, L.P.",
+        "204 | Goldman Sachs 2025 Form 10-K\n\nTHE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES \nNotes to Consolidated Financial Statements\nThe table below presents information, by principal business activity, for consolidated VIEs included in the summary table above.",
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES \nNotes to Consolidated Financial Statements\nNote 25. \nBusiness Segments \nThe firm manages and reports its activities in \nthree"
+      ]
+    },
+    {
+      "question": "What market risk disclosures does Goldman Sachs provide including VaR?",
+      "answer": "Goldman Sachs provides several market risk disclosures in its 2026 10-K filing. The company acknowledges the inherent limitations of Value-at-Risk (VaR) in its market risk management process. Specifically, it notes that VaR does not estimate potential losses over longer time horizons where market moves may be extreme, nor does it account for the relative liquidity of different risk positions (Source: GS_10-K_2026-02-25, Management Discussion and Analysis).\n\nAdditionally, Goldman Sachs employs a variety of risk measures beyond VaR. Certain portfolios and individual positions are excluded from VaR analysis because it may not be the most appropriate risk measure for those cases. The company also utilizes other sensitivity measures to analyze market risk (Source: GS_10-K_2026-02-25, Management Discussion and Analysis).",
+      "contexts": [
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nWe are aware of the inherent limitations to VaR and therefore use a variety of risk measures in our market risk management process. Inherent limitations to VaR include: \n\u2022\nVaR does not estimate potential losses over longer time horizons where moves may be extreme; \n\u2022\nVaR does not take account of the relative liquidity of different risk positions; and \n\u2022",
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nSensitivity Measures \nCertain portfolios and individual positions are not included in VaR because VaR is not the most appropriate risk measure. Other sensitivity measures we use to analyze market risk are described below. \n10% Sensitivity Measures.",
+        "tative and Qualitative Disclosures About Market Risk | 135\n\nGoldman Sachs 2025 Form 10-K\n\nTHE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES \n INDEX \n\nPage No.",
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nMarket Risk Management \nOverview",
+        "The Company applied a value-at-risk (\u201cVAR\u201d) model to its foreign currency derivative positions to assess the potential impact of fluctuations in exchange rates. The VAR model used a Monte Carlo simulation. The VAR is the maximum expected loss in fair value, for a given confidence interval, to the Company\u2019s foreign currency derivative positions due to adverse movements in rates"
+      ]
+    },
+    {
+      "question": "Compare the risk factor disclosures between JPMorgan and Goldman Sachs regarding credit risk.",
+      "answer": "JPMorgan Chase's risk factor disclosures regarding credit risk emphasize the impact of credit ratings on its liquidity and funding costs. Specifically, JPMorgan Chase is subject to risks associated with potential downgrades of its credit ratings, which could adversely affect its liquidity and cost of funding (JPM_10-K_2026-02-13, Section: Risk Factors).\n\nOn the other hand, Goldman Sachs does not provide specific details about credit risk in the available documents. The focus of the Goldman Sachs filing is more on market risk and does not explicitly mention credit risk factors in the sections provided (GS_10-K_2026-02-25).\n\nIn summary, JPMorgan Chase outlines specific risks related to credit ratings and their effects on liquidity, while Goldman Sachs does not provide comparable disclosures on credit risk in the available context.",
+      "contexts": [
+        "\u2022\nLiquidity\n risks, including the risk that JPMorganChase\u2019s ability to operate could be impaired by constrained liquidity; the dependence of JPMorgan Chase & Co. on its subsidiaries for funding; and the potential adverse effects that any downgrades of JPMorganChase\u2019s credit ratings could have on its liquidity and cost of funding.\n\u2022\nCapital",
+        "tative and Qualitative Disclosures About Market Risk | 135\n\nGoldman Sachs 2025 Form 10-K\n\nTHE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES \n INDEX \n\nPage No.",
+        "JPMorgan Chase & Co. and certain of its principal subsidiaries are rated by credit rating agencies, which evaluate general, firm-specific and industry-specific factors when determining credit ratings, including:\n\u2022\nexpected future profitability \n\u2022\nrisk management practices\n\u2022\nlegal expenses\n\u2022\nregulatory developments\n\u2022\nratings differentials between bank holding companies and their bank and non-bank subsidiaries\n\u2022\nassumptions about government support, and\n\u2022\neconomic and geopolitical developments.",
+        "238 | Goldman Sachs 2025 Form 10-K\n\nTHE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nSupplemental Financial Information\nCommon Stock Performance\nThe graph and table below compare the performance of an investment in the firm\u2019s common stock from December 31, 2020 (the last trading day before the firm\u2019s 2021 fiscal year) through December 31, 2025, with the S&P 500 Index (S&P 500) and the S&P 500 Financials Index (S&P 500 Financials).",
+        "The following discussion sets forth the material risk factors that could affect JPMorganChase\u2019s financial condition and operations. Readers should not consider any descriptions of these factors to be a complete set of all potential risks that could affect the Firm"
+      ]
+    },
+    {
+      "question": "How do Apple and Microsoft compare in terms of their cloud and services businesses?",
+      "answer": "I don't have enough information in the available documents to answer this question.",
+      "contexts": [
+        "The markets for software, devices, and cloud-based services are dynamic and highly competitive. Our competitors are developing new software and devices, while also deploying competing cloud-based services for consumers and businesses. The devices and form factors customers prefer evolve rapidly, influencing how users access services in the cloud and, in some cases, the user\u2019s choice of which suite of cloud-based services to use",
+        "Our Microsoft Cloud revenue, which includes Microsoft 365 Commercial cloud, Azure and other cloud services, the commercial portion of LinkedIn, and Dynamics 365, was $\n168.9\n billion, $\n137.7\n billion, and $\n111.6\n billion in fiscal years 2025, 2024, and 2023, respectively. These amounts are included in Microsoft 365 Commercial products and cloud services, Server products and cloud services, LinkedIn, and Dynamics products and cloud services in the table above.",
+        ". Other changes include combining Windows OEM and Devices into a single revenue growth metric that brings revenue from PC market-driven businesses together, as well as elevating our cloud revenue growth metrics to align to our strategic focus on cloud growth.",
+        "Cloud Services\nThe Company\u2019s cloud services store and keep customers\u2019 content up-to-date and available across multiple Apple devices and Windows personal computers.\nDigital Content\nThe Company operates various platforms, including the App Store\n\u00ae\n,\n that allow customers to discover and download applications and digital content, such as books, music, video, games and podcasts.\nThe Company also offers digital content through subscription-based services, including Apple Arcade\n\u00ae",
+        "Microsoft 365 Commercial products and cloud services revenue increased $10.8 billion or 14%. Microsoft 365 Commercial cloud revenue grew 15% with Microsoft 365 Commercial seat growth of 6% driven by small and medium businesses and frontline worker offerings, as well as growth in revenue per user"
+      ]
+    },
+    {
+      "question": "What regulatory risks do JPMorgan and Goldman Sachs face?",
+      "answer": "Both JPMorgan and Goldman Sachs face significant regulatory risks as outlined in their respective 10-K filings.\n\nAccording to JPMorgan's 2026 10-K, the company is subject to heightened regulatory scrutiny and pervasive investigations and enforcement actions by governmental authorities. Additionally, it may face criticism or litigation from clients or customers who claim to have been harmed by actions taken to comply with applicable laws (JPM_10-K_2026-02-13, Item 1A Risk Factors).\n\nGoldman Sachs, in its 2026 10-K, highlights that its businesses and those of its clients are subject to extensive and pervasive regulation globally. The firm may be adversely affected by governmental and regulatory scrutiny or negative publicity. Furthermore, it faces significant legal risks, with a high volume of claims and substantial damages and penalties claimed in litigation and regulatory proceedings against financial institutions (GS_10-K_2026-02-25, Item 1A Risk Factors).",
+      "contexts": [
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nLegal and Regulatory\n\u2022\nOur businesses and those of our clients are subject to extensive and pervasive regulation around the world.\n\u2022\nA failure to appropriately identify and address potential conflicts of interest has in the past adversely affected and may in the future adversely affect our businesses.\n\u2022\nWe may be adversely affected by governmental and regulatory scrutiny or negative publicity.\n\u2022",
+        "We face risks associated with maintaining and expanding our international operations, including unfavorable and uncertain regulatory, political, economic, tax and labor conditions.",
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nWe may be adversely affected by governmental and regulatory scrutiny or negative publicity.",
+        "We face significant legal risks in our businesses, and the volume of claims and amount of damages and penalties claimed in litigation and regulatory proceedings against financial institutions remain high. See Notes 18 and 27 to the consolidated financial statements in Part II, Item 8 of this Form 10-K for information about certain of our legal and regulatory proceedings and investigations",
+        "\u2022\nit will be subject to heightened regulatory scrutiny and pervasive investigations and enforcement actions by governmental authorities, as well as criticism or litigation from clients or customers who claim that they have been harmed by actions taken by JPMorganChase in order to comply with applicable law\n\u2022"
+      ]
+    },
+    {
+      "question": "What does Tesla say about competition in the electric vehicle market?",
+      "answer": "According to Tesla's 2026 10-K, the worldwide automotive market is described as highly competitive, with expectations that it will become even more competitive in the future. This is due to a significant and growing number of established and new automobile manufacturers, as well as other companies, entering the electric vehicle market (Document 1, Section: Business). Additionally, Tesla notes that the market for electric vehicles still constitutes a small percentage of overall vehicle sales, which could be negatively affected by various factors, including perceptions about electric vehicle features, quality, safety, performance, and cost (Document 3, Section: Risk Factors).",
+      "contexts": [
+        "Competition\nAutomotive\nThe worldwide automotive market is highly competitive and we expect it will become even more competitive in the future as a significant and growing number of established and new automobile manufacturers, as well as other companies, have entered, or are reported to have plans to enter the electric vehicle market.",
+        "Our future growth and success are dependent upon demand for our electric vehicles and adoption of autonomous driving solutions. \nIf the market for electric vehicles in general and Tesla vehicles in particular does not develop as we expect, develops more slowly than we expect, or if demand for our vehicles decreases in our markets or our vehicles compete with each other, our business, prospects, financial condition and operating results may be harmed.",
+        "In addition, electric vehicles still constitute a small percentage of overall vehicle sales. As a result, the market for our vehicles could be negatively affected by numerous factors, such as: \n\u2022\nperceptions about electric vehicle features, quality, safety, performance and cost;\n\u2022\nperceptions about the limited range over which electric vehicles may be driven on a single battery charge, and access to charging facilities; \n\u2022",
+        ". A significant and growing number of established and new automobile manufacturers, as well as other companies, have entered, or are reported to have plans to enter, the market for electric and other alternative fuel vehicles, including hybrid, plug-in hybrid and fully electric vehicles, as well as the market for self-driving technology and services and other vehicle applications and software platforms",
+        ". We offer dual motor powertrain vehicles, which use two electric motors to maximize traction and performance in an all-wheel drive configuration, as well as vehicle powertrain technology featuring three electric motors for further increased performance in certain versions of Model S and Model X, Cybertruck and the Tesla Semi."
+      ]
+    },
+    {
+      "question": "What is JPMorgan's provision for credit losses?",
+      "answer": "I don't have enough information in the available documents to answer this question.",
+      "contexts": [
+        ". JPMorganChase could incur credit losses on its loans and other commitments to clients that operate in, or are significantly impacted by, any sector of the economy under stress.",
+        "Provision for Credit Losses \nProvision for credit losses consists of provision for credit losses on financial assets and commitments accounted for at amortized cost, including loans and lending commitments held for investment. See Note 9 to the consolidated financial statements for further information about the provision for credit losses on loans and lending commitments. \nThe table below presents our provision for credit losses.",
+        ". In addition, JPMorganChase could be required to increase the allowance for credit losses or establish other reserves with respect to certain clients, industries or country exposures in order to align with regulatory directives or expectations.",
+        ". The firm did not record any provision for credit losses on such securities during either 2025 or 2024.",
+        "and the losses that security holders and other unsecured creditors will absorb if JPMorganChase were to enter into a resolution."
+      ]
+    },
+    {
+      "question": "How does Microsoft describe its AI strategy and investments?",
+      "answer": "Microsoft describes its AI strategy as a commitment to making digital technology and artificial intelligence broadly available and doing so responsibly. The company's mission is to empower every person and organization on the planet to achieve more through innovative solutions powered by AI (Source: MSFT_10-K_2025-07-30, Section: Management Discussion and Analysis).\n\nIn terms of investments, Microsoft has increased its operating expenses by $1.1 billion or 4%, primarily driven by investments in cloud and AI engineering and commercial sales (Source: MSFT_10-K_2025-07-30, Section: Management Discussion and Analysis). Additionally, the company plans to continue investing in capital expenditures to support growth in its cloud offerings and AI infrastructure (Source: MSFT_10-K_2025-07-30, Section: Management Discussion and Analysis).",
+      "contexts": [
+        ". The potential replacement of the recently rescinded AI Diffusion Rule and other potential AI-related rulemakings could adversely affect Microsoft\u2019s business, strategy, and operations",
+        "OVERVIEW\nMicrosoft is a technology company committed to making digital technology and artificial intelligence (\u201cAI\u201d) available broadly and doing so responsibly, with a mission to empower every person and every organization on the planet to achieve more. We create platforms and tools, powered by AI, that deliver innovative solutions that meet the evolving needs of our customers.",
+        "\u2022\nGross margin increased $11.2 billion or 13% driven by growth in Microsoft 365 Commercial cloud. Gross margin percentage decreased slightly primarily driven by the impact of scaling our AI infrastructure, offset in part by efficiency gains in Microsoft 365 Commercial cloud.\n\u2022\nOperating expenses increased $1.1 billion or 4% driven by investments in cloud and AI engineering and commercial sales.",
+        "ESS\nGENERAL\nMicrosoft is a technology company committed to making digital technology and artificial intelligence (\u201cAI\u201d) available broadly and doing so responsibly. Our mission is to empower every person and every organization on the planet to achieve more.",
+        ". We will continue to invest in capital expenditures to support growth in our cloud offerings and our investments in AI infrastructure and training. We have operating and finance leases for datacenters, corporate offices, research and development facilities, Microsoft Experience Centers, and certain equipment"
+      ]
+    },
+    {
+      "question": "What are the quantitative disclosures about market risk for Goldman Sachs?",
+      "answer": "I don't have enough information in the available documents to answer this question.",
+      "contexts": [
+        "tative and Qualitative Disclosures About Market Risk | 135\n\nGoldman Sachs 2025 Form 10-K\n\nTHE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES \n INDEX \n\nPage No.",
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nMarket Risk Management \nOverview",
+        "tative and Qualitative Disclosures About Market Risk.\nRefer to the Market Risk Management section of Management\u2019s discussion and analysis on pages 133-142 for a discussion of quantitative and qualitative disclosures about market risk.\n\n\nParts II and III",
+        "THE GOLDMAN SACHS GROUP, INC. AND SUBSIDIARIES\nManagement\u2019s Discussion and Analysis\nFinancial Statement Linkages to Market Risk Measures",
+        "tative and Qualitative Disclosures About Market Risk\nQuantitative and qualitative disclosures about market risk are set forth in \u201cManagement\u2019s Discussion and Analysis of Financial Condition and Results of Operations \u2014 Risk Management\u201d in Part II, Item 7 of this Form 10-K."
+      ]
+    },
+    {
+      "question": "What legal proceedings are disclosed by JPMorgan?",
+      "answer": "JPMorgan Chase is involved in various civil and governmental legal proceedings, including class actions, derivative actions, and other litigation or disputes with third parties. Additionally, the company faces investigations and enforcement actions by U.S. and non-U.S. governmental authorities, which may include criminal proceedings (JPM_10-K_2026-02-13, Section: Risk Factors). Furthermore, JPMorgan Chase could face legal proceedings related to the mishandling of personal information, which could lead to unauthorized access or compromise (JPM_10-K_2026-02-13, Section: Risk Factors).",
+      "contexts": [
+        "JPMorganChase is named as a defendant or is otherwise involved in many civil and governmental legal proceedings, including class actions, derivative actions and other litigation or disputes with third parties, as well as investigations and enforcement actions by U.S. and non-U.S. governmental authorities, including criminal proceedings. Actions currently",
+        "Legal and Regulatory Compliance Risks\nThe Company\u2019s business, results of operations and financial condition could be adversely impacted by unfavorable results of legal proceedings or government investigations.",
+        "JPMorganChase could face legal proceedings, including governmental investigations or enforcement actions, if personal information is mishandled, including if unauthorized parties receive, intercept, or compromise it, if JPMorganChase fails or is perceived",
+        "JPMorgan Chase Bank, N.A. and its subsidiaries are subject to restrictions imposed by federal law on extensions of credit to, investments in stock or securities of, and derivatives, securities lending and certain other transactions with, JPMorgan Chase & Co. and certain other affiliates. These restrictions prevent JPMorgan Chase & Co. and other affiliates from borrowing from JPMorgan Chase Bank, N.A",
+        "As a participant in the financial services industry, it is likely that JPMorganChase will continue to experience a high level of litigation and investigations by"
+      ]
+    }
+  ]
+}

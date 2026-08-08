@@ -27,6 +27,9 @@ dependencies = [
     "chromadb>=0.5.0",
     "langchain-chroma>=0.2.0,<1.0",
 
+    # Hybrid search (BM25 lexical index fused with dense retrieval)
+    "rank-bm25>=0.2.2",
+
     # SEC EDGAR HTML parsing
     "beautifulsoup4>=4.12.0",
     "lxml>=5.0.0",

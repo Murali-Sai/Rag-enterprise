@@ -64,6 +64,8 @@ Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chu
 | LLM (Primary) | Groq (llama-3.3-70b) — Free tier |
 | LLM (Fallback) | Google Gemini 2.5 Flash / OpenAI gpt-4o-mini |
 | Embeddings | sentence-transformers/all-MiniLM-L6-v2 (local, free) |
+| Hybrid Search | BM25 (`rank_bm25`) fused with dense retrieval via Reciprocal Rank Fusion |
+| Reranking | cross-encoder/ms-marco-MiniLM-L-6-v2 — retrieves top-20, reranks to top-5 |
 | Vector Store | ChromaDB (prebuilt index committed for zero-build deploys) |
 | API | FastAPI with async lifespan |
 | Auth | JWT + SQLAlchemy + bcrypt |
@@ -176,6 +178,7 @@ curl -s -X POST http://localhost:8000/query \
 3. **Load**: Each section becomes a LangChain `Document` with metadata (ticker, filing_date, section_id, section_name, department)
 4. **Chunk**: Standard recursive text splitting with section-aware metadata propagation
 5. **Index**: ChromaDB with metadata filtering — RBAC and section queries at the database level
+6. **Retrieve**: Hybrid + rerank pipeline — dense embedding search and a BM25 lexical index each return candidates (both RBAC-filtered), fused by Reciprocal Rank Fusion, then rescored by a `cross-encoder/ms-marco-MiniLM-L-6-v2` reranker and cut to the top-5 sent to the LLM
 
 ### Parsed Sections
 
@@ -320,6 +323,37 @@ rag-enterprise/
 
 Increasing retrieval breadth from 5 → 10 chunks improved Recall and Faithfulness substantially without hurting Precision — more relevant context was captured without diluting the signal passed to the LLM.
 
+### Retrieval Pipeline Ablation
+
+Each retrieval stage toggles independently, so all four combinations were measured on the same 20 questions at `top_k=5`, same generation and judge model (`gpt-4o-mini`). Every run is saved in `evaluation/results/` tagged with the config that produced it.
+
+**First, a noise floor.** The dense-only baseline was run twice with identical configuration. RAGAS metrics are LLM-judged over only 20 questions, so they are not deterministic:
+
+| Dense-only baseline | Faithfulness | Answer Relevancy | Context Precision | Context Recall |
+|---|---|---|---|---|
+| Run A | 0.575 | 0.535 | 0.524 | 0.579 |
+| Run B | 0.556 | 0.537 | 0.519 | 0.625 |
+| **Run-to-run spread** | 0.019 | 0.002 | 0.006 | **0.046** |
+
+Context Recall moves by ~0.05 between identical runs. Any single-run delta smaller than that is noise, not signal — so the ablation below is read against this floor rather than treating every difference as real.
+
+| Config | Faithfulness | Answer Relevancy | Context Precision | Context Recall |
+|---|---|---|---|---|
+| Dense only (mean of 2 runs) | 0.565 | 0.536 | 0.522 | 0.602 |
+| **+ Cross-encoder rerank** | 0.569 | **0.622** | 0.632 | **0.646** |
+| + BM25 hybrid (RRF) | **0.657** | 0.575 | 0.542 | 0.375 |
+| + Both | 0.649 | 0.567 | **0.665** | 0.462 |
+
+**Reranking — real gains in precision and relevancy.** Context Precision +0.111 and Answer Relevancy +0.086 are both far outside the noise floor. Precision is exactly the metric a reranker should move: it measures whether the *right* chunks reached the top-k. Faithfulness (+0.004) is flat, and the Context Recall gain (+0.044) sits *within* run-to-run variance — so reranking should be credited with better-ordered context, not more of it.
+
+**Hybrid search — a real tradeoff, not a free win.** BM25 lifts Faithfulness to the best of any config (+0.093, outside noise) and drives the best Context Precision when stacked with reranking (0.665, +0.143). But it costs Context Recall severely: −0.227 alone, −0.140 stacked. Both are five times the noise floor, so the regression is unambiguous.
+
+The mechanism is visible in the numbers: dense and BM25 each contribute candidates into one fixed fusion budget, so exact-term matches displace semantically-relevant chunks before the LLM sees them. Answers become better grounded in what *was* retrieved (Faithfulness ↑) while more ground-truth content falls out of the window (Recall ↓). Reranking over the wider candidate set partially recovers it (0.375 → 0.462), confirming the cause, but does not restore it.
+
+Honest conclusion: on this dataset **reranking alone is the best-scoring configuration, and that is what ships** — `RERANK_ENABLED=true`, `HYBRID_SEARCH_ENABLED=false`. Hybrid stays in the codebase behind its flag because exact-match retrieval is qualitatively valuable for filing queries (ticker symbols, "Item 7A", specific dollar figures) and its Faithfulness/Precision gains are real — but a −0.23 recall regression doesn't earn a default just because the technique is fashionable. It gets turned on when the candidate budget or fusion weighting is tuned enough to keep the recall.
+
+The broader methodological point: with n=20 and an LLM judge, a single run cannot distinguish a 0.04 improvement from noise. Repeating one config was the cheapest way to learn which of these deltas were worth believing.
+
 ### Iteration Story (interview talking point)
 
 First RAGAS run showed Context Recall of **0.08** — suspiciously low. Root cause: the shipped eval dataset had placeholder ground truths (e.g., *"Sourced from Apple's 10-K. The exact figure will be populated from the actual downloaded filing."*) rather than real answers. Fix: wrote `scripts/generate_ground_truths.py` to regenerate ground truths from the actual filings using `gpt-4o-mini` + wide retrieval (top_k=20). Recall jumped to 0.57 — now measuring the system, not the dataset. Tuning top_k to 10 then gave the scores above.
@@ -327,6 +361,12 @@ First RAGAS run showed Context Recall of **0.08** — suspiciously low. Root cau
 ```bash
 make eval                     # Runs RAGAS on eval_questions_v2.json
 RETRIEVAL_TOP_K=10 make eval  # Tuned variant
+
+# Retrieval stages toggle independently, so each can be measured in isolation
+RERANK_ENABLED=false HYBRID_SEARCH_ENABLED=false make eval  # Dense only (baseline)
+RERANK_ENABLED=true  HYBRID_SEARCH_ENABLED=false make eval  # + cross-encoder rerank
+RERANK_ENABLED=false HYBRID_SEARCH_ENABLED=true  make eval  # + BM25 hybrid
+RERANK_ENABLED=true  HYBRID_SEARCH_ENABLED=true  make eval  # full pipeline
 ```
 
 ## Testing

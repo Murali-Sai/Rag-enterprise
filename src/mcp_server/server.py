@@ -33,7 +33,7 @@ from src.guardrails.financial_compliance import (
 )
 from src.guardrails.input_validator import validate_input
 from src.guardrails.prompt_injection import detect_prompt_injection
-from src.retrieval.retriever import RBACRetriever
+from src.retrieval.retriever import get_retriever
 
 logger = get_logger(__name__)
 
@@ -78,7 +78,7 @@ def _run_rag(question: str, role: str) -> str:
     user_roles = {role}
 
     # RBAC-filtered retrieval (Chinese Wall enforced inside the retriever)
-    retriever = RBACRetriever(user_roles=user_roles)
+    retriever = get_retriever(user_roles=user_roles)
     documents = retriever.retrieve(question)
 
     barriers = get_information_barriers_for_user(user_roles)

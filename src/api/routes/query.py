@@ -15,7 +15,7 @@ from src.guardrails.input_validator import validate_input
 from src.guardrails.output_safety import check_output_safety
 from src.guardrails.pii_detector import redact_pii
 from src.guardrails.prompt_injection import detect_prompt_injection
-from src.retrieval.retriever import RBACRetriever
+from src.retrieval.retriever import RBACRetriever, RerankingRetriever
 
 router = APIRouter(tags=["Query"])
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 async def query_documents(
     request: QueryRequest,
     user: User = Depends(get_current_user),
-    retriever: RBACRetriever = Depends(get_rbac_retriever),
+    retriever: RBACRetriever | RerankingRetriever = Depends(get_rbac_retriever),
 ) -> QueryResponse:
     guardrail_flags: list[str] = []
 

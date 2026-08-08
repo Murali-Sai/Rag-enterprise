@@ -5,11 +5,9 @@ Usage:
 """
 
 import json
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
-from evaluation.eval_config import DATASETS_DIR, EVAL_QUESTIONS_PATH, RESULTS_DIR
+from evaluation.eval_config import EVAL_QUESTIONS_PATH, RESULTS_DIR
 
 
 def load_eval_dataset() -> list[dict]:
@@ -18,11 +16,18 @@ def load_eval_dataset() -> list[dict]:
 
 
 def run_rag_pipeline(question: str, user_roles: set[str]) -> dict:
-    """Run the RAG pipeline for a single question and return results."""
-    from src.retrieval.retriever import RBACRetriever
-    from src.generation.chains import query_with_context
+    """Run the RAG pipeline for a single question and return results.
 
-    retriever = RBACRetriever(user_roles=user_roles)
+    Uses get_retriever() rather than RBACRetriever directly, so this measures
+    whatever the app actually serves — including re-ranking when
+    RERANK_ENABLED=true (the default). Run with RERANK_ENABLED=false to get
+    a before/after comparison, the same pattern used for the RETRIEVAL_TOP_K
+    tuning run.
+    """
+    from src.generation.chains import query_with_context
+    from src.retrieval.retriever import get_retriever
+
+    retriever = get_retriever(user_roles=user_roles)
     documents = retriever.retrieve(question)
 
     contexts = [doc.page_content for doc in documents]
@@ -47,7 +52,6 @@ def evaluate_with_ragas(results: list[dict], eval_data: list[dict]) -> dict:
     """Run RAGAS evaluation on the collected results."""
     try:
         from datasets import Dataset
-        from langchain_openai import ChatOpenAI
         from langchain_huggingface import HuggingFaceEmbeddings
         from ragas import evaluate
         from ragas.embeddings import LangchainEmbeddingsWrapper
@@ -60,16 +64,13 @@ def evaluate_with_ragas(results: list[dict], eval_data: list[dict]) -> dict:
         )
 
         from src.config import settings
+        from src.generation.llm_factory import create_llm
 
-        # Use OpenAI gpt-4o-mini for RAGAS judging (reliable, supports n>1,
-        # industry-standard judge model). Cost ~$0.30 per full 20-question run.
-        ragas_llm = LangchainLLMWrapper(
-            ChatOpenAI(
-                model="gpt-4o-mini",
-                api_key=settings.openai_api_key,
-                temperature=0.0,
-            )
-        )
+        # Judge model — defaults to OpenAI gpt-4o-mini (the historical
+        # baseline in evaluation/results/); EVAL_JUDGE_PROVIDER overrides it
+        # for a run where that's unavailable. See config.py for the caveat.
+        print(f"Judge model: {settings.eval_judge_provider.value}")
+        ragas_llm = LangchainLLMWrapper(create_llm(settings.eval_judge_provider))
         ragas_embeddings = LangchainEmbeddingsWrapper(
             HuggingFaceEmbeddings(
                 model_name=settings.embedding_model,
@@ -100,7 +101,8 @@ def evaluate_with_ragas(results: list[dict], eval_data: list[dict]) -> dict:
         try:
             df = score.to_pandas()
             metric_cols = [
-                c for c in df.columns
+                c
+                for c in df.columns
                 if c in {"faithfulness", "answer_relevancy", "context_precision", "context_recall"}
             ]
             return {c: float(df[c].mean()) for c in metric_cols}
@@ -129,7 +131,7 @@ def run_basic_evaluation(results: list[dict], eval_data: list[dict]) -> dict:
 
     # Simple keyword overlap scoring
     keyword_scores = []
-    for result, eval_item in zip(results, eval_data):
+    for result, eval_item in zip(results, eval_data, strict=False):
         gt_words = set(eval_item["ground_truth"].lower().split())
         answer_words = set(result["answer"].lower().split())
         if gt_words:
@@ -154,7 +156,7 @@ def main() -> None:
     # Run RAG pipeline for each question
     results: list[dict] = []
     for i, item in enumerate(eval_data):
-        print(f"\n[{i+1}/{len(eval_data)}] {item['question'][:60]}...")
+        print(f"\n[{i + 1}/{len(eval_data)}] {item['question'][:60]}...")
         try:
             result = run_rag_pipeline(
                 question=item["question"],
@@ -165,11 +167,13 @@ def main() -> None:
             print(f"  Contexts retrieved: {len(result['contexts'])}")
         except Exception as e:
             print(f"  ERROR: {e}")
-            results.append({
-                "question": item["question"],
-                "answer": f"Error: {e}",
-                "contexts": [],
-            })
+            results.append(
+                {
+                    "question": item["question"],
+                    "answer": f"Error: {e}",
+                    "contexts": [],
+                }
+            )
 
     # Run evaluation
     print("\n" + "=" * 60)
@@ -186,14 +190,31 @@ def main() -> None:
         else:
             print(f"  {metric}: {value}")
 
-    # Save results
+    # Save results, tagged with the config that produced them — scores are
+    # meaningless without knowing which retrieval stages were on and which
+    # model judged them, and a results directory of untagged runs can't be
+    # compared after the fact.
+    from src.config import settings
+
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     results_path = RESULTS_DIR / f"eval_{timestamp}.json"
     with open(results_path, "w") as f:
         json.dump(
             {
                 "timestamp": timestamp,
+                "config": {
+                    "hybrid_search_enabled": settings.hybrid_search_enabled,
+                    "rerank_enabled": settings.rerank_enabled,
+                    "rerank_model": settings.rerank_model if settings.rerank_enabled else None,
+                    "retrieval_top_k": settings.retrieval_top_k,
+                    "rerank_candidate_k": (
+                        settings.rerank_candidate_k if settings.rerank_enabled else None
+                    ),
+                    "generation_provider": settings.llm_provider.value,
+                    "judge_provider": settings.eval_judge_provider.value,
+                    "embedding_model": settings.embedding_model,
+                },
                 "scores": {k: float(v) if isinstance(v, float) else v for k, v in scores.items()},
                 "results": results,
             },

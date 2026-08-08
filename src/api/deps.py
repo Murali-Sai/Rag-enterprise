@@ -5,7 +5,7 @@ from src.auth.jwt_handler import decode_access_token
 from src.auth.models import User
 from src.auth.repository import get_user_by_id
 from src.common.exceptions import AuthenticationError
-from src.retrieval.retriever import RBACRetriever
+from src.retrieval.retriever import RBACRetriever, RerankingRetriever, get_retriever
 
 security = HTTPBearer()
 
@@ -31,8 +31,10 @@ async def get_current_user(
     return user
 
 
-def get_rbac_retriever(user: User = Depends(get_current_user)) -> RBACRetriever:
-    return RBACRetriever(user_roles=user.role_names)
+def get_rbac_retriever(
+    user: User = Depends(get_current_user),
+) -> RBACRetriever | RerankingRetriever:
+    return get_retriever(user_roles=user.role_names)
 
 
 def require_role(required_role: str):  # noqa: ANN201

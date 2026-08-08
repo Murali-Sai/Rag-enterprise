@@ -69,6 +69,34 @@ class Settings(BaseSettings):
     # Retrieval
     retrieval_top_k: int = 5
 
+    # Re-ranking — a cross-encoder scores (query, doc) pairs jointly, which is
+    # slower but substantially more precise than the bi-encoder cosine
+    # similarity ChromaDB returns. Cheap because it only runs on a small
+    # candidate set, not the whole corpus.
+    rerank_enabled: bool = True
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_candidate_k: int = 20
+
+    # Hybrid search — pairs dense embedding search with a BM25 lexical index
+    # and fuses the rankings (RRF). Dense handles paraphrase; BM25 handles the
+    # exact-match terms filings are full of (tickers, "Item 7A", dollar
+    # figures) that a 384-dim embedding blurs together.
+    #
+    # Off by default: the ablation in README ("Retrieval Pipeline Ablation")
+    # measured it lifting Faithfulness (+0.09) and Precision, but costing
+    # Context Recall -0.23 — five times the run-to-run noise floor. Lexical
+    # hits crowd semantically-relevant chunks out of a fixed fusion budget.
+    # Turn on once the candidate budget or fusion weighting is tuned.
+    hybrid_search_enabled: bool = False
+
+    # RAGAS eval judge — separate from LLM_PROVIDER (the runtime generation
+    # model) so switching the app's provider doesn't silently change what
+    # judges eval scores. Defaults to OpenAI gpt-4o-mini, matching the
+    # historical baseline in evaluation/results/. Override for a run where
+    # OpenAI isn't available (e.g. EVAL_JUDGE_PROVIDER=gemini) — just note
+    # scores from a different judge aren't directly comparable to the baseline.
+    eval_judge_provider: LLMProvider = LLMProvider.OPENAI
+
     # SEC EDGAR
     edgar_user_agent: str = "RAGEnterprise murali140824@gmail.com"
     edgar_rate_limit: int = 10
