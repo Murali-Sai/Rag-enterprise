@@ -33,10 +33,13 @@ async def ingest_from_disk(tickers: list[str]) -> int:
     vector_store = get_vector_store()
     total_chunks = 0
 
+    missing_tickers: list[str] = []
+
     for ticker in tickers:
         ticker_dir = edgar_dir / ticker.upper()
-        if not ticker_dir.exists():
+        if not ticker_dir.exists() or not any(ticker_dir.glob("*.html")):
             print(f"  No downloaded filings for {ticker} in {ticker_dir}")
+            missing_tickers.append(ticker)
             continue
 
         for html_file in sorted(ticker_dir.glob("*.html")):
@@ -48,6 +51,13 @@ async def ingest_from_disk(tickers: list[str]) -> int:
             vector_store.add_documents(chunks)
             total_chunks += len(chunks)
             print(f"    Chunks ingested: {len(chunks)}")
+
+    if missing_tickers:
+        print(
+            f"\n  WARNING: no downloaded filings found for {', '.join(missing_tickers)}. "
+            "Run 'python scripts/download_filings.py' first, or pass --from-api to fetch "
+            "directly from EDGAR."
+        )
 
     return total_chunks
 

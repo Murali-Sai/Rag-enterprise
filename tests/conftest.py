@@ -34,18 +34,18 @@ def admin_token() -> str:
 
 
 @pytest.fixture
-def hr_token() -> str:
-    return create_access_token(user_id=2, username="hr_user", roles=["hr"])
+def trading_token() -> str:
+    return create_access_token(user_id=2, username="trader_desk", roles=["trading"])
 
 
 @pytest.fixture
-def eng_token() -> str:
-    return create_access_token(user_id=3, username="eng_user", roles=["engineering"])
+def research_token() -> str:
+    return create_access_token(user_id=3, username="research_analyst", roles=["research"])
 
 
 @pytest.fixture
-def finance_token() -> str:
-    return create_access_token(user_id=4, username="finance_user", roles=["finance"])
+def compliance_token() -> str:
+    return create_access_token(user_id=4, username="compliance_officer", roles=["compliance"])
 
 
 @pytest.fixture

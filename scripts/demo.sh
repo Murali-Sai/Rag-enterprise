@@ -10,23 +10,27 @@ echo "[1/3] Seeding demo users..."
 python scripts/seed_users.py
 
 echo ""
-echo "[2/3] Ingesting sample documents..."
-python scripts/ingest_samples.py
+echo "[2/3] Downloading real SEC EDGAR 10-K filings..."
+python scripts/download_filings.py
 
 echo ""
-echo "[3/3] Demo environment ready!"
+echo "[3/3] Ingesting filings into ChromaDB..."
+python scripts/ingest_edgar.py --from-disk
+
+echo ""
+echo "Demo environment ready!"
 echo ""
 echo "Start the server with: make dev"
 echo ""
 echo "Then try these commands:"
 echo ""
-echo "  # Login as HR user"
+echo "  # Login as a research analyst"
 echo '  curl -s -X POST http://localhost:8000/auth/token \'
 echo '    -H "Content-Type: application/json" \'
-echo '    -d '"'"'{"username":"hr_user","password":"hrpass1234!"}'"'"' | python -m json.tool'
+echo '    -d '"'"'{"username":"research_analyst","password":"research1!"}'"'"' | python -m json.tool'
 echo ""
 echo "  # Query with the token"
 echo '  curl -s -X POST http://localhost:8000/query \'
 echo '    -H "Authorization: Bearer <token>" \'
 echo '    -H "Content-Type: application/json" \'
-echo '    -d '"'"'{"question":"What is the PTO policy?"}'"'"' | python -m json.tool'
+echo '    -d '"'"'{"question":"What was Apple total net revenue for fiscal year 2024?"}'"'"' | python -m json.tool'

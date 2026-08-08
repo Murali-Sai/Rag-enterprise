@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from sqlalchemy import text
 
 from src.common.schemas import HealthResponse, ReadinessResponse
 from src.config import settings
@@ -34,7 +35,7 @@ async def readiness_check() -> ReadinessResponse:
         from src.auth.repository import async_session
 
         async with async_session() as session:
-            await session.execute("SELECT 1")  # type: ignore[arg-type]
+            await session.execute(text("SELECT 1"))
         db_status = "connected"
     except Exception:
         db_status = "disconnected"
