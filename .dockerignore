@@ -15,10 +15,16 @@ Makefile
 docker-compose.yml
 *.md
 
-# The working index — three collections and 361 MB of experiments. The image
+# The working index — several collections and 361 MB of experiments. The image
 # ships chroma_dist/ instead: one collection, verified against the corpus the
 # published numbers were measured on. See scripts/build_index_dist.py.
 chroma_data/
+
+# The Dockerfile's optional index COPY globs on `chroma_dist*`, so any sibling
+# with that prefix would be shipped as if it were the verified corpus. Excluded
+# by name here so a scratch copy in the repo root cannot become the index.
+chroma_dist_*/
+chroma_dist-*/
 data/edgar/**/*.html
 data/edgar/**/*.json
 .cache/

@@ -54,12 +54,18 @@ demo: seed download-filings ingest-edgar ingest
 dashboard:
 	cd dashboard && streamlit run app.py --server.port=8501
 
-# The shippable index. The API image copies chroma_dist/ instead of ingesting
-# at build time, so this has to exist before a build — it is generated from
-# chroma_data/, and the script fails rather than shipping a corpus other than
-# the measured one. Regenerate by deleting chroma_dist/ and running again.
+# The shippable index, generated from chroma_data/ when there is one to
+# generate from. Optional by design: a fresh clone has no local index, and the
+# image builds without this and ingests on first boot instead. Present, it is
+# what the container serves — and build_index_dist.py fails rather than ship a
+# corpus other than the measured one. Regenerate by deleting chroma_dist/.
 chroma_dist/chroma.sqlite3:
-	python scripts/build_index_dist.py
+	@if [ -f chroma_data/chroma.sqlite3 ]; then \
+		python scripts/build_index_dist.py; \
+	else \
+		echo "No local chroma_data/ — the image will build its own index on first"; \
+		echo "boot (a few minutes, no API key needed). Nothing to do here."; \
+	fi
 
 index-dist: chroma_dist/chroma.sqlite3
 

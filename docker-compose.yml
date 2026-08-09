@@ -38,7 +38,11 @@ services:
       # a dimension-mismatch error, or silently empty retrieval. Fix:
       # `docker compose down -v` and start again.
       - chroma_data:/app/chroma_data
-      - ./data:/app/data:ro
+      # Writable, not :ro. An image built without a shipped index downloads the
+      # filings into data/edgar on first boot — the path a fresh clone takes —
+      # and a read-only mount fails that with a permission error several
+      # minutes into startup.
+      - ./data:/app/data
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]

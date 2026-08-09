@@ -198,10 +198,27 @@ sitting. Do not re-ingest without the eval.
 - `main` is current and pushed. Phases 1–5 are all on it; `origin/main` is at
   the same commit.
 - **383 tests pass, ruff clean.**
-- `chroma_dist/` is generated and gitignored. `make docker-up` builds it if
-  missing; delete the directory to regenerate. A clone with no `chroma_data/`
-  of its own has to build one first (`make demo`) — that is the cost of the
-  image and the deployment sharing the published corpus.
+- `chroma_dist/` is generated and gitignored. `make docker-up` builds it from
+  `chroma_data/` when there is one; delete the directory to regenerate.
+- **It is optional, and it has to stay optional.** Shipping the index briefly
+  broke the one thing Project 6 §5.3 asks the container to do — "so reviewers
+  can spin it up and test immediately". `make docker-up` on a fresh clone died
+  at `no Chroma store at chroma_data`, and the bootstrap path then wanted an
+  `OPENAI_API_KEY` a reviewer does not have. Before that change the image
+  ingested at build time with local MiniLM and needed no key at all.
+
+  Now: the index COPY tolerates `chroma_dist/` being absent, and `start.py`
+  builds one on first boot — filings, *and* samples — choosing local
+  embeddings when there is no OpenAI key and holding the server to the same
+  choice, since 1536- and 384-dim collections cannot be queried
+  interchangeably. Docker has no conditional COPY and fails when every source
+  glob matches nothing, which is why `pyproject.toml` is named in that COPY
+  and deleted on the next line.
+
+  **If you touch the Dockerfile, re-test the empty case with `--no-cache`.**
+  BuildKit reused the cached COPY layer when `chroma_dist/` was moved aside,
+  so the first "fresh clone" test passed while the image still carried all
+  106 MB of the index. The test looked green and measured nothing.
 - **Use `./.venv/Scripts/python.exe`, never bare `python`.** The `python` on
   PATH is system Python 3.13 with *some* dependencies (langchain,
   langchain-openai) but not `rank_bm25`, `transformers`, or

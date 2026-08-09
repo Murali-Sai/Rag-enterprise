@@ -19,9 +19,7 @@ def meta(source, department="sec_filings", **extra):
 
 class TestGrouping:
     def test_chunks_are_counted_per_source(self):
-        documents = _group_by_source(
-            [meta("AAPL_10-K"), meta("AAPL_10-K"), meta("MSFT_10-K")]
-        )
+        documents = _group_by_source([meta("AAPL_10-K"), meta("AAPL_10-K"), meta("MSFT_10-K")])
 
         assert [(d.source, d.chunks) for d in documents] == [("AAPL_10-K", 2), ("MSFT_10-K", 1)]
 

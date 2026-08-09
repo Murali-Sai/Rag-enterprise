@@ -651,7 +651,15 @@ Or use the **interactive demo on the landing page** (pick a role, ask a question
 make docker-up
 ```
 
-Two services. The API image copies the index from `chroma_dist/`, which `make docker-up` generates from your local `chroma_data/` if it is missing — so a clone with no index of its own has to build one first (`make demo`, which downloads the filings from EDGAR and ingests them; needs `OPENAI_API_KEY` for the default embeddings). That is the cost of the image and the deployment answering off the same corpus as the published scores. The dashboard image carries only `streamlit` and `requests` — it talks to the API over HTTP and shares none of its dependencies, which keeps it at ~800 MB against the API's multi-GB.
+**That is the whole setup — no API key required.** A fresh clone has no index, so the container downloads the filings from EDGAR and builds one on first boot with local embeddings (`all-MiniLM-L6-v2`), then serves. Retrieval, RBAC, the information barriers and the refusal path all work with no keys at all; only *generating* an answer needs one, and the API says so per request, naming the variable to set.
+
+If you do have a local `chroma_data/`, `make docker-up` copies it into the image via `chroma_dist/` instead, and the container starts instantly on that corpus — which is how the deployment answers off the same 8,232 chunks as the published scores. Either way the boot log names the corpus it is serving:
+
+```
+Corpus: rag_enterprise — 8232 chunks, embedded with openai/text-embedding-3-small
+```
+
+Two services. The dashboard image carries only `streamlit` and `requests` — it talks to the API over HTTP and shares none of its dependencies, which keeps it at ~800 MB against the API's multi-GB.
 
 | Service | Host port | Container port | Notes |
 |---|---|---|---|

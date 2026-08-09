@@ -49,9 +49,7 @@ def ingest(client, upload):
 
 
 class TestIngestGate:
-    def test_a_read_only_deployment_refuses_an_admin_upload(
-        self, client, upload, monkeypatch
-    ):
+    def test_a_read_only_deployment_refuses_an_admin_upload(self, client, upload, monkeypatch):
         monkeypatch.setattr(settings, "allow_runtime_ingest", False)
 
         response = ingest(client, upload)
@@ -59,9 +57,7 @@ class TestIngestGate:
         assert response.status_code == 403
         assert "does not accept document uploads" in response.json()["detail"]
 
-    def test_the_refusal_happens_before_the_file_is_read(
-        self, client, upload, monkeypatch
-    ):
+    def test_the_refusal_happens_before_the_file_is_read(self, client, upload, monkeypatch):
         """The gate is not a validation step — nothing should reach the
         ingestion pipeline, which embeds (and bills) before it writes."""
         monkeypatch.setattr(settings, "allow_runtime_ingest", False)

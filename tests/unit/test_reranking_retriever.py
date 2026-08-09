@@ -264,7 +264,9 @@ class TestMultiEntityRetrieval:
         store = FakeVectorStore([Document(page_content="a")])
         retriever = get_retriever(user_roles={"admin"}, vector_store=store)
 
-        with patch("src.retrieval.reranker.get_reranker", return_value=FakeCrossEncoder({"a": 1.0})):
+        with patch(
+            "src.retrieval.reranker.get_reranker", return_value=FakeCrossEncoder({"a": 1.0})
+        ):
             retriever.retrieve("What was Apple's total net revenue?")
 
         assert store.last_filter is None  # no entity clause added

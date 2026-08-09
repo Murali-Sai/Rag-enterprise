@@ -30,19 +30,40 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+# The sample corpus — trading, risk, compliance and research documents, and the
+# only documents outside sec_filings. Small, and the information-barrier demo is
+# empty without them. The SEC filings themselves are excluded by .dockerignore
+# and fetched at first boot when the image ships no index.
+COPY data/ ./data/
 
-# Ship the measured index instead of baking a fresh one.
+# Ship the measured index — if one was built.
 #
-# Baking meant the deployment answered off a corpus no published number
-# described — build-time ingest cannot use OpenAI embeddings without putting a
-# key in the build, so the image pinned local MiniLM and produced its own
-# 8,099-chunk corpus while every score in the README came from 8,232 OpenAI-
-# embedded chunks. Two systems, one set of numbers.
+# Baking an index at build time meant the deployment answered off a corpus no
+# published number described: build-time ingest cannot use OpenAI embeddings
+# without putting a key in the build, so the image pinned local MiniLM and
+# produced its own 8,099-chunk corpus while every score in the README came from
+# 8,232 OpenAI-embedded chunks. Two systems, one set of numbers.
 #
 # chroma_dist/ is that corpus, built and checked by scripts/build_index_dist.py
-# (8,232 chunks, digest c2f8c13673cf5ca5). It lands at the default persist
-# path, so nothing downstream has to know where the index came from.
-COPY chroma_dist/ ./chroma_data/
+# (8,232 chunks, digest c2f8c13673cf5ca5). It lands at the default persist path,
+# so nothing downstream has to know where the index came from.
+#
+# It is optional, and that matters: a fresh clone has no chroma_data/ to build
+# it from, and an image that refuses to build is worse for a reviewer than one
+# that ingests on first boot. scripts/start.py handles the empty case. Docker
+# has no conditional COPY and fails when every source glob matches nothing, so
+# pyproject.toml is listed purely to guarantee one match; it is removed
+# immediately below.
+#
+# The trailing glob is load-bearing and it is loose: `chroma_dist*` also
+# matches a sibling like chroma_dist_old/ or chroma_dist_held/, which would
+# silently ship the wrong corpus. It cannot be tightened to `chroma_dist/*`,
+# which matches the segment directory as a *source* and flattens its contents
+# into chroma_data/, destroying the layout Chroma needs. Keep stray
+# chroma_dist-prefixed directories out of the build context — and note that
+# .dockerignore excludes chroma_data/ but nothing else by that prefix.
+COPY pyproject.toml chroma_dist* ./chroma_data/
+RUN rm -f chroma_data/pyproject.toml
 
 # Prevent transformers from trying to load TensorFlow / Keras
 ENV USE_TF=0
@@ -63,6 +84,10 @@ ENV PYTHONUNBUFFERED=1
 # costs ~$0.000005 against text-embedding-3-small's $0.02/1M tokens, which is
 # what makes an unauthenticated public URL affordable; generating an answer
 # with gpt-4o costs ~$0.012, which is what makes it not.
+#
+# start.py overrides this to huggingface when it has to build an index at boot
+# and there is no OpenAI key — a reviewer running `make docker-up` on a fresh
+# clone has neither an index nor a key, and local embeddings need neither.
 ENV EMBEDDING_PROVIDER=openai
 
 # The image serves a fixed corpus, so it does not accept uploads. Set in the
