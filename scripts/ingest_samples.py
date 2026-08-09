@@ -14,7 +14,17 @@ SAMPLE_DIR = Path(__file__).parent.parent / "data" / "sample"
 DEPARTMENTS = {
     "sec_filings": {
         "path": SAMPLE_DIR / "sec_filings",
-        "access_roles": ["trading", "risk", "compliance", "research", "wealth_management", "operations", "auditor", "viewer", "admin"],
+        "access_roles": [
+            "trading",
+            "risk",
+            "compliance",
+            "research",
+            "wealth_management",
+            "operations",
+            "auditor",
+            "viewer",
+            "admin",
+        ],
     },
     "risk_management": {
         "path": SAMPLE_DIR / "risk_management",

@@ -36,12 +36,31 @@ ENV HF_HOME=/app/.cache/huggingface
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 ENV PYTHONUNBUFFERED=1
 
-# Bake the SEC filing index + embedding model into the image at build time.
-# This downloads the 5 real 10-K filings, parses them, and ingests ~6,400
-# chunks into ChromaDB during the build — so Cloud Run cold starts are instant
-# instead of running a ~4-minute ingest on every container start.
+# The image pins local embeddings, overriding the openai default in config.py.
+#
+# The index is baked at build time (below), and the two providers emit
+# different-sized vectors — 384 vs 1536 — so a collection built under one
+# cannot be queried under the other. Embedding at build time with OpenAI would
+# put an API key in the build, and leaving the default while baking locally
+# would ship an image whose index silently mismatches its own query path.
+#
+# Generation still uses whatever LLM_PROVIDER is set at deploy time, so this
+# does not pin the answer model. Override at run time only together with a
+# rebuilt or remounted index.
+ENV EMBEDDING_PROVIDER=huggingface
+
+# Bake the document index + embedding model into the image at build time, so
+# Cloud Run cold starts are instant instead of running a multi-minute ingest on
+# every container start.
+#
+# ingest_samples is required, not optional: it supplies the trading, risk,
+# compliance and research documents. Without it the index is SEC filings only,
+# every role can see everything that exists, and the information-barrier demo
+# silently degrades — a trader asking about desk procedures gets "no documents
+# found", which looks identical to a Chinese Wall block but is an empty corpus.
 RUN python scripts/download_filings.py \
     && python scripts/ingest_edgar.py --from-disk \
+    && python scripts/ingest_samples.py \
     && python -c "from src.ingestion.embeddings import get_embedding_model; get_embedding_model()"
 
 # Create non-root user and hand over ownership of the baked data + caches
