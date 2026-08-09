@@ -16,6 +16,7 @@ from sentence_transformers import CrossEncoder
 from src.common.logging import get_logger
 from src.config import settings
 from src.retrieval.passages import passage_text
+from src.retrieval.scores import ScoredDocument, ScoreType, documents_of
 
 logger = get_logger(__name__)
 
@@ -30,8 +31,14 @@ def get_reranker() -> CrossEncoder:
     return _reranker_instance
 
 
-def rerank_documents(query: str, documents: list[Document], top_k: int) -> list[Document]:
+def rerank_with_scores(query: str, documents: list[Document], top_k: int) -> list[ScoredDocument]:
     """Re-score candidate documents with a cross-encoder and return the top_k.
+
+    The scores come back with the documents rather than being dropped on the
+    floor. A cross-encoder logit is the best relevance signal the pipeline
+    produces — the query and the document were scored jointly, unlike the
+    bi-encoder cosine — so it is what the confidence layer reads to decide
+    whether an answer is worth generating at all.
 
     Args:
         query: The user's question.
@@ -39,7 +46,8 @@ def rerank_documents(query: str, documents: list[Document], top_k: int) -> list[
         top_k: How many documents to keep after re-scoring.
 
     Returns:
-        The top_k documents, ordered by cross-encoder relevance (descending).
+        The top_k documents with their raw cross-encoder logits, ordered by
+        relevance (descending).
     """
     if not documents:
         return []
@@ -49,12 +57,24 @@ def rerank_documents(query: str, documents: list[Document], top_k: int) -> list[
     scores = model.predict(pairs)
 
     ranked = sorted(zip(documents, scores, strict=True), key=lambda pair: pair[1], reverse=True)
-    top_documents = [doc for doc, _ in ranked[:top_k]]
+    top = [
+        ScoredDocument(
+            document=doc,
+            score=float(score),
+            score_type=ScoreType.CROSS_ENCODER,
+        )
+        for doc, score in ranked[:top_k]
+    ]
 
     logger.info(
         "reranking_complete",
         candidates=len(documents),
-        returned=len(top_documents),
+        returned=len(top),
         top_score=float(ranked[0][1]) if ranked else None,
     )
-    return top_documents
+    return top
+
+
+def rerank_documents(query: str, documents: list[Document], top_k: int) -> list[Document]:
+    """Documents-only view of rerank_with_scores, for callers that don't score."""
+    return documents_of(rerank_with_scores(query, documents, top_k))

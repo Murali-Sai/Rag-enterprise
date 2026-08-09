@@ -34,15 +34,23 @@ class ChromaVectorStore(VectorStoreBase):
         from src.ingestion.embeddings import get_embedding_model
 
         self._store = Chroma(
-            collection_name="rag_enterprise",
+            collection_name=settings.chroma_collection,
             embedding_function=get_embedding_model(),
             persist_directory=settings.chroma_persist_dir,
         )
-        logger.info("chroma_initialized", persist_dir=settings.chroma_persist_dir)
+        logger.info(
+            "chroma_initialized",
+            persist_dir=settings.chroma_persist_dir,
+            collection=settings.chroma_collection,
+        )
 
     def add_documents(self, documents: list[Document]) -> list[str]:
         # Imported lazily — bm25 imports this module for its type hints.
         from src.retrieval.bm25 import reset_bm25_cache
+
+        documents = self._drop_duplicates(documents)
+        if not documents:
+            return []
 
         ids = self._store.add_documents(documents)
         # BM25 indexes are in-memory snapshots of the corpus; without this the
@@ -51,6 +59,29 @@ class ChromaVectorStore(VectorStoreBase):
         reset_bm25_cache()
         logger.info("documents_added", count=len(ids))
         return ids
+
+    def _drop_duplicates(self, documents: list[Document]) -> list[Document]:
+        """Suppress near-duplicates before they reach the index.
+
+        Done here rather than in each ingestion script so every path gets it —
+        the EDGAR scripts, the sample loader, and POST /documents/ingest. A
+        duplicate that enters through the API is exactly as harmful as one
+        that enters through a batch job.
+        """
+        if not settings.dedup_enabled or not documents:
+            return documents
+
+        from src.ingestion.dedup import deduplicate, existing_corpus_vectors
+
+        result = deduplicate(documents, existing_corpus_vectors(self))
+        if result.skipped:
+            logger.info(
+                "duplicates_suppressed",
+                collection=settings.chroma_collection,
+                skipped=result.skipped_count,
+                submitted=len(documents),
+            )
+        return result.kept
 
     def similarity_search(
         self,
