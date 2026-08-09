@@ -1,6 +1,6 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
-> **Live Demo** &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-dashboard-1072425852803.us-central1.run.app) &nbsp;·&nbsp; [Landing page](https://rag-enterprise-1072425852803.us-central1.run.app) &nbsp;·&nbsp; [API docs](https://rag-enterprise-1072425852803.us-central1.run.app/docs)
+> **Live Demo** &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-dashboard-laa65asupq-uc.a.run.app) &nbsp;·&nbsp; [Landing page](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;·&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
 >
 > Two Cloud Run services: the API with the filing index baked into the image, and the Streamlit dashboard talking to it over HTTP.
 >
@@ -85,7 +85,7 @@ Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chu
 | Financial Guardrails | MNPI detection, investment advice blocking, disclaimer injection |
 | Audit Trail | Append-only JSONL (SEC 17a-4 / FINRA 4511) |
 | Evaluation | RAGAS (Faithfulness, Relevancy, Precision, Recall) |
-| Deployment | Railway (Nixpacks) — live demo |
+| Deployment | Google Cloud Run — two services (API + Streamlit dashboard) |
 | Infrastructure | Terraform + AWS ECS Fargate (reference architecture) |
 | CI/CD | GitHub Actions |
 

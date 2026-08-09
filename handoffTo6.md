@@ -31,8 +31,8 @@ guardrails, SEC 17a-4 audit trail, MCP server).
 | 2. Hybrid retrieval | **Done** — dense + BM25 + RRF + cross-encoder + per-entity split |
 | 3. Generation & citation | **Done** — bracketed citations, LLM-judge verification, composite confidence, structured "I don't know" |
 | 4. Evaluation | **Done** — 54 hand-written questions, 7 strata, refusal scoring, noise floor measured |
-| 5. API & dashboard | **Done** — `GET /dashboard`, `GET /access`, structured barriers on the response, templates |
-| **6. Portfolio** | **← you are here.** Case study strong, no demo video, live demo stale |
+| 5. API & dashboard | **Done** — Streamlit dashboard, `GET /access`, `GET /documents`, per-request retrieval mode, structured barriers |
+| **6. Portfolio** | **← you are here.** Case study written, live demo deployed and current, no demo video |
 
 ---
 
@@ -44,8 +44,8 @@ Two Cloud Run services in `us-central1`, project `rag-enterprise-498519`:
 
 | Service | URL |
 |---|---|
-| `rag-enterprise` (API + landing page) | https://rag-enterprise-1072425852803.us-central1.run.app |
-| `rag-enterprise-dashboard` (Streamlit) | https://rag-enterprise-dashboard-1072425852803.us-central1.run.app |
+| `rag-enterprise` (API + landing page) | https://rag-enterprise-laa65asupq-uc.a.run.app |
+| `rag-enterprise-dashboard` (Streamlit) | https://rag-enterprise-dashboard-laa65asupq-uc.a.run.app |
 
 They know each other through env vars: the dashboard has `RAG_API_URL`, the
 API has `DASHBOARD_URL` so its landing page links resolve. Deploy the API
@@ -91,8 +91,8 @@ loader.
 
 ## 3. Repo state
 
-- Branch `phases-1-4`. Phases 1–5 are committed; `main` is behind. See §9.
-- 347 tests pass, ruff clean.
+- `main` is current and pushed: Phases 1–5 are all on it.
+- 362 tests pass, ruff clean.
 - **Use `./.venv/Scripts/python.exe`, never bare `python`.** The `python` on
   PATH is system Python 3.13 with *some* dependencies (langchain,
   langchain-openai) but not `rank_bm25`, `transformers`, or
@@ -102,7 +102,7 @@ loader.
 
 ```bash
 ./.venv/Scripts/python.exe -m pytest tests/ -q
-./.venv/Scripts/python.exe -m ruff check src tests evaluation scripts
+./.venv/Scripts/python.exe -m ruff check src tests dashboard evaluation scripts
 ```
 
 Run the app — `.claude/launch.json` has a `dev` config on port 8000, or:
