@@ -41,10 +41,9 @@ async def readiness_check() -> ReadinessResponse:
         db_status = "disconnected"
 
     # Check LLM (just verify config is present)
-    if settings.groq_api_key or settings.google_api_key:
-        llm_status = "configured"
-    else:
-        llm_status = "not_configured"
+    from src.generation.llm_factory import has_usable_provider
+
+    llm_status = "configured" if has_usable_provider() else "not_configured"
 
     overall = "ready" if vector_store_status == "connected" else "not_ready"
 

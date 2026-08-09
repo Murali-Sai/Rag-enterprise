@@ -32,7 +32,11 @@ def format_documents(docs: list[Document]) -> str:
             header_parts.append(f"Date: {filing_date}")
 
         header = ", ".join(header_parts)
-        formatted.append(f"[Document {i}] ({header})\n{doc.page_content}")
+        # Labelled "[3]" rather than "[Document 3]" so the label is written in
+        # exactly the form the prompt asks the model to cite in. When the two
+        # differ, models echo the label — emitting "[Document 3]" — and the
+        # citation parser has to guess which convention it is reading.
+        formatted.append(f"[{i}] ({header})\n{doc.page_content}")
     return "\n\n---\n\n".join(formatted)
 
 

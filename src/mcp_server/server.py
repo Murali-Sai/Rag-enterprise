@@ -26,14 +26,14 @@ from src.auth.rbac import (
 )
 from src.common.logging import get_logger, setup_logging
 from src.edgar.client import COMPANY_REGISTRY
-from src.generation.chains import query_with_context
+from src.generation.answer import generate_grounded_answer
 from src.guardrails.financial_compliance import (
     apply_financial_disclaimers,
     check_financial_compliance,
 )
 from src.guardrails.input_validator import validate_input
 from src.guardrails.prompt_injection import detect_prompt_injection
-from src.retrieval.retriever import get_retriever
+from src.retrieval.retriever import get_retriever, retrieve_scored
 
 logger = get_logger(__name__)
 
@@ -77,9 +77,11 @@ def _run_rag(question: str, role: str) -> str:
 
     user_roles = {role}
 
-    # RBAC-filtered retrieval (Chinese Wall enforced inside the retriever)
+    # RBAC-filtered retrieval (Chinese Wall enforced inside the retriever).
+    # Scored, so the confidence layer can decide whether generating is worth it.
     retriever = get_retriever(user_roles=user_roles)
-    documents = retriever.retrieve(question)
+    scored = retrieve_scored(retriever, question)
+    documents = [item.document for item in scored]
 
     barriers = get_information_barriers_for_user(user_roles)
     barrier_note = ""
@@ -90,9 +92,12 @@ def _run_rag(question: str, role: str) -> str:
     if not documents:
         return f"No relevant documents found within your access level.{barrier_note}"
 
-    # Grounded generation
+    # Grounded generation — same entry point as the REST API and the eval
+    # harness, so bracketed citations and confidence scoring are not a
+    # property of one surface.
     try:
-        answer = query_with_context(question, documents)
+        grounded = generate_grounded_answer(question, scored)
+        answer = grounded.answer
     except Exception as e:
         logger.error("mcp_llm_generation_failed", error=str(e), error_type=type(e).__name__)
         return (
@@ -105,24 +110,36 @@ def _run_rag(question: str, role: str) -> str:
     compliance = check_financial_compliance(query=question, response=answer, user_roles=user_roles)
     answer = apply_financial_disclaimers(answer, compliance)
 
-    # Append source citations
-    sources = []
-    for doc in documents:
+    # Append source citations, numbered in retrieval order. The answer cites
+    # blocks as [1], [2] — deduplicating or sorting this list would renumber
+    # it and point every bracket at the wrong filing.
+    source_lines = []
+    for i, doc in enumerate(documents, 1):
         ticker = doc.metadata.get("ticker", "?")
         section = doc.metadata.get("section_name", "")
         filing = doc.metadata.get("filing_type", "")
         date = doc.metadata.get("filing_date", "")
-        sources.append(f"  - {ticker} {filing} ({date}) — {section}")
-    unique_sources = sorted(set(sources))
+        source_lines.append(f"  [{i}] {ticker} {filing} ({date}) — {section}")
 
     flags_note = ""
     if compliance.flags:
         flags_note = f"\n\nGuardrail flags: {', '.join(compliance.flags)}"
 
+    # MCP clients get one string, so the confidence score has to be rendered
+    # into it — an MCP caller has no response object to read it off.
+    confidence = grounded.confidence
+    confidence_note = (
+        f"\n\nConfidence: {confidence.label} ({confidence.overall:.2f}) — "
+        f"citation coverage {confidence.coverage:.0%}"
+    )
+    if confidence.retrieval is not None:
+        confidence_note += f", retrieval relevance {confidence.retrieval:.2f}"
+
     return (
         f"{answer}\n\n"
         f"Sources ({len(documents)} chunks):\n"
-        + "\n".join(unique_sources)
+        + "\n".join(source_lines)
+        + confidence_note
         + flags_note
         + barrier_note
     )
