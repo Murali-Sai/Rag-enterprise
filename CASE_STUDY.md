@@ -205,26 +205,54 @@ building a collection per strategy and pointing the eval at each — not flippin
 setting on a live index. Every chunk carries the strategy that produced it, so a
 collection can never be misattributed after the fact.
 
-**The measured comparison, and its limits:**
+**The measured comparison.** All three strategies, 2026-08-09, on the same
+54-question suite, the same `gpt-4o` generator and the same `gpt-4o-mini`
+judge — the first time the three have been comparable:
 
-| Strategy | Index | Faithfulness | Answer Relevancy | Context Precision | Context Recall |
-|---|---|---|---|---|---|
-| `recursive` | 9,572 chunks (`e705ac4b`) | 0.770 | **0.719** | 0.466 | 0.350 |
-| `semantic` | 8,936 chunks (`8068f567`) | 0.722 | 0.593 | 0.435 | 0.347 |
-| `fixed` | — | *not measured* | | | |
+| Strategy | Index | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Answer Correctness | Citation Accuracy | Refusal Correctness |
+|---|---|---|---|---|---|---|---|---|
+| `recursive` *(shipped)* | 8,232 (`c2f8c136`) | 0.693 | 0.678 | 0.382 | 0.347 | 0.464 | **0.921** | 0.852 |
+| `fixed` | 6,585 (`0740fec6`) | 0.788 | **0.689** | **0.470** | **0.446** | **0.492** | 0.876 | **0.870** |
+| `semantic` | 8,936 (`8068f567`) | **0.798** | 0.644 | 0.432 | 0.347 | 0.490 | 0.907 | 0.833 |
+| *noise floor (n=54)* | | *0.005* | *0.004* | *0.004* | *0.012* | *—* | *0.017* | *0.000* |
 
-**What this data can and cannot support.** One run each, n=20. Of the four
-deltas, only answer relevancy (0.126) clears its noise floor (0.044); faithfulness
-(0.048) is well under 0.138, and precision and recall are inside their floors.
-And the two rows are different corpora — a chunking change rebuilds the index by
-definition — so even the relevancy delta is confounded with the corpus change.
+The floor is a fresh two-run spread: the `recursive` row above and the earlier
+baseline were the same config against the same corpus, so their difference is
+run-to-run variation and nothing else. It is far tighter than the n=20 floors
+this table used to carry.
 
-So the honest conclusion is narrow: **recursive is shipped, semantic was not
-shown to beat it, and `fixed` — the structure-blind baseline that exists
-specifically so structure-awareness has something to prove itself against — was
-never run.** That is a gap in the evaluation, not a finding. Anyone claiming
-"structure-aware chunking helps" on this evidence would be overreading it, and
-the missing `fixed` row is exactly the one that would settle it.
+**The shipped strategy loses.** `fixed` — the structure-blind baseline that
+exists so structure-awareness has something to prove itself against — beats
+`recursive` on faithfulness by **0.095 against a 0.005 floor**, context
+precision by 0.088 against 0.004, and context recall by 0.099 against 0.012.
+Nineteen, twenty-two and eight times their respective floors. `semantic` beats
+it on faithfulness too, by 0.105.
+
+Recursive keeps exactly one thing: citation accuracy, 0.921 against fixed's
+0.876, which is a real delta at three times its floor. Its chunks are larger
+and paragraph-aligned, so a cited claim more often sits whole inside one chunk.
+That is a genuine advantage and it is the only one.
+
+**What this can and cannot support.** Strategy and corpus cannot be separated —
+a chunking change rebuilds the index by definition, so `fixed` is 6,585 chunks
+against recursive's 8,232, and "fixed wins" means the pipeline under that
+strategy wins, not that structure-blindness is better in the abstract. One run
+each for `fixed` and `semantic`; the floor is transferred from `recursive`'s
+pair on the assumption that variance is comparable across strategies, which is
+reasonable and unverified. And `answer_correctness` has no floor at all yet —
+it was added the same day, so its +0.028 is uncallable and is not claimed here.
+
+**Reading it honestly:** the deltas on faithfulness and precision are an order
+of magnitude past anything variance explains, so the direction is not in doubt
+even if the exact numbers move. The default the system ships was chosen before
+this comparison existed, and the comparison does not support it. That is now
+an open architecture question rather than a settled decision — switching would
+invalidate the shipped index and every published figure, so it deserves a
+second run per strategy before anyone acts on it.
+
+This is also the clearest argument in the project for the spec's instruction to
+build the comparison at all: the missing row was not a formality. It was the
+row that contradicted the design.
 
 What *is* solidly established about chunking here came from a different
 measurement: about a fifth of every filing's chunks were under 200 characters,

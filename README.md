@@ -235,6 +235,19 @@ Chunking is baked into an index at ingestion time, so these are not runtime swit
 | `recursive` *(default)* | Paragraph → line → sentence → word → character | Stacks on the EDGAR parser, which has already split the filing at Item boundaries, so a chunk stays inside one section |
 | `semantic` | Where consecutive sentence embeddings diverge | Cuts where the subject changes rather than where the budget runs out. Hand-implemented (~50 lines) — `langchain-experimental` requires `langchain-core` 1.x against this project's deliberate `<1.0` pin, and is sunset |
 
+**All three, measured 2026-08-09** on the same 54-question suite, generator and judge. The baseline was not beaten:
+
+| Strategy | Chunks | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy |
+|---|---|---|---|---|---|---|
+| `recursive` *(default)* | 8,232 | 0.693 | 0.678 | 0.382 | 0.347 | **0.921** |
+| `fixed` | 6,585 | 0.788 | **0.689** | **0.470** | **0.446** | 0.876 |
+| `semantic` | 8,936 | **0.798** | 0.644 | 0.432 | 0.347 | 0.907 |
+| *noise floor* | | *0.005* | *0.004* | *0.004* | *0.012* | *0.017* |
+
+`fixed` beats the shipped default on faithfulness by 19× the run-to-run noise floor, on context precision by 22×, and on recall by 8×. `recursive` keeps citation accuracy alone (3× the floor), which its larger paragraph-aligned chunks plausibly explain — a cited claim more often sits whole inside one chunk.
+
+Strategy and corpus can't be separated here (a chunking change rebuilds the index), and these are single runs against a floor transferred from `recursive`'s pair. The direction is an order of magnitude past variance; the exact numbers are not settled. **The default was chosen before this comparison existed and the comparison does not support it** — see `CASE_STUDY.md` for why that's an open question rather than a pending change.
+
 ### Deduplication — 7.8% of this corpus is redundant
 
 A duplicate chunk is not just wasted disk. Retrieval returns a fixed `top_k`, so an indexed duplicate competes for one of those slots and wins it — the chunk it displaces is by definition the next most relevant thing the model would have seen. Duplication is paid for in context the LLM never gets.

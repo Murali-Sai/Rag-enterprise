@@ -197,7 +197,7 @@ sitting. Do not re-ingest without the eval.
 
 - `main` is current and pushed. Phases 1–5 are all on it; `origin/main` is at
   the same commit.
-- **374 tests pass, ruff clean.**
+- **383 tests pass, ruff clean.**
 - `chroma_dist/` is generated and gitignored. `make docker-up` builds it if
   missing; delete the directory to regenerate. A clone with no `chroma_data/`
   of its own has to build one first (`make demo`) — that is the cost of the
@@ -230,13 +230,25 @@ container does the same. Diverging themes one and not the other.
 
 ## 4. The current baseline
 
-`eval_20260809_015503.json`, **one run**, against the 8,232-chunk corpus
-(`c2f8c13673cf5ca5`) on disk. First run on this corpus; everything before it
-was measured on 9,572 chunks.
+**Now a two-run mean** against the 8,232-chunk corpus (`c2f8c13673cf5ca5`):
+`eval_20260809_015503` and `eval_20260809_202437`, identical config, so their
+spread is the current noise floor rather than a result.
 
-| Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
-|---|---|---|---|---|---|---|
-| 0.698 | 0.682 | 0.378 | 0.335 | **0.939** | 0.661 | **0.852** |
+| | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Answer Correctness | Citation Accuracy | Citation Coverage | Refusal Correctness |
+|---|---|---|---|---|---|---|---|---|
+| run 1 (`015503`) | 0.698 | 0.682 | 0.378 | 0.335 | — | **0.939** | 0.661 | **0.852** |
+| run 2 (`202437`) | 0.693 | 0.678 | 0.382 | 0.347 | 0.464 | 0.921 | 0.642 | **0.852** |
+| **mean** | **0.696** | **0.680** | **0.380** | **0.341** | 0.464 | **0.930** | **0.652** | **0.852** |
+| **noise floor** | *0.005* | *0.004* | *0.004* | *0.012* | *—* | *0.017* | *0.019* | *0.000* |
+
+`answer_correctness` exists only in run 2 — it was added the same day, so it
+has a value but no floor, and no delta on it can be called yet. Everywhere it
+is absent it means *not measured*, never 0.000.
+
+**This floor is much tighter than the old n=20 one** (faithfulness 0.005 here
+against 0.138 there), which is what n=54 buys. It is still two runs: treat it
+as "deltas below this are definitely noise", never as "deltas above this are
+definitely real".
 
 | Stratum | n | Refusal Correctness |
 |---|---|---|
@@ -248,9 +260,9 @@ was measured on 9,572 chunks.
 | `out_of_corpus` | 4 | **1.000** |
 | `rbac_blocked` | 4 | **1.000** |
 
-**It is one run against a two-run mean.** The previous figures were a mean of
-two. Only the largest moves are worth reading, and only on metrics stable
-enough to carry them.
+The two runs disagree most on citation coverage (0.019) and accuracy (0.017),
+and not at all on refusal correctness — which stays the most stable metric in
+the set, now across four runs.
 
 ### 4.1 What the parser fix did and did not do
 
@@ -417,11 +429,25 @@ its banner. Measured on 9,572 chunks at n=20 against a 0.138 faithfulness noise
 floor, and only meaningful as a complete set — re-running one row is worse than
 re-running none. ~$3 for the full set.
 
-**The `fixed` chunking strategy has never been evaluated.** It exists in code
-as the structure-blind baseline that recursive chunking has to beat, and the
-comparison in `CASE_STUDY.md` is two rows on two different indices with one
-delta clearing its noise floor. That missing row is the cheapest real result
-left in the project.
+**The shipped chunking strategy lost its own comparison.** All three strategies
+were measured on 2026-08-09 against the same 54-question suite, generator and
+judge (`eval_20260809_202437` recursive, `_203012` fixed, `_203636` semantic).
+`fixed` — the structure-blind baseline that `recursive` exists to beat — beats
+it on faithfulness by 19× the noise floor, context precision by 22× and recall
+by 8×. `semantic` beats it on faithfulness too. `recursive` wins citation
+accuracy alone.
+
+Nothing was changed on the strength of it. Switching the default invalidates
+the shipped index, its digest, the deployment and every published figure, and
+these are single runs for `fixed` and `semantic` against a floor transferred
+from `recursive`'s pair. **Get a second run per strategy before acting**, and
+note that strategy and corpus are inseparable by construction — `fixed` is
+6,585 chunks against 8,232, so what won is the pipeline under that strategy,
+not chunking in isolation.
+
+The `fixed` index lives in the `rag_enterprise_fixed` collection inside
+`chroma_data/`, alongside `rag_enterprise_semantic`. `build_index_dist.py`
+keeps only `rag_enterprise`, so none of this reaches the image.
 
 **The rate limit does not exist.** `rate_limit = "20/minute"` is configured,
 constructed and never enforced — see §2.1. Do not cite it as a control.
@@ -450,8 +476,9 @@ before spending.**
 
 | Action | Estimate |
 |---|---|
-| Single eval run, 54 questions | ~$0.80 |
-| The missing `fixed` chunking row (§6) | ~$0.80, plus an index build |
+| Single eval run, 54 questions | ~$0.80 (three run 2026-08-09 came in near this each) |
+| A second run per chunking strategy (§6) | ~$1.60 for the pair that matters |
+| Building an index for one strategy | ~$0.05 in embeddings — the cheap half |
 | Re-ingest + fresh baseline (§2.3) | ~$0.80 plus embedding cost |
 | Full six-config ablation re-run | ~$3, and only meaningful as a complete set |
 | Ground truth generation | ~$0.03/question, scaling with filing size |
@@ -569,9 +596,11 @@ case study. The case study is done (`CASE_STUDY.md`).
    dashboard renders it as an answer, so describing it as a refusal, in any
    medium, would be describing something the screen is not showing.
 
-3. **Optional, if budget allows**: the missing `fixed` chunking row (§6), a
-   second run on the current corpus so §4 is a mean rather than a single
-   sample, or the ablation re-run.
+3. ~~Optional: the missing `fixed` chunking row, a second run on the current
+   corpus, answer correctness~~ — all three done 2026-08-09 (§4, §6). What is
+   left in this category: **a second run per chunking strategy**, so the
+   comparison that just contradicted the shipped default rests on more than one
+   sample each (~$1.60), and the six-config ablation re-run (~$3).
 
 The case study deliberately does not claim hybrid beats dense-only, because
 the measurement says otherwise. If someone asks you to reframe it that way,
