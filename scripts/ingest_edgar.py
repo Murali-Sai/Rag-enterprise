@@ -18,9 +18,27 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.common.logging import setup_logging
 from src.config import settings
-from src.edgar.client import COMPANY_REGISTRY
+from src.ingestion.embeddings import active_embedding_model_name
 
 DEFAULT_TICKERS = ["AAPL", "JPM", "TSLA", "MSFT", "GS"]
+
+
+def reset_collection() -> None:
+    """Empty the collection before ingesting.
+
+    Two situations need this, and neither fails in a way that points at the
+    cause. add_documents appends, so re-ingesting without clearing doubles the
+    corpus and quietly shifts retrieval. And switching EMBEDDING_PROVIDER
+    changes the vector dimensionality (1536 vs 384), which Chroma rejects
+    against an existing collection — the index has to be rebuilt, not added to.
+    """
+    from src.retrieval.vector_store import get_vector_store
+
+    vector_store = get_vector_store()
+    existing = vector_store.get_all_documents()
+    if existing:
+        print(f"  Clearing {len(existing)} existing chunks from {settings.chroma_collection}...")
+        vector_store.store.reset_collection()
 
 
 async def ingest_from_disk(tickers: list[str]) -> int:
@@ -74,14 +92,21 @@ async def ingest_from_api(tickers: list[str], filing_type: str, count: int) -> i
     return len(chunks)
 
 
-async def main(tickers: list[str], filing_type: str, count: int, from_disk: bool) -> None:
+async def main(
+    tickers: list[str], filing_type: str, count: int, from_disk: bool, reset: bool
+) -> None:
     setup_logging()
     print("=" * 60)
     print("SEC EDGAR Filing Ingestion")
     print("=" * 60)
     print(f"Companies: {', '.join(tickers)}")
     print(f"Source: {'disk (data/edgar/)' if from_disk else 'EDGAR API'}")
+    print(f"Collection: {settings.chroma_collection}")
+    print(f"Embeddings: {active_embedding_model_name()}")
     print()
+
+    if reset:
+        reset_collection()
 
     if from_disk:
         total = await ingest_from_disk(tickers)
@@ -110,6 +135,15 @@ if __name__ == "__main__":
         type=int,
         default=1,
     )
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help=(
+            "Empty the collection first. Required when EMBEDDING_PROVIDER changed "
+            "(vector dimensionality differs); otherwise use it to re-ingest without "
+            "appending a duplicate copy of the corpus."
+        ),
+    )
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--from-disk", action="store_true", default=True)
     source.add_argument("--from-api", action="store_true")
@@ -118,4 +152,4 @@ if __name__ == "__main__":
     tickers = [t.strip().upper() for t in args.tickers.split(",")]
     from_disk = not args.from_api
 
-    asyncio.run(main(tickers, args.filing_type, args.count, from_disk))
+    asyncio.run(main(tickers, args.filing_type, args.count, from_disk, args.reset))

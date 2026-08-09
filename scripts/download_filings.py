@@ -17,7 +17,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.edgar.client import COMPANY_REGISTRY, EdgarClient
 
-
 DEFAULT_TICKERS = ["AAPL", "JPM", "TSLA", "MSFT", "GS"]
 DEFAULT_FILING_TYPE = "10-K"
 DEFAULT_COUNT = 1
