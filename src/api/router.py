@@ -1,11 +1,12 @@
 from fastapi import APIRouter
 
-from src.api.routes import admin, auth, documents, health, query
+from src.api.routes import access, admin, auth, documents, health, query
 
 api_router = APIRouter()
 
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
+api_router.include_router(access.router)
 api_router.include_router(query.router)
 api_router.include_router(documents.router)
 api_router.include_router(admin.router)

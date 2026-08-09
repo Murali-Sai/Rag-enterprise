@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
-from langchain_core.documents import Document
 
 from src.api.audit import log_query_audit
 from src.api.deps import get_current_user, get_rbac_retriever
+from src.api.routes.access import to_information_barriers
 from src.auth.models import User
-from src.auth.rbac import get_information_barriers_for_user
+from src.auth.rbac import get_accessible_departments, get_information_barriers_for_user
 from src.common.logging import get_logger
 from src.common.schemas import (
     ClaimCitation,
@@ -24,23 +24,35 @@ from src.guardrails.output_safety import check_output_safety
 from src.guardrails.pii_detector import redact_pii
 from src.guardrails.prompt_injection import detect_prompt_injection
 from src.retrieval.retriever import Retriever, retrieve_scored
+from src.retrieval.scores import ScoredDocument
 
 router = APIRouter(tags=["Query"])
 logger = get_logger(__name__)
 
 
-def _to_source_documents(documents: list[Document]) -> list[SourceDocument]:
+def _to_source_documents(scored: list[ScoredDocument]) -> list[SourceDocument]:
+    """The retrieved set as the response sees it, scores included.
+
+    `retrieve_scored()` already carries the number each stage produced, and
+    dropping it here meant `relevance_score` was declared on the schema and
+    null on every response ever served. Confidence reads the same channel, so
+    a client showing `confidence.retrieval` without the per-chunk scores can
+    see that retrieval scored 0.077 and not which chunk dragged it there.
+    """
     return [
         SourceDocument(
-            content=doc.page_content[:200],
-            source=doc.metadata.get("source_file", "Unknown"),
-            department=doc.metadata.get("department", "Unknown"),
-            ticker=doc.metadata.get("ticker"),
-            filing_type=doc.metadata.get("filing_type"),
-            filing_date=doc.metadata.get("filing_date"),
-            section_name=doc.metadata.get("section_name"),
+            content=item.document.page_content[:200],
+            source=item.document.metadata.get("source_file", "Unknown"),
+            department=item.document.metadata.get("department", "Unknown"),
+            relevance_score=item.relevance,
+            raw_score=item.score,
+            score_type=item.score_type.value if item.score_type else None,
+            ticker=item.document.metadata.get("ticker"),
+            filing_type=item.document.metadata.get("filing_type"),
+            filing_date=item.document.metadata.get("filing_date"),
+            section_name=item.document.metadata.get("section_name"),
         )
-        for doc in documents
+        for item in scored
     ]
 
 
@@ -75,6 +87,16 @@ async def query_documents(
 ) -> QueryResponse:
     guardrail_flags: list[str] = []
 
+    # The access state this query runs under. Computed before the guardrails
+    # rather than after retrieval so that every return path carries it —
+    # a query blocked at the door was still gated by a role, and a client
+    # showing which wall was in force should not have to guess on the paths
+    # where nothing was retrieved.
+    barriers = get_information_barriers_for_user(user.role_names)
+    barrier_names = [b["name"] for b in barriers]
+    departments = sorted(get_accessible_departments(user.role_names))
+    structured_barriers = to_information_barriers(barriers)
+
     # Input guardrails
     validate_input(request.question)
 
@@ -86,6 +108,8 @@ async def query_documents(
             sources=[],
             query=request.question,
             guardrail_flags=guardrail_flags,
+            accessible_departments=departments,
+            information_barriers=structured_barriers,
         )
 
     if injection_result.risk_score > 0.3:
@@ -103,9 +127,10 @@ async def query_documents(
     scored = retrieve_scored(retriever, clean_question)
     documents = [item.document for item in scored]
 
-    # Track active information barriers for audit
-    barriers = get_information_barriers_for_user(user.role_names)
-    barrier_names = [b["name"] for b in barriers]
+    # Record the barriers in the audit trail's own flattened form. Kept
+    # alongside `information_barriers` rather than replaced by it: this string
+    # is what 17a-4 log lines already contain, and rewriting it would break
+    # the comparability of the existing trail.
     if barrier_names:
         guardrail_flags.append(f"information_barriers: {', '.join(barrier_names)}")
 
@@ -115,6 +140,8 @@ async def query_documents(
             sources=[],
             query=request.question,
             guardrail_flags=guardrail_flags,
+            accessible_departments=departments,
+            information_barriers=structured_barriers,
         )
 
     # Generate answer, parse and score its citations. All of it happens in the
@@ -129,9 +156,11 @@ async def query_documents(
                 f"({type(e).__name__}). The LLM provider may be misconfigured — "
                 "check the LLM_PROVIDER and API key environment variables."
             ),
-            sources=_to_source_documents(documents),
+            sources=_to_source_documents(scored),
             query=request.question,
             guardrail_flags=[*guardrail_flags, "llm_generation_error"],
+            accessible_departments=departments,
+            information_barriers=structured_barriers,
         )
 
     # Citations were parsed from grounded.answer above — i.e. before the
@@ -183,9 +212,11 @@ async def query_documents(
 
     return QueryResponse(
         answer=clean_answer,
-        sources=_to_source_documents(documents),
+        sources=_to_source_documents(scored),
         query=request.question,
         guardrail_flags=guardrail_flags,
+        accessible_departments=departments,
+        information_barriers=structured_barriers,
         confidence=ConfidenceScore(**grounded.confidence.as_dict()),
         claims=_to_claim_citations(grounded),
         unanswered=(

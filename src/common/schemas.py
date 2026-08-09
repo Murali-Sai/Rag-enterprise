@@ -73,7 +73,21 @@ class SourceDocument(BaseModel):
     content: str = Field(description="First 200 chars of the retrieved chunk")
     source: str = Field(description="Source file path")
     department: str = Field(description="Document department (sec_filings, trading, etc.)")
-    relevance_score: float | None = None
+    relevance_score: float | None = Field(
+        default=None,
+        description="Normalised 0-1 relevance. Null when the retrieval stage produced no comparable score (RRF is ordinal).",
+    )
+    # The raw number and the stage that produced it, alongside the normalised
+    # one. A cross-encoder logit of -2.33 and a cosine relevance of 0.42 both
+    # normalise into the same 0-1 channel, and only the raw pair says which
+    # scale a reader is looking at. `relevance_score` on its own invites the
+    # reading that every retrieval was scored the same way.
+    raw_score: float | None = Field(
+        default=None, description="The stage's own score, before normalisation"
+    )
+    score_type: str | None = Field(
+        default=None, description="cross_encoder | cosine_relevance | rrf — how to read raw_score"
+    )
     ticker: str | None = Field(
         default=None, description="Company ticker (AAPL, JPM, TSLA, MSFT, GS)"
     )
@@ -111,6 +125,48 @@ class ConfidenceScore(BaseModel):
     label: str = Field(description="high | medium | low")
 
 
+class InformationBarrier(BaseModel):
+    """One Chinese Wall that was in force for this query.
+
+    `guardrail_flags` already carries the barrier names, but flattened into a
+    single string — `"information_barriers: Research-Trading Wall, ..."` —
+    which drops the descriptions and the departments each wall removed. That
+    string is what the audit trail records and it stays as it is; this is the
+    same fact in a shape a caller can read without parsing prose.
+    """
+
+    name: str = Field(examples=["Research-Trading Wall"])
+    description: str = Field(
+        examples=["Research analysts cannot access non-public trading positions or strategies"]
+    )
+    blocked_departments: list[str] = Field(
+        default_factory=list,
+        description="Departments this barrier removed from the search, regardless of role grants",
+    )
+
+
+class AccessProfile(BaseModel):
+    """What the current token may search, before any query is run.
+
+    The same access facts `QueryResponse` reports, available without spending
+    an LLM call to see them. A client that wants to show the effect of
+    switching roles otherwise has to run a real query per role.
+    """
+
+    username: str
+    roles: list[str]
+    accessible_departments: list[str] = Field(
+        description="Departments the roles grant, after barriers have removed what they remove"
+    )
+    information_barriers: list[InformationBarrier] = Field(default_factory=list)
+    unrestricted: bool = Field(
+        description=(
+            "True for admin, where no where-clause is applied at all. The department list is "
+            "still populated — it says what the roles grant, not what was filtered on."
+        )
+    )
+
+
 class UnansweredReport(BaseModel):
     """What was searched, when the system declines to answer."""
 
@@ -133,6 +189,14 @@ class QueryResponse(BaseModel):
     guardrail_flags: list[str] = Field(
         default_factory=list,
         description="Triggered guardrails: MNPI detection, investment advice, information barriers, PII redaction",
+    )
+    accessible_departments: list[str] = Field(
+        default_factory=list,
+        description="Departments this user's roles could search, after information barriers were applied. The RBAC where-clause, as data.",
+    )
+    information_barriers: list[InformationBarrier] = Field(
+        default_factory=list,
+        description="Chinese Walls in force for this user. Empty for roles no barrier applies to.",
     )
     # Defaulted, and not by accident. QueryResponse is constructed on four
     # paths — injection-blocked, no documents retrieved, generation failed,
