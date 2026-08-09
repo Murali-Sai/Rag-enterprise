@@ -30,7 +30,6 @@ from langchain_openai import ChatOpenAI
 from src.config import settings
 from src.retrieval.retriever import RBACRetriever
 
-
 SYSTEM_PROMPT = """You are generating reference answers for a RAG evaluation dataset.
 
 You will be given a question and excerpts from SEC 10-K filings. Generate a concise,
@@ -63,10 +62,12 @@ Filing Excerpts:
 
 Answer (2-4 sentences, factual, with specific numbers/names when present):"""
 
-    response = llm.invoke([
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt},
-    ])
+    response = llm.invoke(
+        [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ]
+    )
     return response.content.strip()
 
 
@@ -86,7 +87,7 @@ def main(input_path: str, output_path: str) -> None:
     print()
 
     for i, item in enumerate(questions):
-        print(f"[{i+1}/{len(questions)}] {item['question'][:70]}...")
+        print(f"[{i + 1}/{len(questions)}] {item['question'][:70]}...")
         try:
             new_gt = generate_ground_truth(
                 question=item["question"],

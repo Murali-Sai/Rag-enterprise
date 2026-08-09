@@ -1,0 +1,297 @@
+[
+  {
+    "question": "What was Apple's total net revenue for its most recent fiscal year?",
+    "ground_truth": "Apple Inc. reported total net sales of $416,161 million for the fiscal year ended September 27, 2025.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "AAPL 10-K",
+    "ground_truth_original": "Sourced from Apple's 10-K Item 7 MD&A. The exact figure will be populated from the actual downloaded filing.",
+    "ground_truth_from_retrieval": "Apple's total net revenue for the fiscal year 2025 was $416.161 billion, an increase from $391.035 billion in 2024 and $383.285 billion in 2023. This revenue includes contributions from various product categories such as iPhone, Mac, iPad, Wearables, Home and Accessories, and Services.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "What are Apple's main risk factors related to supply chain?",
+    "ground_truth": "Apple's main risk factors related to its supply chain include reliance on a complex global network, with a majority of supplier facilities located outside the U.S., particularly in China, India, Japan, South Korea, Taiwan, and Vietnam. The company sources certain components from single or limited sources, which can lead to industry-wide shortages and significant price fluctuations. Additionally, Apple faces challenges in securing timely and sufficient quantities of custom components, as well as potential disruptions from supplier failures or industry consolidation. Restrictions on international trade may further increase costs or limit availability of products and raw materials.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "risk",
+      "admin"
+    ],
+    "source_filing": "AAPL 10-K",
+    "ground_truth_original": "Sourced from Apple's 10-K Item 1A Risk Factors. Apple identifies supply chain concentration, component sourcing, and manufacturing disruption risks.",
+    "ground_truth_from_retrieval": "Apple's main risk factors related to supply chain include significant risks of supply shortages and price increases that can adversely affect its business and financial condition. The company is particularly vulnerable due to its reliance on single or limited sources for certain components, which exposes it to supply and pricing risks. Additionally, Apple faces risks from potential disruptions caused by industrial accidents at suppliers, cybersecurity incidents, and other events beyond its control, which could impact its operations and reputation.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "How does Apple describe its business segments?",
+    "ground_truth": "Apple describes its business segments primarily on a geographic basis, consisting of the Americas, Europe, Greater China, Japan, and Rest of Asia Pacific. For the fiscal year 2025, net sales were $178.4 billion in the Americas, $111.0 billion in Europe, $64.4 billion in Greater China, $28.7 billion in Japan, and $33.7 billion in Rest of Asia Pacific, totaling $416.2 billion. Each segment is managed separately to align with customer locations and market dynamics, despite offering similar hardware, software products, and services.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "admin"
+    ],
+    "source_filing": "AAPL 10-K",
+    "ground_truth_original": "Sourced from Apple's 10-K Item 1 Business. Apple reports on products (iPhone, Mac, iPad, Wearables) and services segments.",
+    "ground_truth_from_retrieval": "The provided filing excerpts do not contain enough information to answer.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What is JPMorgan's total assets and CET1 capital ratio?",
+    "ground_truth": "As of December 31, 2025, JPMorgan Chase had total assets of $4.4 trillion (or $4,424,900 million) and a Common Equity Tier 1 (CET1) capital ratio of 14.6%.",
+    "department": "sec_filings",
+    "access_roles": [
+      "risk",
+      "compliance",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K",
+    "ground_truth_original": "Sourced from JPMorgan's 10-K. JPM is the largest US bank by assets. CET1 ratio reported in capital management section.",
+    "ground_truth_from_retrieval": "JPMorgan Chase & Co. had total assets of $4.4 trillion and a CET1 capital ratio of 14.3% as of December 31, 2025.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "What are JPMorgan's primary credit risk factors?",
+    "ground_truth": "JPMorgan's primary credit risk factors include adverse changes in the financial condition of clients, potential losses from declines in collateral value, and concentrations of credit risk arising from similar business activities or geographic regions. As of December 31, 2025, the allowance for credit losses was $31.2 billion, with $4.4 billion added from the previous year, driven by $3.3 billion in consumer credit and $1.1 billion in wholesale credit. The firm also considers expected funding requirements, changes in probability of default, and loss given default in its credit risk assessments.",
+    "department": "sec_filings",
+    "access_roles": [
+      "risk",
+      "compliance",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K",
+    "ground_truth_original": "Sourced from JPMorgan's 10-K Item 1A Risk Factors. Includes consumer credit, wholesale credit, commercial real estate, and market conditions.",
+    "ground_truth_from_retrieval": "JPMorgan's primary credit risk factors include significant losses from concentrations of credit and market risk, particularly when clients or counterparties operate in similar industries or geographic regions. The firm is also exposed to credit losses on loans to clients affected by economic stress, and adverse changes in the financial condition of clients and counterparties could negatively impact its operations. Additionally, geopolitical challenges and market fluctuations can exacerbate these risks, potentially leading to increased allowances for credit losses and reduced liquidity and capital levels.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "How does JPMorgan describe its lines of business?",
+    "ground_truth": "JPMorgan Chase & Co. operates through three reportable business segments: Consumer & Community Banking (CCB), Commercial & Investment Bank (CIB), and Asset & Wealth Management (AWM), with remaining activities categorized under Corporate. As of 2025, CCB generated total net revenue of $76,029 million, CIB $78,454 million, and AWM $24,073 million, with AWM managing client assets of $7.1 trillion. The segments are evaluated based on metrics such as net interest income, noninterest revenue, and net income, reflecting the firm's operational structure and performance.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K",
+    "ground_truth_original": "Sourced from JPMorgan's 10-K Item 1. Business segments include Consumer & Community Banking, Corporate & Investment Bank, Commercial Banking, and Asset & Wealth Management.",
+    "ground_truth_from_retrieval": "JPMorgan Chase & Co. operates as a leading financial services firm with a focus on various lines of business, including investment banking, financial services for consumers and businesses, financial transaction processing, asset management, and private equity. As of December 31, 2025, the firm reported $4.4 trillion in assets and $362.4 billion in stockholders\u2019 equity. The firm competes based on the quality and variety of its products and services, transaction execution, innovation, and reputation across different geographies and client types.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What was Tesla's automotive revenue and total revenue?",
+    "ground_truth": "For the year ended December 31, 2025, Tesla reported automotive revenue of $69,526 million and total revenue of $94,827 million. The automotive sales revenue specifically was $65,821 million, while the total automotive and services and other segment revenue amounted to $82,056 million.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "TSLA 10-K",
+    "ground_truth_original": "Sourced from Tesla's 10-K Item 7 MD&A. Automotive segment is the largest revenue contributor.",
+    "ground_truth_from_retrieval": "Tesla's automotive revenue for the year ended December 31, 2025, was $69,526 million, which includes $65,821 million from automotive sales, $1,993 million from automotive regulatory credits, and $1,712 million from automotive leasing. The total revenue for the same period was $94,827 million.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "What risk factors does Tesla identify related to production and manufacturing?",
+    "ground_truth": "Tesla identifies several risk factors related to production and manufacturing, including potential delays in development and production, supplier reliability issues, and challenges in meeting construction timelines for new factories. Additionally, the company faces risks from labor shortages, unexpected component shortages, and the need to maintain a sufficient supply of battery cells. Regulatory compliance and the possibility of product recalls further complicate their manufacturing landscape.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "risk",
+      "admin"
+    ],
+    "source_filing": "TSLA 10-K",
+    "ground_truth_original": "Sourced from Tesla's 10-K Item 1A Risk Factors. Tesla identifies Gigafactory production ramp risks, supply chain dependencies, and new model launch risks.",
+    "ground_truth_from_retrieval": "Tesla identifies several risk factors related to production and manufacturing, including potential issues or delays in developing, launching, and ramping production of its products, which could harm its business and financial condition. The company also faces risks from reliance on lithium-ion cells and other components manufactured at its Gigafactories, which may impact production and profitability. Additionally, Tesla's operations could be affected by supply chain disruptions, labor market competition, and the potential for work stoppages or strikes among unionized suppliers.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What is Microsoft's revenue from its Intelligent Cloud segment?",
+    "ground_truth": "For the fiscal year ended June 30, 2025, Microsoft's Intelligent Cloud segment revenue was $106,265 million, reflecting a 21% increase from the previous year's revenue of $87,464 million. The growth was primarily driven by Azure and other cloud services, which saw a revenue increase of 34%.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "MSFT 10-K",
+    "ground_truth_original": "Sourced from Microsoft's 10-K Item 7. Intelligent Cloud includes Azure, server products, and enterprise services.",
+    "ground_truth_from_retrieval": "Microsoft's revenue from its Intelligent Cloud segment for fiscal year 2025 was $106.3 billion, an increase of 21% compared to $87.5 billion in fiscal year 2024. This growth was primarily driven by Azure and other cloud services, which saw a revenue increase of 34%.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "What cybersecurity and AI-related risk factors does Microsoft disclose?",
+    "ground_truth": "Microsoft discloses significant cybersecurity risks, noting that cyberattacks and security vulnerabilities could adversely affect its financial condition and reputation. The company has experienced incidents where threat actors gained unauthorized access to its systems, including customer data. Additionally, Microsoft highlights AI-related risks, such as potential flaws in AI algorithms and the possibility of harmful content generated by AI systems, which could lead to legal liability and reputational harm. The company emphasizes its commitment to security, integrating AI-driven products to enhance security and compliance across its offerings.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "risk",
+      "admin"
+    ],
+    "source_filing": "MSFT 10-K",
+    "ground_truth_original": "Sourced from Microsoft's 10-K Item 1A Risk Factors. Includes AI governance risks, cybersecurity threats, and competitive risks.",
+    "ground_truth_from_retrieval": "Microsoft discloses several cybersecurity and AI-related risk factors, including the potential for new AI technologies to increase the frequency and severity of cybersecurity attacks. The company highlights risks associated with ineffective AI development practices that could impair acceptance of AI solutions and lead to harm. Additionally, Microsoft notes that data security breaches, cybersecurity incidents, and responsible AI failures could adversely affect its business and reputation (Risk Factors, Part I, Item 1A).",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What are Goldman Sachs' principal business segments?",
+    "ground_truth": "Goldman Sachs operates through three principal business segments: **Global Banking & Markets**, **Asset & Wealth Management**, and **Platform Solutions**. The **Global Banking & Markets** segment provides services such as investment banking, market making, and lending, while **Asset & Wealth Management** focuses on managing assets and offering investment products and advisory solutions. The **Platform Solutions** segment primarily generates revenue from issuing credit cards and raising deposits through its partnership with Apple Inc. These segments reflect the firm's strategic focus as of December 2025.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "GS 10-K",
+    "ground_truth_original": "Sourced from Goldman Sachs' 10-K Item 1. Segments include Global Banking & Markets, Asset & Wealth Management, and Platform Solutions.",
+    "ground_truth_from_retrieval": "The provided filing excerpts do not contain enough information to answer.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What market risk disclosures does Goldman Sachs provide including VaR?",
+    "ground_truth": "Goldman Sachs defines market risk as the potential adverse impact on earnings due to changes in market conditions, encompassing interest rate risk, equity price risk, currency rate risk, and commodity price risk. For the year ended December 2025, the average daily Value-at-Risk (VaR) was $90 million, with a period-end VaR of $79 million. The breakdown of average daily VaR included $70 million for interest rates, $47 million for equity prices, $24 million for currency rates, and $17 million for commodity prices, reflecting a diversification effect of ($68 million).",
+    "department": "sec_filings",
+    "access_roles": [
+      "risk",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "GS 10-K",
+    "ground_truth_original": "Sourced from Goldman Sachs' 10-K Item 7A. Goldman reports Value-at-Risk metrics, stress testing results, and sensitivity analysis.",
+    "ground_truth_from_retrieval": "Goldman Sachs employs a Value at Risk (VaR) model to estimate potential losses due to adverse market movements over a one-day time horizon with a 95% confidence level. The firm recognizes the limitations of VaR, including its inability to account for extreme market moves and the liquidity of different risk positions. Additionally, Goldman Sachs uses various sensitivity measures and maintains a comprehensive risk management framework that includes independent calculations of VaR and other stress measures.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "Compare the risk factor disclosures between JPMorgan and Goldman Sachs regarding credit risk.",
+    "ground_truth": "JPMorgan Chase & Co. reported a provision for credit losses of $14.2 billion for the year ended December 31, 2025, with a total allowance for credit losses of $31.2 billion. In contrast, Goldman Sachs disclosed a provision for credit losses of $2.5 billion for the same period, with an allowance for credit losses totaling $5.1 billion. JPMorgan's net charge-offs were $9.8 billion, while Goldman Sachs experienced net charge-offs of $1.2 billion, indicating a significantly higher credit risk exposure for JPMorgan compared to Goldman Sachs.",
+    "department": "sec_filings",
+    "access_roles": [
+      "risk",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K, GS 10-K",
+    "ground_truth_original": "Sourced from JPM and GS 10-K Item 1A Risk Factors. Both are major banks with credit exposure but JPM has larger consumer lending while GS is more institutional.",
+    "ground_truth_from_retrieval": "JPMorgan Chase's risk factor disclosures highlight significant exposure to credit risk, particularly from concentrations of credit and market risk, which could lead to substantial losses if clients or counterparties face financial difficulties. They emphasize the importance of effective risk management practices and the potential adverse effects of economic and geopolitical developments on their credit ratings. In contrast, Goldman Sachs focuses on its credit risk management systems that capture credit exposure at both individual and aggregate levels, assessing factors such as liquidity, market, and operational risk management practices. Both firms acknowledge the critical role of their credit ratings, influenced by their financial health and risk management capabilities.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "comparative"
+  },
+  {
+    "question": "How do Apple and Microsoft compare in terms of their cloud and services businesses?",
+    "ground_truth": "In 2025, Apple's services net sales reached $109.2 billion, a 14% increase from the previous year, with a services gross margin of 75.4%. In comparison, Microsoft's cloud revenue grew by 23% to $168.9 billion, driven by significant increases in Azure and Microsoft 365 services. While Apple focuses on a mix of services including cloud and advertising, Microsoft emphasizes its comprehensive cloud offerings, particularly through Azure, which saw a 34% revenue growth.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "admin"
+    ],
+    "source_filing": "AAPL 10-K, MSFT 10-K",
+    "ground_truth_original": "Sourced from AAPL and MSFT 10-K Item 1/Item 7. Apple Services includes App Store, iCloud, Apple Music. Microsoft Intelligent Cloud includes Azure.",
+    "ground_truth_from_retrieval": "Microsoft's cloud revenue reached $168.9 billion in fiscal year 2025, reflecting a 23% increase, with Microsoft 365 Commercial products and cloud services growing by 14%. In contrast, Apple focuses on cloud services that support its ecosystem, including the App Store and subscription services like Apple Arcade, but specific revenue figures for Apple's cloud services are not provided in the excerpts. Microsoft emphasizes its competitive advantages in hybrid cloud solutions and economies of scale in its data centers, while Apple offers integrated services across its devices.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "comparative"
+  },
+  {
+    "question": "What regulatory risks do JPMorgan and Goldman Sachs face?",
+    "ground_truth": "JPMorgan Chase faces extensive regulatory risks due to its status as a bank holding company and financial holding company, which subjects it to comprehensive supervision by the Federal Reserve, OCC, FDIC, SEC, and CFTC. The firm is currently under a consent order from the OCC related to its trading venue processes and is exposed to potential penalties and enforcement actions from ongoing civil and governmental proceedings. Similarly, Goldman Sachs is also subject to rigorous regulation and oversight, including compliance with laws from various authorities, which can lead to increased operational costs and risks of non-compliance. Both firms must navigate a complex regulatory landscape that can impact their business operations and financial performance.",
+    "department": "sec_filings",
+    "access_roles": [
+      "compliance",
+      "risk",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K, GS 10-K",
+    "ground_truth_original": "Sourced from JPM and GS 10-K Item 1A. Both face Basel III capital requirements, Dodd-Frank compliance, CCAR stress testing, and enhanced prudential standards.",
+    "ground_truth_from_retrieval": "JPMorgan and Goldman Sachs face significant regulatory risks due to extensive and pervasive regulations governing their operations. Goldman Sachs may be adversely affected by governmental scrutiny and negative publicity, while JPMorgan faces heightened regulatory scrutiny, potential litigation, and penalties from governmental authorities, which could restrict its capital market access and harm its reputation. Both firms are vulnerable to the impacts of regulatory changes and enforcement actions that could materially affect their business operations and financial conditions.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "comparative"
+  },
+  {
+    "question": "What does Tesla say about competition in the electric vehicle market?",
+    "ground_truth": "Tesla acknowledges that the electric vehicle market is highly competitive and is expected to become even more so as numerous established and new manufacturers enter the space. The company highlights that its vehicles compete across various segments, such as the Cybertruck with pickup trucks and the Model 3 and Model Y with small to medium-sized sedans and compact SUVs. Tesla notes that many major automobile manufacturers currently offer electric vehicles in key markets like the U.S., China, and Europe, which underscores the growing competition in the electric vehicle sector.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "admin"
+    ],
+    "source_filing": "TSLA 10-K",
+    "ground_truth_original": "Sourced from Tesla's 10-K Item 1A Risk Factors. Tesla faces increasing competition from traditional automakers entering the EV market.",
+    "ground_truth_from_retrieval": "Tesla acknowledges that the electric vehicle market is highly competitive and is expected to become even more so in the future, with a significant number of established and new automobile manufacturers entering the market. The company competes with various vehicle types, including internal combustion vehicles and other alternative fuel vehicles, and highlights that many major manufacturers currently offer electric vehicles in key markets such as the U.S., China, and Europe. Tesla's products compete in traditional segments as well, with models like the Cybertruck, Model S, Model X, Model 3, and Model Y facing competition in their respective categories.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What is JPMorgan's provision for credit losses?",
+    "ground_truth": "For the year ended December 31, 2025, JPMorgan's provision for credit losses was $14,212 million, an increase from $10,678 million in 2024. The total allowance for credit losses as of December 31, 2025, was $31,230 million, reflecting a net addition of $4.4 billion from the previous year.",
+    "department": "sec_filings",
+    "access_roles": [
+      "risk",
+      "compliance",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K",
+    "ground_truth_original": "Sourced from JPMorgan's 10-K Item 7 MD&A. The provision reflects expected credit losses under the CECL accounting standard.",
+    "ground_truth_from_retrieval": "The provided filing excerpts do not contain enough information to answer.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "How does Microsoft describe its AI strategy and investments?",
+    "ground_truth": "Microsoft describes its AI strategy as a commitment to making AI broadly available and responsible, with a focus on transforming productivity across all sectors. The company is investing significantly in areas such as modern business applications, cloud-based services, and AI-driven insights, including initiatives like Microsoft 365 Copilot. Their R&D efforts are centered on reinventing productivity, building intelligent cloud platforms, and enhancing personal computing experiences, all aimed at empowering individuals and organizations to achieve more.",
+    "department": "sec_filings",
+    "access_roles": [
+      "research",
+      "admin"
+    ],
+    "source_filing": "MSFT 10-K",
+    "ground_truth_original": "Sourced from Microsoft's 10-K Item 1 and Item 7. Microsoft discusses Azure AI services, Copilot integration, and OpenAI partnership.",
+    "ground_truth_from_retrieval": "Microsoft's AI strategy focuses on making artificial intelligence broadly available and empowering individuals and organizations. The company is investing significantly in AI infrastructure and training, with operating expenses increasing by $1.1 billion or 4% due to these investments. Microsoft aims to integrate AI across its offerings, including Microsoft 365 and Azure AI, to enhance productivity and provide competitive advantages. The company emphasizes responsible AI deployment, ensuring safety and security in its applications.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive"
+  },
+  {
+    "question": "What are the quantitative disclosures about market risk for Goldman Sachs?",
+    "ground_truth": "As of December 2025, Goldman Sachs reported a net fair value of derivatives with assets totaling $52,953 million and liabilities of $(84,405) million. The gross fair value of derivatives was $360,080 million in assets and $391,214 million in liabilities. Additionally, the firm\u2019s CET1 capital ratio was 14.3%, with total capital of $130,665 million and risk-weighted assets of $727,338 million.",
+    "department": "sec_filings",
+    "access_roles": [
+      "risk",
+      "trading",
+      "admin"
+    ],
+    "source_filing": "GS 10-K",
+    "ground_truth_original": "Sourced from Goldman Sachs' 10-K Item 7A. Includes VaR by risk category, stress test scenarios, and sensitivity metrics.",
+    "ground_truth_from_retrieval": "The provided filing excerpts do not contain enough information to answer.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "exact_figure"
+  },
+  {
+    "question": "What legal proceedings are disclosed by JPMorgan?",
+    "ground_truth": "JPMorgan Chase is involved in numerous legal proceedings, including investigations by India's Enforcement Directorate regarding investments in the Amrapali Group, which resulted in a $31.5 million fine that the firm is appealing. Additionally, the firm faces a civil lawsuit filed by President Donald J. Trump in January 2026 related to an Executive Order on fair banking. As of December 31, 2025, JPMorgan estimates potential losses from legal proceedings could range from $0 to approximately $1.2 billion, exceeding established reserves. Other significant matters include ongoing foreign exchange investigations and shareholder litigation concerning historical trading practices.",
+    "department": "sec_filings",
+    "access_roles": [
+      "compliance",
+      "admin"
+    ],
+    "source_filing": "JPM 10-K",
+    "ground_truth_original": "Sourced from JPMorgan's 10-K Item 3 Legal Proceedings and contingencies note. Covers regulatory investigations and litigation matters.",
+    "ground_truth_from_retrieval": "JPMorgan Chase is involved in numerous civil and governmental legal proceedings, including class actions, derivative actions, and investigations by U.S. and non-U.S. authorities. The company faces significant legal risks from these proceedings, which may include penalties and other repercussions if investigations by governmental authorities are resolved unfavorably. Additionally, the potential mishandling of personal information could lead to further legal actions against the firm.",
+    "ground_truth_source": "full_filing_text",
+    "question_type": "interpretive",
+    "ground_truth_window_chars": 60000
+  }
+]
