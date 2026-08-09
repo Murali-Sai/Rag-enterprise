@@ -14,6 +14,7 @@ path cannot surface a trading document the dense path would have excluded.
 The Chinese Wall holds on both sides of the hybrid.
 """
 
+import json
 import re
 
 from langchain_core.documents import Document
@@ -70,9 +71,23 @@ class BM25Index:
         return [self.documents[index] for index, _ in matches[:k]]
 
 
-# Cached per accessible-department set. There are only nine roles, so this
-# settles at a handful of indexes rather than one per request.
-_index_cache: dict[frozenset[str] | None, BM25Index] = {}
+# Cached per corpus scope. There are only nine roles and five companies, so
+# this settles at a handful of indexes rather than one per request.
+_index_cache: dict[str, BM25Index] = {}
+
+
+def _cache_key(accessible_departments: frozenset[str] | None, filter_dict: dict | None) -> str:
+    """Identify the corpus slice an index was built over.
+
+    Keyed on the where-filter as well as the department set, because they are
+    no longer the same thing: per-entity retrieval narrows the filter to one
+    company while leaving the user's departments untouched. Keying on
+    departments alone would hand a JPMorgan-scoped query the index built for
+    a Goldman-scoped one, and the lexical half of hybrid search would answer
+    from the wrong filing.
+    """
+    departments = ",".join(sorted(accessible_departments)) if accessible_departments else "*"
+    return f"{departments}|{json.dumps(filter_dict, sort_keys=True)}"
 
 
 def get_bm25_index(
@@ -84,10 +99,12 @@ def get_bm25_index(
 
     Args:
         vector_store: Store to pull the corpus from.
-        accessible_departments: Cache key — None means unrestricted (admin).
+        accessible_departments: Departments the caller may read; None means
+            unrestricted (admin).
         filter_dict: The where-filter restricting the corpus fetch.
     """
-    cached = _index_cache.get(accessible_departments)
+    key = _cache_key(accessible_departments, filter_dict)
+    cached = _index_cache.get(key)
     if cached is not None:
         return cached
 
@@ -96,9 +113,10 @@ def get_bm25_index(
         "building_bm25_index",
         documents=len(documents),
         departments=sorted(accessible_departments) if accessible_departments else "all",
+        filtered=filter_dict is not None,
     )
     index = BM25Index(documents)
-    _index_cache[accessible_departments] = index
+    _index_cache[key] = index
     return index
 
 

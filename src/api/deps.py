@@ -5,7 +5,7 @@ from src.auth.jwt_handler import decode_access_token
 from src.auth.models import User
 from src.auth.repository import get_user_by_id
 from src.common.exceptions import AuthenticationError
-from src.retrieval.retriever import RBACRetriever, RerankingRetriever, get_retriever
+from src.retrieval.retriever import Retriever, get_retriever
 
 security = HTTPBearer()
 
@@ -33,7 +33,14 @@ async def get_current_user(
 
 def get_rbac_retriever(
     user: User = Depends(get_current_user),
-) -> RBACRetriever | RerankingRetriever:
+) -> Retriever:
+    """The retriever the app serves with, for this user's roles.
+
+    Typed as the `Retriever` protocol rather than a union of concrete classes.
+    `get_retriever()` composes whichever stages are enabled — the union had to
+    be edited every time a stage was added, and went stale the moment one was,
+    which is how a route ends up annotated for a pipeline it no longer gets.
+    """
     return get_retriever(user_roles=user.role_names)
 
 
