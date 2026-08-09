@@ -1,0 +1,41 @@
+:root{
+  --ink:#16181d;
+  --ink-soft:rgba(22,24,29,.66);
+  --ink-faint:rgba(22,24,29,.4);
+  --paper:#efe9da;
+  --paper-panel:#e6dfcb;
+  --paper-line:rgba(22,24,29,.15);
+  --terminal:#07090b;
+  --terminal-panel:#0d1113;
+  --terminal-line:rgba(255,255,255,.09);
+  --terminal-text:rgba(232,236,232,.86);
+  --amber:#f5a623;
+  --wire:#4ade80;
+  --barrier:#c0392b;
+  /* Outcome colours. `--declined` is deliberately not `--barrier`: a refusal
+     is a correct outcome that scores 1.000 in the evaluation, and painting it
+     the same red as a blocked query tells a reader the opposite of what the
+     measurement says. It reads as a distinct, neutral state. */
+  --supported:#4ade80;
+  --partial:#f5a623;
+  --unsupported:#c0392b;
+  --declined:#7aa2f7;
+  --font-display:'Fraunces',serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+a{color:inherit;}
+::selection{background:var(--amber);color:var(--ink);}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;}
+.terminal :focus-visible{outline:2px solid var(--amber);}

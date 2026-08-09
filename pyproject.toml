@@ -11,6 +11,10 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "pydantic>=2.9.0",
     "pydantic-settings>=2.5.0",
+    # Server-rendered landing page and query dashboard. Arrives transitively
+    # today, declared here because src/web imports it directly — a transitive
+    # dependency that stops being one is a broken install, not a warning.
+    "jinja2>=3.1.0",
 
     # LangChain (pin to 0.3.x — 1.x has breaking API changes)
     "langchain>=0.3.0,<1.0",
@@ -89,6 +93,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
+
+# Templates and stylesheets are code here, not extras. `pip install .` copies
+# only .py by default, which would install src.web as a package whose
+# template directory is empty — and the Dockerfile installs the project.
+[tool.setuptools.package-data]
+"src.web" = ["templates/*.html", "static/css/*.css", "static/js/*.js"]
 
 [tool.ruff]
 target-version = "py311"

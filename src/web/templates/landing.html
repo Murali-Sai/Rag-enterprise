@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}RAG Enterprise — SEC EDGAR Filing Analyzer{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/landing.css">{% endblock %}
+{% block content %}
+<!-- ============ PAPER: filing cover + TOC ============ -->
+  <div class="paper">
+    <div class="kicker-row">
+      <span><span class="status-dot">●</span> LIVE — RAG ENTERPRISE</span>
+      <nav class="kicker-nav">
+        <a href="/dashboard">Dashboard</a>
+        <a href="#terminal">Terminal</a>
+        <a href="/docs">API Docs</a>
+        <a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank">GitHub</a>
+      </nav>
+    </div>
+
+    <div class="masthead">
+      <div class="form-tag">Form 10-K(RAG) · Filed with SEC EDGAR data</div>
+      <h1 class="title">RAG Enterprise<br><em>an annual report on retrieval</em></h1>
+      <p class="dek">A retrieval-augmented generation system that reads real SEC 10-K filings the way a compliance desk would — role-gated, disclaiming, and logged. Not a demo with synthetic PDFs: this indexes actual Apple, JPMorgan, Tesla, Microsoft, and Goldman Sachs filings.</p>
+
+      <dl class="filing-meta">
+        <dt>Filed by</dt><dd>Murali Sai</dd>
+        <dt>Indexes</dt><dd>AAPL · JPM · TSLA · MSFT · GS (10-K, most recent)</dd>
+        <dt>Evaluated</dt><dd>54 questions, 7 strata — Faithfulness 0.70, Refusal Correctness 0.85</dd>
+        <dt>Status</dt><dd><span class="dot">●</span> Live — redeploys rebuild the index</dd>
+      </dl>
+
+      <div class="cta-row">
+        <a href="/dashboard" class="btn btn-primary">Open the dashboard →</a>
+        <a href="#terminal" class="btn btn-ghost">Quick demo below</a>
+        <a href="/docs" class="btn btn-ghost">Read the API docs</a>
+        <a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank" class="btn btn-ghost">Source on GitHub</a>
+      </div>
+    </div>
+
+    <div class="toc">
+      <div class="part-label">Part I — Overview</div>
+
+      <details class="item" open>
+        <summary>
+          <span class="item-num">Item 1</span>
+          <span class="item-title">Business</span>
+          <span class="item-chevron">+</span>
+        </summary>
+        <div class="item-body">
+          Downloads, parses, and indexes real 10-K filings straight from EDGAR — not synthetic demo text. Ask about revenue, margins, or risk factors and get an answer grounded in the actual filing, with the exact section it came from.
+        </div>
+      </details>
+
+      <details class="item">
+        <summary>
+          <span class="item-num">Item 1A</span>
+          <span class="item-title">Risk Factors</span>
+          <span class="item-chevron">+</span>
+        </summary>
+        <div class="item-body">
+          Every response passes through guardrails before it reaches you: MNPI detection, investment-advice blocking, forward-looking-statement flags, PII redaction. Violations are logged, not just hidden.
+        </div>
+      </details>
+
+      <details class="item">
+        <summary>
+          <span class="item-num">Item 2</span>
+          <span class="item-title">Properties</span>
+          <span class="item-chevron">+</span>
+        </summary>
+        <div class="item-body">
+          FastAPI, ChromaDB, LangChain, local embeddings. Deployed as a single Cloud Run container with the filing index baked in at build time — no ingestion step on cold start.
+        </div>
+      </details>
+
+      <div class="part-label">Part II — Results &amp; Disclosures</div>
+
+      <details class="item">
+        <summary>
+          <span class="item-num">Item 7</span>
+          <span class="item-title">Management's Discussion &amp; Analysis</span>
+          <span class="item-chevron">+</span>
+        </summary>
+        <div class="item-body">
+          Measured across 54 hand-written questions in seven strata, judged by GPT-4o-mini. Sixteen of the 54 have no answer in the corpus and are scored on whether the system correctly declines — pooling them into the RAGAS means would lower every figure <em>because the system behaved correctly</em>.
+          <div class="metric-row">
+            <div class="metric"><span class="val">0.70</span><span class="lbl">Faithfulness</span></div>
+            <div class="metric"><span class="val">0.94</span><span class="lbl">Citation Accuracy</span></div>
+            <div class="metric"><span class="val">0.85</span><span class="lbl">Refusal Correctness</span></div>
+          </div>
+          <span class="translated">Run <code>eval_20260809_015503</code>, against the 8,232-chunk index currently on disk. One run, not a mean — see the README for the run-to-run noise floor before reading any single delta as real.</span>
+        </div>
+      </details>
+
+      <details class="item">
+        <summary>
+          <span class="item-num">Item 7A</span>
+          <span class="item-title">Disclosures About Access Risk</span>
+          <span class="item-chevron">+</span>
+        </summary>
+        <div class="item-body">
+          Who can see what is enforced as a ChromaDB filter, not a UI toggle — a research role never receives a trading-desk document, even in the raw retrieval results.
+          <span class="translated">Real filings call this section "Market Risk." We're disclosing information-access risk instead — same idea, different exposure.</span>
+        </div>
+      </details>
+
+      <details class="item">
+        <summary>
+          <span class="item-num">Item 8</span>
+          <span class="item-title">Filings Currently Indexed</span>
+          <span class="item-chevron">+</span>
+        </summary>
+        <div class="item-body">
+          AAPL · JPM · TSLA · MSFT · GS — each company's latest 10-K, parsed into Item 1 (Business), 1A (Risk Factors), 7 (MD&amp;A), 7A (Market Risk), and 8 (Financials).
+        </div>
+      </details>
+    </div>
+    <div class="paper-foot-space"></div>
+  </div>
+
+  <!-- ============ BARRIER (signature) ============ -->
+  <div class="barrier">
+    <div class="barrier-inner">
+      <div class="barrier-label">⟡ Information Barrier</div>
+      <h2>Everything above this line, everyone sees.</h2>
+      <p>Below it is the query path a research analyst or a trader would actually hit — gated by whichever role you pick next. That's the whole point of a Chinese Wall: what you're shown depends on who you are, enforced before the answer is generated, not after.</p>
+    </div>
+  </div>
+
+  <!-- ============ TERMINAL ============ -->
+  <div class="terminal" id="terminal">
+    <div class="ticker-wrap">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+
+    <div class="term-inner">
+      <div class="term-head">
+        <div class="term-kicker">&gt; try it live</div>
+        <h2>Query the filing index</h2>
+        <p>Pick a demo account, ask a question, watch the access barrier apply in real time. This is the short version — the <a href="/dashboard">dashboard</a> shows the retrieval scores, the per-claim citation verdicts and the confidence breakdown behind the same answer.</p>
+      </div>
+
+      <div class="term-panel">
+        <div class="term-titlebar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          sec-edgar-rag — role: none
+        </div>
+        <div class="term-body">
+          <div class="term-step-label">01 — select role</div>
+          <div class="role-grid">
+            <button class="role-btn" data-fkey="F1" onclick="selectRole(this,'research_analyst','research1!')">
+              <div class="fkey">F1</div>
+              <div class="rname">Research Analyst</div>
+              <div class="raccess">SEC filings — no trading, no compliance</div>
+            </button>
+            <button class="role-btn" data-fkey="F2" onclick="selectRole(this,'trader_desk','trade1234!')">
+              <div class="fkey">F2</div>
+              <div class="rname">Trading Desk</div>
+              <div class="raccess">Trading, risk, SEC filings</div>
+            </button>
+            <button class="role-btn" data-fkey="F3" onclick="selectRole(this,'compliance_officer','compl1234!')">
+              <div class="fkey">F3</div>
+              <div class="rname">Compliance Officer</div>
+              <div class="raccess">Compliance, SEC, risk</div>
+            </button>
+            <button class="role-btn" data-fkey="F4" onclick="selectRole(this,'admin_user','admin1234!')">
+              <div class="fkey">F4</div>
+              <div class="rname">Admin</div>
+              <div class="raccess">All departments, no barriers</div>
+            </button>
+          </div>
+          <div class="status-line" id="statusLine">&gt; status: not authenticated<span class="cursor"></span></div>
+
+          <div class="term-step-label">02 — ask a question</div>
+          <div class="query-examples">
+            <button class="qx" onclick="setQuestion(this)">What was Apple's total net revenue in fiscal year 2024?</button>
+            <button class="qx" onclick="setQuestion(this)">What are Tesla's key risk factors?</button>
+            <button class="qx" onclick="setQuestion(this)">Compare JPMorgan and Goldman Sachs credit risk</button>
+            <button class="qx" onclick="setQuestion(this)">What is Microsoft's cloud revenue growth?</button>
+          </div>
+          <div class="query-row">
+            <div class="term-prompt">&gt;</div>
+            <input type="text" class="term-input" id="questionInput" placeholder="query the filing index..." onkeydown="if(event.key==='Enter') sendQuery()">
+            <button class="term-go" id="sendBtn" onclick="sendQuery()" disabled>RUN</button>
+          </div>
+
+          <div class="resp" id="responseArea">
+            <div class="resp-answer" id="responseAnswer"></div>
+            <div id="responseMeta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="term-foot">
+      <p>Personal portfolio project — not investment advice. Guardrail flags and disclaimers are real, generated live.</p>
+      <div class="links"><a href="/dashboard">Dashboard</a><a href="/redoc">ReDoc</a><a href="/docs">Swagger</a><a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank">GitHub</a></div>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/landing.js"></script>{% endblock %}
