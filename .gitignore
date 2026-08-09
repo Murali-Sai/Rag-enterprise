@@ -55,3 +55,6 @@ logs/
 
 # Audit logs (contain sensitive query data)
 audit_logs/
+
+# Original project brief — kept locally, not published
+Project 6.docx

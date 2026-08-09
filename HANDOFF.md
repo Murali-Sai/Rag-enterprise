@@ -8,7 +8,8 @@ state on `main`; last pushed commit is still `ea0aea8`.
 ## 0. Relationship to "Project 6"
 
 This project is a **SEC-filings implementation of Project 6: RAG Pipeline with
-Hybrid Search Over Internal Docs** (`Project 6.docx` in the repo root). Project 6
+Hybrid Search Over Internal Docs** (`Project 6.docx`, kept in the repo root but
+not in version control, so a fresh clone will not have it). Project 6
 specifies six phases; this repo implements them against SEC EDGAR filings and
 adds a compliance layer Project 6 does not ask for (RBAC information barriers,
 MNPI/investment-advice guardrails, SEC 17a-4 audit trail, MCP server).

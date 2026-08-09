@@ -6,8 +6,9 @@ no memory of the previous ones.
 
 Companion documents: `handoffTo4.md` (what Phase 4 was asked to produce),
 `handoffTo3.md`, `HANDOFF.md` (full project history, what was tried and failed)
-and `Project 6.docx` (the original spec, in the repo root). Read this one
-first; reach for those when you need the why behind a number.
+and `Project 6.docx` (the original spec — kept locally in the repo root but
+deliberately not in version control, so a fresh clone will not have it). Read
+this one first; reach for those when you need the why behind a number.
 
 ---
 
