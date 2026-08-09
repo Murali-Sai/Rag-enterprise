@@ -45,9 +45,9 @@ services:
     restart: unless-stopped
 
   dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile.dashboard
+    # Context is dashboard/, not the repo root: the image needs one file, and
+    # a root context would rebuild it on every unrelated source change.
+    build: ./dashboard
     ports:
       - "8501:8501"
     environment:
