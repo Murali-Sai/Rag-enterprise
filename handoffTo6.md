@@ -26,13 +26,13 @@ guardrails, SEC 17a-4 audit trail, MCP server).
 
 | Phase | Status |
 |---|---|
-| Tech stack | Done — `gpt-4o`, `text-embedding-3-small`, ChromaDB, `rank_bm25`, FastAPI, Docker |
+| Tech stack | Done — `gpt-4o`, `text-embedding-3-small`, ChromaDB, `rank_bm25`, FastAPI, Docker (the deploy generates with Gemini — §2) |
 | 1. Ingestion & chunking | **Done** — three strategies, dedup, page-furniture stripping, chunk provenance |
 | 2. Hybrid retrieval | **Done** — dense + BM25 + RRF + cross-encoder + per-entity split |
 | 3. Generation & citation | **Done** — bracketed citations, LLM-judge verification, composite confidence, structured "I don't know" |
 | 4. Evaluation | **Done** — 54 hand-written questions, 7 strata, refusal scoring, noise floor measured |
 | 5. API & dashboard | **Done** — Streamlit dashboard, `/access`, `/documents`, per-request retrieval mode, two-service deploy |
-| **6. Portfolio** | **← you are here.** Case study written, demo deployed. No video; one open decision in §2.1 |
+| **6. Portfolio** | Case study written; demo deployed on the measured index (§2.1) with two privilege holes closed (§2.2a). **The walkthrough recording was dropped** (§9) — the live demo stands in for it |
 
 Phase 5 was verified requirement-by-requirement against Project 6 §5, not
 against a summary of it. That turned up four gaps that had been assumed met.
@@ -61,53 +61,61 @@ They find each other through environment variables: the dashboard has
 its URL, deploy the dashboard with it, then update the API with the
 dashboard's URL.
 
-**The deployment generates with Gemini and embeds with local MiniLM.** Every
-score in this document and in the README was measured on `gpt-4o` with
-`text-embedding-3-small`. The Dockerfile pins `EMBEDDING_PROVIDER=huggingface`
-because the image bakes its index at build time and embedding with OpenAI
-there would put a key in the build — so the deployed index is a *different
-corpus* as well (8,099 chunks against the 8,232 measured). The README and the
-landing page both say so in as many words. Do not quietly delete those
-caveats; a page showing 0.70 faithfulness beside answers no part of that
-measurement produced is the exact failure this project's evaluation section
-spends its length warning about.
+**The deployment retrieves as measured and generates with Gemini.** Resolved
+2026-08-09; §2.1 records the reasoning. The image now *ships* the measured
+index (8,232 chunks, digest `c2f8c13673cf5ca5`) instead of baking a fresh one,
+and embeds with `text-embedding-3-small`, so retrieval, ranking, citation
+targets and the insufficient-context gate are the measured pipeline. Answer
+text comes from Gemini's free tier, not `gpt-4o`.
 
-### 2.1 The open decision: should the demo run gpt-4o?
+So of the seven headline metrics, the retrieval- and citation-driven ones are
+reproducible on the live demo; faithfulness and answer relevancy are
+generator-dependent and were measured on `gpt-4o`. The README and landing page
+say exactly this. **Do not upgrade that to "the demo is the measured system"** —
+it is two-thirds of the way there, and the remaining third is the part a
+reviewer is most likely to check.
 
-This was asked and answered "keep Gemini (free tier)" before the first deploy,
-then reopened at the end of the session. It was left undecided. There are two
-levels and they differ enormously in effort:
+### 2.1 The gpt-4o decision — settled, and why it landed where it did
 
-**Option A — generation only.** Set `LLM_PROVIDER=openai` and add an
-`openai-api-key` secret. No rebuild; a service config change, about five
-minutes. `gpt-4o` writes the answers, but *retrieval* still runs on MiniLM
-embeddings over the build-time index. Closer to the measured system, still not
-it — faithfulness and citation accuracy were measured with OpenAI embeddings
-driving retrieval.
+The index moved to OpenAI; generation did not. Both halves were deliberate.
 
-**Option B — actually the measured system.** The local `chroma_data/` is
-362 MB and holds exactly the measured corpus: **8,232 chunks, digest
-`c2f8c13673cf5ca5`**. Ship *that* into the image instead of baking a fresh one
-(it is currently excluded by `.dockerignore` line 20) and set
-`EMBEDDING_PROVIDER=openai`. The deployment then has the same corpus, the same
-embeddings and the same generator as `eval_20260809_015503` — the live demo
-becomes the thing the README describes. Costs a ~362 MB image increase and a
-rebuild.
+**Why the index moved.** The local `chroma_data/` holds the measured corpus.
+`scripts/build_index_dist.py` copies it to `chroma_dist/`, keeps the one live
+collection (the working directory also held a semantic-chunking experiment, a
+dedup smoke test and eight orphaned segment directories — 361 MB down to 106),
+and **fails unless the result is 8,232 chunks at digest `c2f8c13673cf5ca5`**.
+The Dockerfile copies that to the default persist path. The build-time ingest
+is gone, which took the image from 3.13 GB to 829 MB and Cloud Build from ~26
+minutes to ~3.
 
-**The reason to think hard before either.** gpt-4o at `retrieval_top_k=5` runs
-roughly 3,500 input tokens and 300 output per query — about **$0.012 a query**.
-The dashboard is deployed public with four demo logins and no authentication
-of its own. The API rate-limits at 20/minute, which is the only thing between
-a bot and the key: sustained, that is ~$14/hour. Before switching, either cap
-spend in the OpenAI dashboard, or deploy the dashboard with
-`--no-allow-unauthenticated`, or both. Gemini's free tier is why this is not
-currently a problem.
+**Why generation did not.** gpt-4o runs ~3,500 input and 300 output tokens per
+query — **~$0.012**. The demo is public with published logins, and the owner's
+constraint was no spend after deploy. Embedding a question instead costs
+**~$0.000005** (`text-embedding-3-small`, $0.02/1M, questions capped at 1,000
+chars), which is what makes an open URL affordable. The OpenAI key is on the
+service for embeddings only.
+
+**The claim in §2.1 of the previous handoff was wrong, and it mattered.** It
+said "the API rate-limits at 20/minute, which is the only thing between a bot
+and the key." There is no rate limiting. `Limiter` is built in
+`src/api/middleware.py` and attached to `app.state`, but `SlowAPIMiddleware` is
+never added and no route carries `@limiter.limit`, so slowapi's `default_limits`
+never apply — verified against the deployment, 40 consecutive requests, zero
+429s. Had the demo been switched to gpt-4o on the strength of that sentence,
+the only real ceiling would have been the OpenAI account tier: between ~$140
+and ~$3,600 a day depending on it. **Check a control exists before citing it as
+one.** The setting now carries a comment saying it is not enforced; wiring it
+up is a three-line change nobody has made.
+
+Spend is instead bounded by `--max-instances 1 --concurrency 8` on the service,
+which caps in-flight requests regardless of caller IP.
 
 ### 2.2 Secrets
 
-`google-api-key` and `jwt-secret-key` live in Secret Manager and are wired
-with `--set-secrets`, with `1072425852803-compute@developer.gserviceaccount.com`
-granted `secretAccessor`. Nothing sensitive remains in the service config.
+`google-api-key`, `jwt-secret-key` and `openai-api-key` live in Secret Manager
+and are wired with `--set-secrets`, with
+`1072425852803-compute@developer.gserviceaccount.com` granted `secretAccessor`.
+Nothing sensitive remains in the service config.
 
 The previous deployment held both **in plaintext as environment variables**,
 readable by any project viewer and retained in every revision's history. The
@@ -115,6 +123,38 @@ JWT signing key was rotated during the move. **The old Google API key should
 be treated as compromised** — delete it in AI Studio if that has not happened.
 There is also a stray version 1 on `google-api-key` from a first attempt;
 harmless because deploys pin `:latest`, but worth disabling.
+
+### 2.2a Two privilege holes, found while pricing the gpt-4o switch
+
+Both are closed and verified against the deployment. Recorded because the
+pattern is worth keeping: the barriers were enforced correctly everywhere they
+were *checked*, and the holes were both upstream of the check.
+
+**Anyone could register themselves as `admin`.** `POST /auth/register` is
+public and took `roles` from the request body; `create_user()` validated only
+that the role existed. One unauthenticated request bought a token that read
+every department — the information barriers, which are the most distinctive
+thing in this project, bypassed without touching them. Self-registration is now
+capped at `viewer`; anything else needs an admin token
+(`tests/unit/test_registration.py` pins it, including `["viewer","admin"]`,
+which a membership test would let through).
+
+While fixing it: `create_user()` returned a detached instance, so reading
+`user.roles` raised *after* the commit. A successful registration returned 500.
+The exploit looked like it had failed, which is the worst way for one to look.
+
+**The published admin login could write to the index.** `POST /documents/ingest`
+requires `admin` — correct nearly everywhere and wrong here, because
+`admin_user / admin1234!` is printed in the README and sits on the landing page
+as a button, so admin is a *public* role by design. A fabricated upload took
+the corpus 8,232 → 8,236. The image now sets `ALLOW_RUNTIME_INGEST=false`, so
+the deployment serves a fixed corpus and refuses uploads; admin still *reads*
+everything, so the unfiltered-admin contrast still demos. Set in the image
+rather than at deploy time, so a future deploy that forgets the flag cannot
+silently reopen it.
+
+A corpus a visitor can edit cannot carry a digest in the README. Those two
+claims have to be defended together.
 
 ### 2.3 One code change is waiting on a re-ingest
 
@@ -132,13 +172,36 @@ changes the corpus fingerprint and would invalidate the baseline in §4. Do it
 deliberately and re-run the eval in the same sitting. It affects only
 `data/sample/` — SEC filings go through `src/edgar/parser.py`, not this loader.
 
+**Since 2026-08-09 this ships.** The deployment serves the local index, so the
+mojibake is now public, and it is not buried: the top-ranked chunk of the
+role-switch demo opens with
+
+    ACME FINANCIAL HOLDINGS â€… TRADING DESK PROCEDURES AND CONTROLS
+
+Every sample document carries it — `annual_report_10k.txt` and
+`credit_risk_policy.txt` too — so any answer citing one shows it in the
+retrieved-chunks panel. It is cosmetic and it is on the first screen a reviewer
+sees.
+
+Fixing it is a genuine trilemma rather than a chore, which is why it is still
+here: re-ingesting the samples changes the digest, and `c2f8c13673cf5ca5` is
+now printed on the landing page and in the README. So the fix costs a re-ingest
+*plus* a fresh eval run (~$0.80) *plus* updating every published figure — or it
+means dropping the digest claim, which is the thing that makes the deployment
+checkable. Cheapest honest version: re-ingest, re-run, republish, all in one
+sitting. Do not re-ingest without the eval.
+
 ---
 
 ## 3. Repo state
 
 - `main` is current and pushed. Phases 1–5 are all on it; `origin/main` is at
   the same commit.
-- **362 tests pass, ruff clean.**
+- **374 tests pass, ruff clean.**
+- `chroma_dist/` is generated and gitignored. `make docker-up` builds it if
+  missing; delete the directory to regenerate. A clone with no `chroma_data/`
+  of its own has to build one first (`make demo`) — that is the cost of the
+  image and the deployment sharing the published corpus.
 - **Use `./.venv/Scripts/python.exe`, never bare `python`.** The `python` on
   PATH is system Python 3.13 with *some* dependencies (langchain,
   langchain-openai) but not `rank_bm25`, `transformers`, or
@@ -360,12 +423,13 @@ comparison in `CASE_STUDY.md` is two rows on two different indices with one
 delta clearing its noise floor. That missing row is the cheapest real result
 left in the project.
 
-**The API Dockerfile does `COPY . .` before the build-time ingest**, so editing
-*any* file — including `dashboard/`, which the API image never uses —
-invalidates a ~25-minute ingest layer. Splitting the COPY so the ingest depends
-only on `src/` and `scripts/` is a small fix that was deliberately not made
-mid-verification. Cloud Build takes ~26 minutes for the API image and ~1.5 for
-the dashboard.
+**The rate limit does not exist.** `rate_limit = "20/minute"` is configured,
+constructed and never enforced — see §2.1. Do not cite it as a control.
+
+~~The API Dockerfile does `COPY . .` before the build-time ingest~~ — fixed.
+The ingest is gone (the index ships instead) and the COPYs are explicit, so
+editing `dashboard/` no longer invalidates anything in the API image. Cloud
+Build is now ~3 minutes for the API image and ~1.5 for the dashboard.
 
 **The palette is duplicated.** `src/web/static/css/tokens.css` and
 `dashboard/.streamlit/config.toml` hold the same colours, because the dashboard
@@ -444,29 +508,54 @@ exercise as often as you like.
 ## 9. What Phase 6 asks for
 
 Project 6 §6 is the portfolio phase: record a demo walkthrough, and write the
-case study. The case study is done (`CASE_STUDY.md`). What is left:
+case study. The case study is done (`CASE_STUDY.md`).
 
-1. **Decide §2.1** — whether the demo runs gpt-4o, and if so whether it also
-   ships the measured index. Read the spend note first; the dashboard is
-   public and unauthenticated.
+1. ~~Decide §2.1~~ — done, see §2.1.
 
-2. **Record the demo walkthrough.** Under four minutes, per the spec. Three
-   shots, in this order:
+2. **The walkthrough recording was dropped** by the project owner on
+   2026-08-09. This is the one spec item Phase 6 does not deliver; the live
+   demo is what a reviewer gets instead. Nothing public promises a video —
+   neither `README.md` nor `CASE_STUDY.md` ever mentioned one — so there is no
+   dangling claim to clean up.
+
+   **The path below stays, because it is verified behaviour rather than a
+   shooting script.** These three are the demonstration whether it is watched
+   live, walked through in an interview, or recorded after all, and the
+   questions were checked against the deployment on 2026-08-09 — the ones the
+   previous handoff named no longer behave as it described. See the note after
+   the list.
    - **The role switch.** Ask the ACME trading-desk question as
-     `research_analyst` — it declines at the retrieval gate with the
-     Research-Trading Wall shown in force and `trading` listed among the
-     departments it removed. Switch to `trader_desk`; the same question answers
-     at ~0.80 confidence off `trading_desk_procedures.txt`. The wall is the
-     only thing that changed. This is the strongest 40 seconds in the project.
-   - **A refusal that is not an error.** "How many iPhone units did Apple ship
-     in fiscal 2025?" — `model_refused`, retrieval scoring 0.716 while
-     completeness is 0.000, the passages consulted and the filings worth
-     opening by hand. Shows the system declining correctly and saying why.
+     `research_analyst`: the Research-Trading Wall is shown in force, `trading`
+     is listed among the departments it removed, and the answer says the
+     documents do not detail ACME's procedures — sourced only from filings the
+     research analyst can see. Switch to `trader_desk`; the same question
+     answers at **0.885** off `trading_desk_procedures.txt` at 0.999. The wall
+     is the only thing that changed. Still the strongest 40 seconds here.
+   - **A refusal that is not an error.** Use **"What was Amazon's total revenue
+     in fiscal 2025?"** — `model_refused`, label low, while **retrieval scores
+     0.861**. That combination is the shot: retrieval is confident, and the
+     model declines anyway because Amazon is not in the corpus. Follow it with
+     **"What is Netflix's subscriber count?"** — `low_retrieval_confidence`,
+     retrieval 0.000, the gate firing *before* the model is called. Two
+     refusals with different causes, which is precisely the distinction the
+     panel draws (§5.1) and the reason it draws it.
    - **Hybrid vs. dense side by side**, which the spec asks for by name. On the
      Apple revenue question the two columns differ by one rank position and
      both leave a Goldman Sachs chunk wrongly at rank 1 — the reranker defect,
      on screen, next to a comparison whose aggregate answer is "inside the
      noise floor."
+
+   **Why the old questions were replaced.** Both refusal shots the previous
+   handoff named now return *partial answers*, not structured refusals. Shipping
+   the measured index made retrieval good enough that the
+   insufficient-context gate stops firing on them, so the question reaches the
+   model — and Gemini declines *in prose while citing sources*, which
+   `is_full_refusal()` correctly classifies as a partial answer at completeness
+   0.5, not a refusal (§8). The iPhone question now scores retrieval 0.716 and
+   label `medium`; under gpt-4o locally it still gives a clean `model_refused`.
+   Nothing is broken — a documented rule met a better retriever — but the
+   dashboard renders it as an answer, so describing it as a refusal, in any
+   medium, would be describing something the screen is not showing.
 
 3. **Optional, if budget allows**: the missing `fixed` chunking row (§6), a
    second run on the current corpus so §4 is a mean rather than a single
