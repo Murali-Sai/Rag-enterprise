@@ -16,6 +16,17 @@ def _provider_has_key(provider: LLMProvider) -> bool:
     }.get(provider, False)
 
 
+def has_usable_provider() -> bool:
+    """True if any provider has a key, i.e. create_llm() would succeed.
+
+    The readiness probe uses this rather than naming providers itself — an
+    OpenAI-only deployment reporting llm=not_configured because the check
+    predated OpenAI becoming the default is exactly the kind of drift a probe
+    is supposed to catch, not cause.
+    """
+    return any(_provider_has_key(p) for p in LLMProvider)
+
+
 def _resolve_provider(provider: LLMProvider | None) -> LLMProvider:
     """Pick a usable provider.
 
@@ -27,11 +38,13 @@ def _resolve_provider(provider: LLMProvider | None) -> LLMProvider:
     if _provider_has_key(provider):
         return provider
 
-    # Fallback priority: Gemini -> Groq -> OpenAI -> HuggingFace
+    # Fallback priority: OpenAI -> Gemini -> Groq -> HuggingFace. OpenAI leads
+    # because it is the configured default; a fallback that reorders the list
+    # would answer from a different model than the one the run is tagged with.
     for candidate in (
+        LLMProvider.OPENAI,
         LLMProvider.GEMINI,
         LLMProvider.GROQ,
-        LLMProvider.OPENAI,
         LLMProvider.HUGGINGFACE,
     ):
         if _provider_has_key(candidate):
@@ -49,51 +62,78 @@ def _resolve_provider(provider: LLMProvider | None) -> LLMProvider:
     )
 
 
-def create_llm(provider: LLMProvider | None = None) -> BaseChatModel:
+DEFAULT_MAX_TOKENS = 1024
+
+
+def create_llm(
+    provider: LLMProvider | None = None,
+    model: str | None = None,
+    max_tokens: int | None = None,
+) -> BaseChatModel:
+    """Build a chat model.
+
+    `model` overrides the provider's default — the RAGAS judge uses it to stay
+    on gpt-4o-mini while runtime generation moved to gpt-4o, so raising the
+    answer model doesn't silently change what grades the eval.
+
+    `max_tokens` overrides the 1024-token cap. Generation wants a cap: an
+    answer that long has stopped being an answer. A judge does not — RAGAS
+    faithfulness emits one structured verdict per extracted statement, so its
+    output grows with the answer it is grading, and hitting the cap raises
+    LLMDidNotFinishException and drops the row from the aggregate rather than
+    truncating it. That failure is silent in the score and heavily
+    non-uniform: it lands on exactly the long, multi-claim answers, so the
+    mean is taken over the short ones.
+    """
     provider = _resolve_provider(provider)
+    max_tokens = max_tokens or DEFAULT_MAX_TOKENS
 
     if provider == LLMProvider.GROQ:
         from langchain_groq import ChatGroq
 
-        logger.info("initializing_llm", provider="groq", model="llama-3.3-70b-versatile")
+        name = model or "llama-3.3-70b-versatile"
+        logger.info("initializing_llm", provider="groq", model=name)
         return ChatGroq(
             api_key=settings.groq_api_key,
-            model="llama-3.3-70b-versatile",
+            model=name,
             temperature=0.1,
-            max_tokens=1024,
+            max_tokens=max_tokens,
         )
 
     if provider == LLMProvider.GEMINI:
         from langchain_google_genai import ChatGoogleGenerativeAI
 
-        logger.info("initializing_llm", provider="gemini", model="gemini-2.5-flash")
+        name = model or "gemini-2.5-flash"
+        logger.info("initializing_llm", provider="gemini", model=name)
         return ChatGoogleGenerativeAI(
             google_api_key=settings.google_api_key,
-            model="gemini-2.5-flash",
+            model=name,
             temperature=0.1,
-            max_output_tokens=1024,
+            max_output_tokens=max_tokens,
         )
 
     if provider == LLMProvider.OPENAI:
         from langchain_openai import ChatOpenAI
 
-        logger.info("initializing_llm", provider="openai", model="gpt-4o-mini")
+        name = model or settings.openai_model
+        logger.info("initializing_llm", provider="openai", model=name)
         return ChatOpenAI(
             api_key=settings.openai_api_key,
-            model="gpt-4o-mini",
+            model=name,
             temperature=0.1,
-            max_tokens=1024,
+            max_tokens=max_tokens,
         )
 
     if provider == LLMProvider.HUGGINGFACE:
         from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 
-        logger.info("initializing_llm", provider="huggingface")
+        repo = model or "mistralai/Mistral-7B-Instruct-v0.3"
+        logger.info("initializing_llm", provider="huggingface", model=repo)
         endpoint = HuggingFaceEndpoint(
             huggingfacehub_api_token=settings.huggingface_api_key,
-            repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+            repo_id=repo,
             temperature=0.1,
-            max_new_tokens=1024,
+            max_new_tokens=max_tokens,
         )
         return ChatHuggingFace(llm=endpoint)
 
