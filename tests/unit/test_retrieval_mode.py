@@ -100,7 +100,14 @@ class TestRouteResolution:
 
         assert resolved is configured
 
-    def test_a_pinned_mode_builds_a_fresh_pipeline(self):
+    def test_a_pinned_mode_builds_a_fresh_pipeline(self, monkeypatch):
+        # Every other test here injects a FakeVectorStore. This one cannot:
+        # building a fresh pipeline is the behaviour under test, so the
+        # retriever calls get_vector_store() itself — which constructs a real
+        # embedding client and needs an API key. That made this the one test in
+        # the suite whose result depended on a secret: it passed locally, where
+        # .env supplies a key, and failed in CI, where nothing does.
+        monkeypatch.setattr("src.retrieval.retriever.get_vector_store", lambda: FakeVectorStore())
         configured = RBACRetriever(user_roles={"research"}, vector_store=FakeVectorStore())
 
         resolved = _resolve_retriever(RetrievalMode.HYBRID, user_with("research"), configured)
