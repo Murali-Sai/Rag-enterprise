@@ -119,7 +119,16 @@ CSS = """
     --font-mono:'IBM Plex Mono',monospace;
   }
 
-  html, body, [class*="st-"], [data-testid="stAppViewContainer"]{
+  /* Applied to text containers, never to everything. Streamlit draws its
+     icons as ligatures in a Material Symbols face, so a blanket
+     `[class*="st-"]` font rule renders them as their own names — the sidebar
+     toggle reading "keyboard_double_arrow_right" in the middle of the page. */
+  [data-testid="stMarkdownContainer"],
+  [data-testid="stMarkdownContainer"] p,
+  [data-testid="stMarkdownContainer"] li,
+  [data-testid="stWidgetLabel"],
+  [data-testid="stRadio"] label,
+  [data-testid="stAlertContainer"]{
     font-family:var(--font-body);
   }
   .stApp{ background:var(--terminal); }
