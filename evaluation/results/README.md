@@ -100,6 +100,51 @@ each of which had stated a verified, cited figure and been scored as though it
 had answered nothing. Against a 0.000 floor that delta is the whole effect,
 measured exactly; the 16 `refuse` rows held at 14/16, unchanged.
 
+## The corpus changed again, and `eval_20260809_015503.json` is the first run on it
+
+Page-furniture stripping in `src/edgar/parser.py` plus `min_chunk_chars=80`
+took the index from 9,572 chunks (`e705ac4b47e9daf3`) to **8,232**
+(`c2f8c13673cf5ca5`). Everything above was measured on the larger corpus.
+`compare_eval_runs.py` refuses to diff across the boundary, which is the
+intended behaviour and why the following is stated as a before/after rather
+than run through the script.
+
+| | 9,572 chunks (mean of 2) | 8,232 chunks (1 run) |
+|---|---|---|
+| Faithfulness | 0.737 | 0.698 |
+| Answer Relevancy | 0.639 | 0.682 |
+| Context Precision | 0.419 | 0.378 |
+| Context Recall | 0.383 | **0.335** |
+| Citation Accuracy | 0.945 | 0.939 |
+| Citation Coverage | 0.607 | 0.661 |
+| Refusal Correctness | 0.796 | **0.852** |
+
+A mean of two against a single run, across a corpus change: only the largest
+moves are worth reading, and only where the metric is stable enough to carry
+them.
+
+**Refusal correctness is that metric, and it improved.** 0.796 → 0.852, against
+a measured n=54 spread of 0.000. As rows: 11 answerable questions declined
+before, **6** now, alongside 2 answered that should have declined. `exact_figure`
+moved 0.692 → 0.846. This is what the parser fix was aimed at and it landed.
+
+**The Goldman Sachs hypothesis is refuted.** GS scored exactly 0.000 context
+recall on every question in every previous run, and the stated cause was its
+214 bare running-header chunks — `"Goldman Sachs 2025 Form 10-K | 123"`.
+`_strip_page_furniture()` took those to **0**. GS context recall is still
+exactly **0.000**, and GS context precision fell 0.271 → 0.050. The furniture
+was real and is gone; it was not the cause. Whatever produces a hard zero on
+one company and not the other four is still unidentified, and it is now the
+best-isolated open defect in the system.
+
+**Context recall fell, which the fix was not supposed to do.** 0.383 → 0.335 in
+aggregate; per company AAPL 0.569 → 0.403 and JPM 0.267 → 0.167, with only MSFT
+rising (0.263 → 0.346). The n=54 recall spread is 0.003, so these are large
+relative to run-to-run variation — but they are not a controlled comparison, and
+a two-run mean would be needed before calling the stripping a net regression on
+grounding. Recorded here so the next session does not rediscover it as a
+surprise.
+
 ## Runs before 2026-08-08 19:00 UTC are superseded
 
 Everything without a `corpus` key was measured against an index that was missing

@@ -1,6 +1,8 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
-> **Live Demo**: [rag-enterprise-laa65asupq-uc.a.run.app](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;|&nbsp; Interactive demo on the landing page, or explore the [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
+> **Live Demo**: [rag-enterprise-laa65asupq-uc.a.run.app](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-laa65asupq-uc.a.run.app/dashboard) &nbsp;|&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
+>
+> ⚠️ The deployed build is stale — it predates the parser fix, the dashboard, and the current index. Run it locally (below) for the current behaviour.
 
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 
@@ -44,7 +46,9 @@ Unlike typical RAG demos with synthetic documents, this system downloads, parses
 
 8. **Confidence Scoring and a Structured "I don't know"**: Every answer carries a composite of retrieval relevance, citation coverage, and answer completeness. Below a retrieval-confidence threshold the system returns what it searched and which filings to read by hand, instead of an answer built on chunks it does not trust.
 
-9. **RAGAS Evaluation**: 20 filing-grounded questions with ground truth, measuring Faithfulness, Answer Relevancy, Context Precision, and Context Recall — plus citation accuracy and coverage, computed outside RAGAS.
+9. **Evaluation**: 54 hand-written questions across seven strata, measuring Faithfulness, Answer Relevancy, Context Precision, and Context Recall — plus citation accuracy, coverage, and refusal correctness, computed outside RAGAS. Sixteen of the 54 correctly have no answer and are scored on whether the system declines.
+
+10. **A Dashboard for the Pipeline, Not the Answer**: `GET /dashboard` traces one question through six stages — the departments the role could search and the walls that removed the rest, the ranked chunks with their raw and normalised scores, the answer with clickable citations, the per-claim verdicts, the confidence breakdown, and every guardrail that fired. Switching roles re-runs the same question behind a different barrier.
 
 ## Demo Companies
 
@@ -286,6 +290,34 @@ Off by default at runtime (one LLM call per citation, on the critical path); the
 
 All of it lives behind `generate_grounded_answer()` in `src/generation/answer.py`, which the REST API, the MCP server, and `evaluation/run_evaluation.py` all call. The eval harness bypasses the API route entirely, so anything implemented in the route would be invisible to the measurement meant to prove it works.
 
+## Query Dashboard (`GET /dashboard`)
+
+A screen for the pipeline, not for the answer. The choice was between an analyst tool — ask, read, click a citation, trust the result — and a demonstration of how the answer was produced. The distinctive things in this repo are the information barrier, the citation verdicts and the structured refusal, and none of them are visible in a screen that optimises for reading one answer, so the dashboard traces a single question through six stages:
+
+| Stage | What it shows | Where the data comes from |
+|---|---|---|
+| 00 Identity | Departments this role may search; the Chinese Walls in force, with the departments each removes | `GET /access` — no LLM call, so switching roles is free |
+| 01 Query | Six questions from the evaluation set, labelled with the stratum each exercises | — |
+| 02 Retrieval | The ranked chunks, each with its normalised relevance, its raw score, and the stage that produced it | `sources[].relevance_score`, `.raw_score`, `.score_type` |
+| 03 Answer **or** Declined | The answer with clickable citations, or the structured refusal | `answer`, `claims`, `unanswered` |
+| 04 Citations | Each claim, the blocks it cites, and the verdict where verification ran | `claims[].verdict` |
+| 05 Confidence | All four components with the label, never the composite alone | `confidence` |
+| 06 Guardrails | Every flag that fired | `guardrail_flags` |
+
+Three rules the markup exists to keep:
+
+**A refusal is not an error state.** It scores 1.000 on all three unanswerable strata; rendering it in red with a warning triangle would tell the reader the opposite of what the measurement says. It gets its own neutral treatment, and the panel distinguishes `low_retrieval_confidence` (the gate fired, nothing was sent to the model) from `model_refused` (retrieval cleared its threshold and the model still declined) — the one signal a user can act on, because the two point at different fixes.
+
+**No number without its scale.** `confidence.overall` never appears without its label; a null retrieval score renders as *unavailable* rather than as zero, with the note that its weight was redistributed; a chunk's relevance sits next to the raw score and the name of the stage that produced it. The reranker's negative logits are visible here as a matter of course — a chunk at raw −2.35 normalising to 0.087 is the defect described below, on screen.
+
+**Nothing is precomputed.** The template is a shell. A test asserts no score is baked into it, because a number in the markup is a number nobody measured.
+
+Role switching is the point. Ask *"What pre-trade controls does ACME Financial Holdings' internal trading desk procedures manual set?"* as `research_analyst` and the query declines at the retrieval gate with the Research-Trading Wall shown in force; the "same question, different role" control re-runs it as `trader_desk`, where the same question answers at 0.877 confidence off `trading_desk_procedures.txt`. The wall is the only thing that changed.
+
+`POST /query` grew two fields to make this possible: `information_barriers` (name, description, blocked departments) and `accessible_departments`. Both were already computed and then flattened into a single `guardrail_flags` string; the string stays, because it is what the 17a-4 audit trail already records.
+
+The pages are Jinja2 templates in `src/web/`, served by the same FastAPI app — no second process, no CORS, no second deployment.
+
 ## Compliance Audit Trail
 
 Every query generates an audit log entry:
@@ -337,10 +369,13 @@ Architecturally this turns the project into a **reusable AI capability**: the do
 ```
 rag-enterprise/
 ├── src/
-│   ├── main.py                          # FastAPI app
+│   ├── main.py                          # FastAPI app + page routes
 │   ├── config.py                        # Settings (inc. EDGAR config)
+│   ├── web/                             # << NEW: server-rendered pages
+│   │   ├── templates/                   # base, landing, dashboard (Jinja2)
+│   │   └── static/                      # tokens.css + per-page css/js
 │   ├── api/
-│   │   ├── routes/                      # auth, query, documents, health, admin
+│   │   ├── routes/                      # auth, access, query, documents, health, admin
 │   │   ├── audit.py                     # Compliance audit trail (SEC 17a-4)
 │   │   └── middleware.py                # Rate limiting, request logging
 │   ├── auth/
@@ -372,7 +407,7 @@ rag-enterprise/
 │   ├── seed_users.py                    # Create demo IB users
 │   └── ingest_samples.py               # Ingest sample domain documents
 ├── tests/                               # Unit + integration tests
-├── evaluation/                          # RAGAS pipeline + 20 filing-grounded Q&A
+├── evaluation/                          # Eval harness + 54 filing-grounded Q&A
 ├── data/edgar/                          # Downloaded 10-K filings (committed for deploy)
 ├── data/sample/                         # Domain documents (risk, compliance, etc.)
 ├── infra/terraform/                     # AWS ECS + OpenSearch IaC
@@ -399,43 +434,42 @@ Three more things about this dataset are worth stating before the numbers, becau
 
 ### Current scores
 
-> ⚠️ **Measured on the 9,572-chunk corpus (`e705ac4b47e9daf3`). The index on disk is now 8,232 chunks (`c2f8c13673cf5ca5`)** after page furniture was stripped from the parser — the fix for the Goldman Sachs recall failure described below. Every figure in this section, and the whole ablation table beneath it, predates that re-ingest. They are accurate records of what was measured and are not claims about the current build. Re-run `python -m evaluation.run_evaluation` for current numbers; `scripts/compare_eval_runs.py` will refuse to diff across the fingerprint change, which is the intended behaviour.
+One run on the 54-question set (`eval_20260809_015503`), against the current 8,232-chunk corpus (`c2f8c13673cf5ca5`). Shipped configuration: dense retrieval, cross-encoder rerank, per-entity retrieval for comparatives.
 
-Mean of two identical runs on the 54-question set (`eval_20260808_212927`, `eval_20260808_213635`), shipped configuration: dense retrieval, cross-encoder rerank, per-entity retrieval for comparatives.
-
-> **These two runs predate the `is_full_refusal` fix**, which narrowed `answer_completeness()` so that an answer carrying refusal wording *and* cited claims scores as partial (0.5) rather than as a full refusal (0.0). A third run on the fixed code — `eval_20260809_001003`, same config, same corpus — measures **refusal correctness 0.796 overall and 0.692 for `exact_figure`**, moving exactly two rows: JPMorgan's CET1 ratio and Tesla's net income, each of which had stated a verified, cited figure and been scored as though it had answered nothing. No row moved the other way, and the 16 `refuse` rows held at 14/16. The RAGAS and citation figures are unaffected in kind — the generated text is unchanged, only its classification — so the two-run mean below stands for everything except refusal correctness, where **0.796 is the current figure**.
+> **One run, not a mean of two.** The previous figures were a two-run mean; these are not, so single-metric moves have to be read against the n=54 noise floor below — and that floor is a lower bound, not a bound.
 
 | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
 |---|---|---|---|---|---|---|
-| 0.737 | 0.639 | 0.419 | 0.383 | **0.945** | 0.607 | **0.796**¹ |
+| 0.698 | 0.682 | 0.378 | 0.335 | **0.939** | 0.661 | **0.852** |
 
 Per stratum, and this is where the system's actual shape shows:
 
 | Stratum | n | Faithfulness | Answer Relevancy | Citation Accuracy | Refusal Correctness |
 |---|---|---|---|---|---|
-| `interpretive` | 14 | 0.897 | 0.822 | 0.968 | 0.929 |
-| `exact_figure` | 13 | 0.730 | 0.498 | 0.921 | 0.692¹ |
-| `comparative` | 8 | 0.493 | 0.565 | 0.905 | 0.625 |
-| `ambiguous` | 6 | 0.667 | 0.582 | 0.875 | 0.500 |
+| `interpretive` | 14 | 0.827 | 0.793 | 0.929 | 0.929 |
+| `exact_figure` | 13 | 0.696 | 0.581 | 0.955 | 0.846 |
+| `comparative` | 8 | 0.426 | 0.576 | 0.891 | 0.625 |
+| `ambiguous` | 6 | 0.833 | 0.883 | 0.900 | 0.667 |
 | `no_answer` | 5 | — | — | — | **1.000** |
 | `out_of_corpus` | 4 | — | — | — | **1.000** |
 | `rbac_blocked` | 4 | — | — | — | **1.000** |
 
-¹ Refusal correctness from `eval_20260809_001003`, the run on the current code; every other column is the two-run mean above.
+**The refusal path is still the strongest thing here.** All three unanswerable strata score 1.000, as they have in every run — the system declines every question it should decline, structures the refusal, and labels it low confidence. Out-of-corpus questions are caught by the retrieval gate before any generation call is spent. RBAC-blocked questions never retrieve the document at all.
 
-**The refusal path is the strongest thing here.** All three unanswerable strata score 1.000, and identically across both runs — the system declines every question it should decline, structures the refusal, and labels it low confidence. Out-of-corpus questions are caught by the retrieval gate before any generation call is spent. RBAC-blocked questions never retrieve the document at all.
+**Over-refusal is still the weakest, and it improved.** Refusal correctness moved 0.796 → 0.852 and `exact_figure` moved 0.692 → 0.846. Counted as rows rather than as a mean: 11 answerable questions declined before, 6 now, plus 2 questions answered that should have declined. This is the one metric the move is safe to attribute to, because refusal correctness is the most stable in the set — it did not move at all across two runs in which 27 of 54 answers were textually different (spread 0.000). Six false refusals is still six; the reranker (below) is still the cause.
 
-**Over-refusal is the weakest.** `exact_figure` scores 0.538 on refusal correctness — 0.692 after the `is_full_refusal` fix above. Either way the system declines a third to a half of the questions asking for a figure that is in the index. That is the reranker (below), and it is invisible in the RAGAS four — a false refusal and a genuine miss both read as 0.000 answer relevancy.
-
-**Goldman Sachs scores 0.000 context recall on every question, in every run.** Broken down per company rather than per stratum, the aggregate hides a hard failure:
+**Goldman Sachs still scores exactly 0.000 context recall, and that retires the explanation.** Page furniture was the stated cause: GS carried 214 bare running-header chunks — `"Goldman Sachs 2025 Form 10-K | 123"` — and `_strip_page_furniture()` took them to **0**. GS recall did not move off 0.000, and GS context precision fell 0.271 → 0.050. Whatever is wrong with Goldman retrieval, the furniture was not it. Per company:
 
 | | AAPL | MSFT | JPM | GS | TSLA |
 |---|---|---|---|---|---|
-| Faithfulness | 0.861 | 0.658 | 0.921 | 0.850 | 0.877 |
-| Context Recall | 0.569 | 0.263 | 0.267 | **0.000** | 0.539 |
-| Citation Accuracy | 0.938 | 1.000 | 0.917 | 0.917 | 1.000 |
+| Faithfulness | 0.737 | 0.718 | 0.900 | 0.613 | 0.881 |
+| Context Recall | 0.403 | 0.346 | 0.167 | **0.000** | 0.506 |
+| Context Precision | 0.722 | 0.619 | 0.158 | **0.050** | 0.305 |
+| Refusal Correctness | 1.000 | 0.800 | 1.000 | 0.800 | 1.000 |
 
-The cause is page furniture in the index. About a fifth of every filing's chunks are under 200 characters; GS has 806 such chunks out of 3,402, of which 214 are bare running headers — `"Goldman Sachs 2025 Form 10-K | 123"`. On the GS revenue question, two of the five retrieved slots are page numbers. Deduplication cannot catch these because each header string differs by its page number; it needs a minimum-length filter in the parser. MSFT's low faithfulness is separate and expected — its filing text is only recovered at ~71%.
+**Context recall fell overall — 0.383 → 0.335 — and that is the honest reading of the parser fix.** AAPL dropped 0.569 → 0.403 and JPM 0.267 → 0.167; only MSFT rose. Against a measured n=54 recall spread of 0.003 these are not noise, though a one-run-versus-two-run-mean comparison across a corpus change can only ever be suggestive. The fix removed 1,340 chunks of genuine page furniture and improved the refusal behaviour it was aimed at; it did not improve grounding, and on two companies it appears to have cost some. Both facts are the measurement.
+
+MSFT's faithfulness remains the separate open defect — its filing text is recovered at only ~71%.
 
 **Ambiguity is not handled.** Two of the three underspecified questions ("How much did the bank set aside for credit losses?", "What are the company's main risks?") were answered about one arbitrarily-chosen company, with no flag that the question admitted others. There is no ambiguity-detection mechanism; the stratum exists to say so.
 
