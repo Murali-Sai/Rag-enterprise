@@ -1,8 +1,10 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
-> **Live Demo**: [rag-enterprise-laa65asupq-uc.a.run.app](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;|&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
+> **Live Demo** &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-dashboard-1072425852803.us-central1.run.app) &nbsp;·&nbsp; [Landing page](https://rag-enterprise-1072425852803.us-central1.run.app) &nbsp;·&nbsp; [API docs](https://rag-enterprise-1072425852803.us-central1.run.app/docs)
 >
-> ⚠️ The deployed build is stale — it predates the parser fix, the current index, and the query dashboard, which is now a second service and is not deployed at all. Run it locally (below) for the current behaviour: `make docker-up` brings up both.
+> Two Cloud Run services: the API with the filing index baked into the image, and the Streamlit dashboard talking to it over HTTP.
+>
+> ⚠️ **The live demo generates with Gemini, not `gpt-4o`.** Every score in this README was measured on `gpt-4o` with `text-embedding-3-small`; the deployment runs Gemini on its free tier with local MiniLM embeddings, over an index rebuilt at image-build time (8,099 chunks against the 8,232 measured). So the demo shows the *system* working — the barriers, the citations, the confidence breakdown, the structured refusal — but it is not the configuration those numbers describe. Run it locally with `make docker-up` and an OpenAI key for that.
 
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 

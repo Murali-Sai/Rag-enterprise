@@ -38,17 +38,39 @@ guardrails, SEC 17a-4 audit trail, MCP server).
 
 ## 2. Read this before anything else
 
-**The live demo is stale and it is now the largest gap in the project.**
+**The live demo is deployed and current, but it is not the measured system.**
 
-Cloud Run still serves a build that predates the parser fix, the current index,
-the dashboard, and every response field the dashboard reads. The README carries
-a banner saying so. Phase 6 is the phase where a reviewer is most likely to
-click that link, and right now the link undersells the repo.
+Two Cloud Run services in `us-central1`, project `rag-enterprise-498519`:
 
-It will need an `OPENAI_API_KEY` at runtime for generation, or
-`LLM_PROVIDER=groq` at deploy to stay on a free tier. The Dockerfile pins
-`EMBEDDING_PROVIDER=huggingface` because the image bakes its index at build
-time and embedding with OpenAI there would put a key in the build.
+| Service | URL |
+|---|---|
+| `rag-enterprise` (API + landing page) | https://rag-enterprise-1072425852803.us-central1.run.app |
+| `rag-enterprise-dashboard` (Streamlit) | https://rag-enterprise-dashboard-1072425852803.us-central1.run.app |
+
+They know each other through env vars: the dashboard has `RAG_API_URL`, the
+API has `DASHBOARD_URL` so its landing page links resolve. Deploy the API
+first, then the dashboard with the API's URL, then update the API with the
+dashboard's — the dependency is circular and that is the order that breaks it.
+
+**The deployment generates with Gemini and embeds with local MiniLM.** Every
+score in the README was measured on `gpt-4o` with `text-embedding-3-small`.
+The Dockerfile pins `EMBEDDING_PROVIDER=huggingface` because the image bakes
+its index at build time and embedding with OpenAI there would put a key in the
+build — so the deployed index is a different corpus too (8,099 chunks against
+the 8,232 measured). The demo shows the system working; it is not the
+configuration the numbers describe, and both the README and the landing page
+say so. Switching to OpenAI is a config change on the service plus a rebuild,
+not a code change.
+
+**Secrets are in Secret Manager, not env vars.** `google-api-key` and
+`jwt-secret-key`, referenced with `--set-secrets`, with
+`1072425852803-compute@developer.gserviceaccount.com` granted
+`secretAccessor`. The previous deployment held both in plaintext in the
+service config, where they were readable by any project viewer and persisted
+in every revision's history; the JWT key was rotated when they moved. **The
+old Google API key should be considered compromised** — it sat in that config
+and in this repo's deploy history. Delete it in AI Studio if that has not
+already happened.
 
 **One code change is waiting on a re-ingest.** `src/ingestion/loaders.py` now
 pins UTF-8 for `TextLoader` and `BSHTMLLoader`, which previously defaulted to
@@ -341,13 +363,11 @@ Project 6 §6 is the portfolio phase. The case study is strong — the README
 carries the measurements, the retracted claims and the open defects. What is
 missing:
 
-1. **Redeploy — now two services.** §2. The live demo is the first thing a
-   reviewer clicks and it predates everything Phases 4 and 5 built. The
-   dashboard is a second container and is not deployed at all: Cloud Run needs
-   a second service, with `RAG_API_URL` pointed at the API's public URL and
-   `DASHBOARD_URL` pointed back at the dashboard's, so the landing page links
-   resolve. `make docker-up` is the working reference for how the two wire
-   together.
+1. ~~**Redeploy.**~~ Done — both services are live and verified end to end
+   (health, the access profile with both walls, the documents listing, and the
+   barrier demo declining as `research` and answering as `trading`). See §2 for
+   URLs and the Gemini caveat. The one thing left here is deciding whether the
+   demo should run OpenAI so it matches the published numbers.
 2. **Demo video.** The dashboard is the thing to record, and there are two
    shots. The role switch: ask the ACME trading-desk question as
    `research_analyst`, watch it decline at the gate with the Research-Trading
