@@ -24,12 +24,30 @@ DATASETS_DIR = EVAL_DIR / "datasets"
 EVAL_QUESTIONS_PATH = DATASETS_DIR / "eval_questions_v4.json"
 RESULTS_DIR = EVAL_DIR / "results"
 
-# RAGAS metrics to compute
+# RAGAS metrics to compute.
+#
+# answer_correctness is the fourth metric Project 6 Phase 4.2 asks for
+# ("answer correctness — LLM-as-judge against golden answer"); the other three
+# it names map to faithfulness, context precision/recall and citation
+# accuracy. It was missing until 2026-08-09, so every result file before then
+# has no column for it — a gap, not a zero.
+#
+# It is the only metric here that grades the answer against the ground truth
+# rather than against the retrieved context, which makes it the one that can
+# catch an answer that is faithful to the wrong passages: internally grounded,
+# correctly cited, and not what the filing says.
+#
+# It can go slightly negative. RAGAS blends a factual-claim F1 with a cosine
+# similarity between answer and ground truth, and the cosine term can be a
+# small negative number, so a wholly wrong answer lands near -0.01 rather than
+# at 0.000 (measured: a fabricated figure scored -0.007). Left unclamped —
+# squashing it to zero would hide that the floor is empirical, not defined.
 METRICS = [
     "faithfulness",
     "answer_relevancy",
     "context_precision",
     "context_recall",
+    "answer_correctness",
 ]
 
 # Judge embeddings for answer_relevancy. Deliberately NOT the corpus

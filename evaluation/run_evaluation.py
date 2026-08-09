@@ -9,7 +9,15 @@ from datetime import UTC, datetime
 
 from evaluation.eval_config import EVAL_EMBEDDING_MODEL, EVAL_QUESTIONS_PATH, RESULTS_DIR
 
-RAGAS_METRIC_NAMES = ("faithfulness", "answer_relevancy", "context_precision", "context_recall")
+RAGAS_METRIC_NAMES = (
+    "faithfulness",
+    "answer_relevancy",
+    "context_precision",
+    "context_recall",
+    # Added 2026-08-09. Runs before this date have no answer_correctness column
+    # at all; treat its absence as "not measured", never as a zero.
+    "answer_correctness",
+)
 # Computed in run_rag_pipeline, not by RAGAS. citation_accuracy is the metric
 # Project 6 asks the case study to state ("X% faithfulness and Y% citation
 # accuracy") and the reason Phase 3 exists; coverage and confidence are kept
@@ -153,6 +161,19 @@ def _refusal_correctness(result: dict, item: dict) -> float | None:
     return 0.0 if refused else 1.0
 
 
+def _weight_ratio(dense: float, sparse: float) -> str:
+    """Fingerprint the fusion weighting by its ratio.
+
+    RRF output is a ranking, so scaling both weights reorders nothing — 0.7/0.3
+    and 7/3 are the same configuration. Recording the raw pair would make them
+    fingerprint as two different runs, and `compare_eval_runs.py` would then
+    refuse to call their spread a noise floor when that is exactly what it is.
+    """
+    if sparse == 0:
+        return "dense_only" if dense else "none"
+    return f"{dense / sparse:.4g}:1"
+
+
 def _corpus_fingerprint() -> dict:
     """Identify the indexed corpus a run was measured against.
 
@@ -213,6 +234,12 @@ def evaluate_with_ragas(results: list[dict], eval_data: list[dict]) -> tuple[dic
         from ragas.embeddings import LangchainEmbeddingsWrapper
         from ragas.llms import LangchainLLMWrapper
         from ragas.metrics import (
+            # Deprecated in RAGAS 0.4.x in favour of ragas.metrics.collections,
+            # which exposes a module rather than the metric instance
+            # evaluate() takes. Keep this import until that migration is done
+            # as its own change — swapping metric implementations mid-baseline
+            # would move scores for a reason that is not the system.
+            answer_correctness,
             answer_relevancy,
             context_precision,
             context_recall,
@@ -272,7 +299,13 @@ def evaluate_with_ragas(results: list[dict], eval_data: list[dict]) -> tuple[dic
 
         dataset = Dataset.from_dict(ragas_data)
 
-        metrics = [faithfulness, answer_relevancy, context_precision, context_recall]
+        metrics = [
+            faithfulness,
+            answer_relevancy,
+            context_precision,
+            context_recall,
+            answer_correctness,
+        ]
 
         score = evaluate(
             dataset=dataset,
@@ -321,10 +354,7 @@ def evaluate_with_ragas(results: list[dict], eval_data: list[dict]) -> tuple[dic
         except Exception:
             # Fallback: try attribute access on Result object
             return {
-                "faithfulness": float(getattr(score, "faithfulness", 0.0) or 0.0),
-                "answer_relevancy": float(getattr(score, "answer_relevancy", 0.0) or 0.0),
-                "context_precision": float(getattr(score, "context_precision", 0.0) or 0.0),
-                "context_recall": float(getattr(score, "context_recall", 0.0) or 0.0),
+                name: float(getattr(score, name, 0.0) or 0.0) for name in RAGAS_METRIC_NAMES
             }, {}
 
     except ImportError:
@@ -569,6 +599,16 @@ def main() -> None:
                         settings.hyde_include_query if settings.hyde_enabled else None
                     ),
                     "hybrid_search_enabled": settings.hybrid_search_enabled,
+                    # Recorded as a ratio, not as the two raw values: only the
+                    # ratio affects the ranking, so 0.7/0.3 and 7/3 are one
+                    # configuration and must not fingerprint as two different
+                    # runs. None when hybrid is off, where the weights are
+                    # read but never reach a fusion call.
+                    "hybrid_weight_ratio": (
+                        _weight_ratio(settings.hybrid_dense_weight, settings.hybrid_sparse_weight)
+                        if settings.hybrid_search_enabled
+                        else None
+                    ),
                     # Splits the retrieval budget across the companies a
                     # question names. Changes what gets retrieved for every
                     # comparative question and nothing else, so a run with it
