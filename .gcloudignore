@@ -15,7 +15,8 @@ __pycache__
 .env
 .env.*
 
-# Local generated state — image bakes a fresh index at build time
+# The working index. chroma_dist/ is what ships — it is deliberately NOT
+# excluded here, and it is the reason an upload is ~106 MB rather than ~1 MB.
 chroma_data/
 data/edgar/**/*.html
 data/edgar/**/*.json

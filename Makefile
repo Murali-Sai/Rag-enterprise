@@ -1,4 +1,4 @@
-.PHONY: install dev dashboard test lint format eval docker-up docker-down seed ingest demo download-filings ingest-edgar mcp mcp-http
+.PHONY: install dev dashboard test lint format eval docker-up docker-down seed ingest demo download-filings ingest-edgar index-dist mcp mcp-http
 
 install:
 	pip install -e ".[dev,eval]"
@@ -54,7 +54,16 @@ demo: seed download-filings ingest-edgar ingest
 dashboard:
 	cd dashboard && streamlit run app.py --server.port=8501
 
-docker-up:
+# The shippable index. The API image copies chroma_dist/ instead of ingesting
+# at build time, so this has to exist before a build — it is generated from
+# chroma_data/, and the script fails rather than shipping a corpus other than
+# the measured one. Regenerate by deleting chroma_dist/ and running again.
+chroma_dist/chroma.sqlite3:
+	python scripts/build_index_dist.py
+
+index-dist: chroma_dist/chroma.sqlite3
+
+docker-up: chroma_dist/chroma.sqlite3
 	docker-compose up -d --build
 	@echo "API       -> http://localhost:8000/docs"
 	@echo "Dashboard -> http://localhost:8501"

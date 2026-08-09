@@ -66,7 +66,7 @@
           <span class="item-chevron">+</span>
         </summary>
         <div class="item-body">
-          FastAPI, ChromaDB, LangChain, local embeddings. Deployed as a single Cloud Run container with the filing index baked in at build time — no ingestion step on cold start.
+          FastAPI, ChromaDB, LangChain, OpenAI <code>text-embedding-3-small</code>. Deployed on Cloud Run with the measured filing index shipped inside the image — no ingestion step on cold start, and no chance of the deployment quietly indexing something else.  Generation runs on Gemini's free tier here; <code>gpt-4o</code> is the default everywhere else.
         </div>
       </details>
 
@@ -85,7 +85,7 @@
             <div class="metric"><span class="val">0.94</span><span class="lbl">Citation Accuracy</span></div>
             <div class="metric"><span class="val">0.85</span><span class="lbl">Refusal Correctness</span></div>
           </div>
-          <span class="translated">Run <code>eval_20260809_015503</code>, against the 8,232-chunk index, generating with <code>gpt-4o</code>. One run, not a mean — see the README for the run-to-run noise floor before reading any single delta as real. <b>This deployment generates with Gemini on its free tier and embeds locally, so it is not the configuration these figures were measured on.</b></span>
+          <span class="translated">Run <code>eval_20260809_015503</code>, against the 8,232-chunk index, generating with <code>gpt-4o</code>. One run, not a mean — see the README for the run-to-run noise floor before reading any single delta as real. <b>This deployment retrieves exactly as measured</b> — same index (digest <code>c2f8c13673cf5ca5</code>), same embeddings — but generates with Gemini's free tier, because a public URL running <code>gpt-4o</code> is an uncapped meter. The retrieval and citation figures are reproducible here; the two generator-dependent ones were measured on <code>gpt-4o</code>.</span>
         </div>
       </details>
 

@@ -15,8 +15,9 @@ Makefile
 docker-compose.yml
 *.md
 
-# Local generated state — the image bakes a fresh index at build time.
-# Excluding these prevents copying stale data (and double-ingestion).
+# The working index — three collections and 361 MB of experiments. The image
+# ships chroma_dist/ instead: one collection, verified against the corpus the
+# published numbers were measured on. See scripts/build_index_dist.py.
 chroma_data/
 data/edgar/**/*.html
 data/edgar/**/*.json

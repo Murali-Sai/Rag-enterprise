@@ -28,9 +28,15 @@ services:
       # compose file publishes and the port the process binds cannot drift.
       PORT: "8080"
     volumes:
-      # Named volume, initialised from the image's baked index on first run.
+      # Named volume, initialised from the image's shipped index on first run.
       # A bind mount here would shadow it with an empty host directory and
       # every query would return nothing.
+      #
+      # Docker only seeds a named volume while it is empty, so a volume created
+      # before the image started shipping OpenAI-embedded vectors keeps serving
+      # 384-dimensional MiniLM ones to a 1536-dimensional query path. Symptom:
+      # a dimension-mismatch error, or silently empty retrieval. Fix:
+      # `docker compose down -v` and start again.
       - chroma_data:/app/chroma_data
       - ./data:/app/data:ro
     healthcheck:

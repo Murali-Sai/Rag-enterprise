@@ -24,10 +24,14 @@ env/
 *.swo
 .claude/
 
-# Data — downloaded fresh at Docker build time (download_filings.py)
+# Data — downloaded fresh by download_filings.py
 data/edgar/**/*.html
 data/edgar/**/*.json
+# The working index, and the shippable copy the image takes from it. Both are
+# generated (scripts/ingest_edgar.py, scripts/build_index_dist.py); chroma_dist
+# is 106 MB and belongs in the image, not in git history.
 chroma_data/
+chroma_dist/
 rag_enterprise.db
 *.sqlite
 

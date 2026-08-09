@@ -2,9 +2,11 @@
 
 > **Live Demo** &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-dashboard-laa65asupq-uc.a.run.app) &nbsp;·&nbsp; [Landing page](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;·&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
 >
-> Two Cloud Run services: the API with the filing index baked into the image, and the Streamlit dashboard talking to it over HTTP.
+> Two Cloud Run services: the API with the filing index shipped inside the image, and the Streamlit dashboard talking to it over HTTP.
 >
-> ⚠️ **The live demo generates with Gemini, not `gpt-4o`.** Every score in this README was measured on `gpt-4o` with `text-embedding-3-small`; the deployment runs Gemini on its free tier with local MiniLM embeddings, over an index rebuilt at image-build time (8,099 chunks against the 8,232 measured). So the demo shows the *system* working — the barriers, the citations, the confidence breakdown, the structured refusal — but it is not the configuration those numbers describe. Run it locally with `make docker-up` and an OpenAI key for that.
+> **The live demo retrieves exactly as measured, and generates with Gemini.** It serves the same 8,232-chunk index as run `eval_20260809_015503` (digest `c2f8c13673cf5ca5`), embedded with `text-embedding-3-small` — so retrieval, ranking, citation targets and the insufficient-context gate are the measured pipeline, not an approximation of it. The answer *text* comes from Gemini's free tier rather than `gpt-4o`, because the demo is public and unauthenticated and `gpt-4o` would put an uncapped meter on a public URL. Faithfulness and answer relevancy are generator-dependent; read those two as "measured on `gpt-4o`", and run it locally with an OpenAI key to reproduce them.
+>
+> Until 2026-08-09 the demo also embedded locally with MiniLM over a differently-built 8,099-chunk corpus, which made every retrieval number unreproducible here too. That half is now closed.
 
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 
@@ -79,7 +81,7 @@ Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chu
 | Query Transform | HyDE — optional hypothetical-document rewrite before retrieval |
 | Hybrid Search | BM25 (`rank_bm25`) fused with dense retrieval via Reciprocal Rank Fusion |
 | Reranking | cross-encoder/ms-marco-MiniLM-L-6-v2 — retrieves top-20, reranks to top-5 |
-| Vector Store | ChromaDB (index baked into the image at build time, so cold starts don't ingest) |
+| Vector Store | ChromaDB (the measured index ships inside the image, so cold starts don't ingest — and the deployment answers off the corpus the scores describe) |
 | API | FastAPI with async lifespan |
 | Auth | JWT + SQLAlchemy + bcrypt |
 | Financial Guardrails | MNPI detection, investment advice blocking, disclaimer injection |
@@ -604,7 +606,9 @@ make lint          # Lint + type check
 
 ### Live Demo (Google Cloud Run)
 
-The app is deployed on **Google Cloud Run** at **https://rag-enterprise-laa65asupq-uc.a.run.app**. The SEC filing index (~6,400 chunks) is baked into the Docker image at build time, so the service scales to zero and cold-starts instantly. Try it:
+The app is deployed on **Google Cloud Run** at **https://rag-enterprise-laa65asupq-uc.a.run.app**. The SEC filing index (8,232 chunks) ships inside the Docker image, so the service scales to zero and cold-starts without ingesting.
+
+It ships rather than rebuilds for a reason. A build-time ingest cannot embed with OpenAI without putting a key in the build, so the image used to pin local MiniLM and produce its own corpus — leaving a deployment that answered off 8,099 differently-embedded chunks while every published score came from 8,232. `scripts/build_index_dist.py` copies the measured index out of the working `chroma_data/` (which also holds a semantic-chunking experiment and a dedup smoke test), keeps one collection, and fails unless the result is 8,232 chunks at digest `c2f8c13673cf5ca5`. Try it:
 
 ```bash
 # Health check
@@ -630,14 +634,14 @@ Or use the **interactive demo on the landing page** (pick a role, ask a question
 make docker-up
 ```
 
-Two services. The API image bakes the filing index at build time, so the first build is slow (it downloads the filings from EDGAR and ingests them) and every start after that is instant. The dashboard image carries only `streamlit` and `requests` — it talks to the API over HTTP and shares none of its dependencies, which keeps it at ~800 MB against the API's multi-GB.
+Two services. The API image copies the index from `chroma_dist/`, which `make docker-up` generates from your local `chroma_data/` if it is missing — so a clone with no index of its own has to build one first (`make demo`, which downloads the filings from EDGAR and ingests them; needs `OPENAI_API_KEY` for the default embeddings). That is the cost of the image and the deployment answering off the same corpus as the published scores. The dashboard image carries only `streamlit` and `requests` — it talks to the API over HTTP and shares none of its dependencies, which keeps it at ~800 MB against the API's multi-GB.
 
 | Service | Host port | Container port | Notes |
 |---|---|---|---|
 | `api` | 8000 | 8080 | `scripts/start.py` reads `$PORT`, defaulting to 8080 to match Cloud Run |
 | `dashboard` | 8501 | 8501 | `RAG_API_URL=http://api:8080` — the compose service name, not localhost |
 
-ChromaDB is not a third service: it runs in-process against a persistent directory, which is what keeps the baked index owned by the process that queries it. The named volume is initialised from the image on first run; a bind mount there would shadow the baked index with an empty host directory and every query would return nothing.
+ChromaDB is not a third service: it runs in-process against a persistent directory, which is what keeps the shipped index owned by the process that queries it. The named volume is initialised from the image on first run; a bind mount there would shadow the shipped index with an empty host directory and every query would return nothing. Docker seeds a named volume only while it is empty, so a volume created before the image carried OpenAI-embedded vectors keeps serving 384-dimensional MiniLM ones to a 1536-dimensional query path — `docker compose down -v` (or `make docker-down`) and start again.
 
 The dashboard waits on the API's healthcheck before starting, because a cold API may be seeding users or ingesting.
 

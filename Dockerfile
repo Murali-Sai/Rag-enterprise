@@ -24,8 +24,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2 libxslt1.1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy application code
-COPY . .
+# Copy application code. Explicit paths rather than `COPY . .`: the repo root
+# also holds the 361 MB working index, the dashboard (a separate image) and the
+# evaluation harness, none of which the API serves from.
+COPY pyproject.toml ./
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+
+# Ship the measured index instead of baking a fresh one.
+#
+# Baking meant the deployment answered off a corpus no published number
+# described — build-time ingest cannot use OpenAI embeddings without putting a
+# key in the build, so the image pinned local MiniLM and produced its own
+# 8,099-chunk corpus while every score in the README came from 8,232 OpenAI-
+# embedded chunks. Two systems, one set of numbers.
+#
+# chroma_dist/ is that corpus, built and checked by scripts/build_index_dist.py
+# (8,232 chunks, digest c2f8c13673cf5ca5). It lands at the default persist
+# path, so nothing downstream has to know where the index came from.
+COPY chroma_dist/ ./chroma_data/
 
 # Prevent transformers from trying to load TensorFlow / Keras
 ENV USE_TF=0
@@ -36,32 +53,28 @@ ENV HF_HOME=/app/.cache/huggingface
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 ENV PYTHONUNBUFFERED=1
 
-# The image pins local embeddings, overriding the openai default in config.py.
+# Named explicitly even though it matches config.py's default. The shipped
+# index is 1536-dimensional; MiniLM emits 384, so a deployment that overrode
+# this would not fail loudly — it would query the wrong space. The image and
+# its index have to agree, and this is where that agreement is written down.
 #
-# The index is baked at build time (below), and the two providers emit
-# different-sized vectors — 384 vs 1536 — so a collection built under one
-# cannot be queried under the other. Embedding at build time with OpenAI would
-# put an API key in the build, and leaving the default while baking locally
-# would ship an image whose index silently mismatches its own query path.
-#
-# Generation still uses whatever LLM_PROVIDER is set at deploy time, so this
-# does not pin the answer model. Override at run time only together with a
-# rebuilt or remounted index.
-ENV EMBEDDING_PROVIDER=huggingface
+# This is an embedding provider, not a generation one: LLM_PROVIDER is set at
+# deploy time and the public demo runs Gemini's free tier. Embedding a question
+# costs ~$0.000005 against text-embedding-3-small's $0.02/1M tokens, which is
+# what makes an unauthenticated public URL affordable; generating an answer
+# with gpt-4o costs ~$0.012, which is what makes it not.
+ENV EMBEDDING_PROVIDER=openai
 
-# Bake the document index + embedding model into the image at build time, so
-# Cloud Run cold starts are instant instead of running a multi-minute ingest on
-# every container start.
-#
-# ingest_samples is required, not optional: it supplies the trading, risk,
-# compliance and research documents. Without it the index is SEC filings only,
-# every role can see everything that exists, and the information-barrier demo
-# silently degrades — a trader asking about desk procedures gets "no documents
-# found", which looks identical to a Chinese Wall block but is an empty corpus.
-RUN python scripts/download_filings.py \
-    && python scripts/ingest_edgar.py --from-disk \
-    && python scripts/ingest_samples.py \
-    && python -c "from src.ingestion.embeddings import get_embedding_model; get_embedding_model()"
+# The image serves a fixed corpus, so it does not accept uploads. Set in the
+# image rather than at deploy time: the demo's admin password is published on
+# the landing page, and a future deploy that forgot this flag would silently
+# hand every visitor write access to the index the published numbers describe.
+ENV ALLOW_RUNTIME_INGEST=false
+
+# The cross-encoder is the one model still downloaded from HuggingFace, and it
+# sits in the request path: without this it fetches on the first query rather
+# than at build time, and the first visitor pays for it.
+RUN python -c "from src.retrieval.reranker import get_reranker; get_reranker()"
 
 # Create non-root user and hand over ownership of the baked data + caches
 RUN groupadd -r appuser && useradd -r -g appuser appuser \
