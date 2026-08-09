@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field
 
@@ -50,12 +51,31 @@ class TokenResponse(BaseModel):
 # --- Query Schemas ---
 
 
+class RetrievalMode(str, Enum):
+    """Which search stage to run, for one request.
+
+    `default` follows `HYBRID_SEARCH_ENABLED`, which ships off. The other two
+    pin the choice so the same question can be asked both ways and compared —
+    the measured difference on this corpus is inside the run-to-run noise
+    floor, which is a result worth being able to reproduce rather than a
+    reason to hide the switch.
+    """
+
+    DEFAULT = "default"
+    DENSE = "dense"
+    HYBRID = "hybrid"
+
+
 class QueryRequest(BaseModel):
     question: str = Field(
         min_length=1,
         max_length=1000,
         description="Natural language question about SEC 10-K filings (AAPL, JPM, TSLA, MSFT, GS)",
         examples=["What was Apple's total net revenue for fiscal year 2024?"],
+    )
+    retrieval_mode: RetrievalMode = Field(
+        default=RetrievalMode.DEFAULT,
+        description="dense (vector only) | hybrid (vector + BM25 fused by RRF) | default (server setting)",
     )
 
     model_config = {
@@ -123,6 +143,22 @@ class ConfidenceScore(BaseModel):
     citation_coverage: float = Field(description="Share of claims carrying a citation")
     answer_completeness: float = Field(description="0 refused, 0.5 partial, 1 answered")
     label: str = Field(description="high | medium | low")
+
+
+class RetrievalConfig(BaseModel):
+    """The pipeline that actually produced this response's sources.
+
+    Reported rather than assumed. `retrieval_mode` on the request says what
+    was asked for and `default` says nothing at all, so a client comparing two
+    runs needs the resolved stages — otherwise a toggle that silently failed
+    to take effect looks exactly like a toggle that made no difference, which
+    is the specific confusion this endpoint's comparison invites.
+    """
+
+    mode: str = Field(description="dense | hybrid — whether BM25 was fused in")
+    reranked: bool = Field(description="Cross-encoder reranking ran over the candidate set")
+    hyde: bool = Field(description="The query was rewritten as a hypothetical answer first")
+    top_k: int = Field(description="Chunks returned, per entity for a multi-company question")
 
 
 class InformationBarrier(BaseModel):
@@ -198,6 +234,10 @@ class QueryResponse(BaseModel):
         default_factory=list,
         description="Chinese Walls in force for this user. Empty for roles no barrier applies to.",
     )
+    retrieval: RetrievalConfig | None = Field(
+        default=None,
+        description="The retrieval stages that produced `sources`. Null on paths that never retrieved.",
+    )
     # Defaulted, and not by accident. QueryResponse is constructed on four
     # paths — injection-blocked, no documents retrieved, generation failed,
     # and success — and three of them have no answer to analyse. A required
@@ -222,6 +262,36 @@ class QueryResponse(BaseModel):
 class DocumentIngestRequest(BaseModel):
     department: str
     access_roles: list[str]
+
+
+class IndexedDocument(BaseModel):
+    """One source document present in the index, as the caller may see it.
+
+    Aggregated from chunk metadata rather than from a separate manifest.
+    There is no document table — ingestion writes chunks — so a manifest
+    would be a second source of truth that could disagree with the index it
+    describes, which is exactly the failure the corpus fingerprint exists to
+    catch elsewhere in this project.
+    """
+
+    source: str = Field(description="Source file the chunks came from")
+    department: str = Field(description="Department that gates access to it")
+    chunks: int = Field(description="Chunks in the index for this document")
+    ticker: str | None = Field(default=None, examples=["AAPL"])
+    filing_type: str | None = Field(default=None, examples=["10-K"])
+    filing_date: str | None = None
+    sections: list[str] = Field(
+        default_factory=list, description="10-K sections recovered from this filing"
+    )
+
+
+class IndexedDocumentsResponse(BaseModel):
+    documents: list[IndexedDocument]
+    total_documents: int
+    total_chunks: int = Field(description="Chunks visible to this role, not the whole index")
+    accessible_departments: list[str] = Field(
+        description="What this listing was filtered to. An admin sees everything."
+    )
 
 
 class DocumentIngestResponse(BaseModel):

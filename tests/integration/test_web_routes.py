@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 
 from src.api.deps import get_current_user
 from src.auth.models import Role, User
+from src.config import settings
 from src.main import app
 
 
@@ -53,50 +54,23 @@ class TestLandingPage:
             assert asset in response.text
             assert client.get(asset).status_code == 200
 
-    def test_it_offers_the_dashboard(self, client):
-        assert '"/dashboard"' in client.get("/").text
+    def test_it_links_out_to_the_dashboard_service(self, client):
+        """The dashboard is a separate Streamlit process on another port — and,
+        deployed, another host — so a relative link would 404 against the API."""
+        page = client.get("/").text
 
+        assert settings.dashboard_url in page
+        assert 'href="/dashboard"' not in page
 
-class TestDashboardPage:
-    def test_it_renders(self, client):
-        response = client.get("/dashboard")
+    def test_the_dashboard_url_is_configurable(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "dashboard_url", "https://dash.example.test")
 
-        assert response.status_code == 200
-        assert "Query Dashboard" in response.text
+        assert "https://dash.example.test" in client.get("/").text
 
-    def test_it_links_the_extracted_assets(self, client):
-        response = client.get("/dashboard")
-
-        for asset in ("/static/css/tokens.css", "/static/css/dashboard.css", "/static/js/dashboard.js"):
-            assert asset in response.text
-            assert client.get(asset).status_code == 200
-
-    def test_every_stage_the_script_fills_is_present(self, client):
-        """The template is a shell; the script writes into these by id. A
-        renamed or dropped id fails as a silently blank section."""
-        page = client.get("/dashboard").text
-
-        for element_id in (
-            "roleGrid",
-            "deptChips",
-            "barrierList",
-            "questionInput",
-            "sourceList",
-            "answerText",
-            "declinedPanel",
-            "claimList",
-            "confidencePanel",
-            "flagChips",
-        ):
-            assert f'id="{element_id}"' in page
-
-    def test_it_bakes_in_no_scores(self, client):
-        """Nothing on this page is precomputed. A number in the template is a
-        number nobody measured."""
-        page = client.get("/dashboard").text
-
-        assert "faithfulness" not in page.lower()
-        assert "0.6" not in page and "0.7" not in page
+    def test_the_api_no_longer_serves_a_dashboard_route(self, client):
+        """Removed when the dashboard moved to Streamlit. A route left behind
+        would serve a second, diverging dashboard."""
+        assert client.get("/dashboard").status_code == 404
 
 
 class TestAccessEndpoint:

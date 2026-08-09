@@ -367,6 +367,7 @@ def get_retriever(
     user_roles: set[str],
     vector_store: VectorStoreBase | None = None,
     top_k: int | None = None,
+    hybrid: bool | None = None,
 ) -> Retriever:
     """Build the retriever the app should actually use for a query.
 
@@ -386,7 +387,17 @@ def get_retriever(
     Each stage is independently toggleable so the eval harness can measure
     them in isolation. Centralizing the choice here means the REST API, MCP
     server, and eval harness all resolve the same pipeline.
+
+    `hybrid` overrides `HYBRID_SEARCH_ENABLED` for one call. `None` means "use
+    the configured value", which is what every existing caller gets — the
+    override exists so a client can ask the same question both ways and
+    compare, without a setting change that would apply to everyone. It is
+    deliberately the only stage exposed this way: the eval harness measures
+    stages by running under a configuration, and a per-request knob for each
+    one would make "which pipeline produced this result" a property of the
+    request rather than of the run.
     """
+    use_hybrid = settings.hybrid_search_enabled if hybrid is None else hybrid
     final_top_k = top_k or settings.retrieval_top_k
     # When reranking follows, the first stage retrieves a wide candidate set
     # for it to re-score; otherwise it returns the final result directly.
@@ -394,7 +405,7 @@ def get_retriever(
 
     def build(extra_filter: dict | None) -> Retriever:
         base: Retriever
-        if settings.hybrid_search_enabled:
+        if use_hybrid:
             base = HybridRetriever(
                 user_roles=user_roles,
                 vector_store=vector_store,

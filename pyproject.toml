@@ -73,6 +73,14 @@ dev = [
     "mypy>=1.11.0",
     "pre-commit>=3.8.0",
 ]
+# The query dashboard is a separate process talking to the API over HTTP, and
+# it gets its own container. Kept out of the base install so the API image
+# does not carry Streamlit and its transitive tree for a dependency it never
+# imports.
+dashboard = [
+    "streamlit>=1.40.0",
+    "requests>=2.32.0",
+]
 eval = [
     "ragas>=0.2.0",
     "datasets>=3.0.0",

@@ -26,6 +26,16 @@ class VectorStoreBase(ABC):
     @abstractmethod
     def get_all_documents(self, filter_dict: dict | None = None) -> list[Document]: ...
 
+    def get_all_metadata(self, filter_dict: dict | None = None) -> list[dict]:
+        """Chunk metadata without the chunk bodies.
+
+        Concrete rather than abstract, and derived from `get_all_documents()`
+        by default, so a backend that cannot express the projection — and
+        every test fake implementing this interface — keeps working unchanged.
+        Backends that can express it override with the cheaper query.
+        """
+        return [doc.metadata for doc in self.get_all_documents(filter_dict)]
+
 
 class ChromaVectorStore(VectorStoreBase):
     def __init__(self) -> None:
@@ -129,6 +139,24 @@ class ChromaVectorStore(VectorStoreBase):
         ]
         logger.info("corpus_fetched", count=len(documents), filtered=filter_dict is not None)
         return documents
+
+    def get_all_metadata(self, filter_dict: dict | None = None) -> list[dict]:
+        """Chunk metadata only, for callers that never look at the text.
+
+        The same query as `get_all_documents()` minus `documents` from the
+        include list. That one omission is the difference between 39 seconds
+        and under one on this corpus: listing what is indexed needs the
+        provenance on 8,232 chunks, not the 8,232 chunk bodies behind it, and
+        materialising them made a listing endpoint slower than a real query.
+        """
+        kwargs: dict = {"include": ["metadatas"]}
+        if filter_dict:
+            kwargs["where"] = filter_dict
+        raw = self._store.get(**kwargs)
+
+        metadatas = [dict(m or {}) for m in (raw.get("metadatas") or [])]
+        logger.info("metadata_fetched", count=len(metadatas), filtered=filter_dict is not None)
+        return metadatas
 
     @property
     def store(self):  # noqa: ANN201

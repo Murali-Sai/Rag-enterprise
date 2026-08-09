@@ -11,9 +11,12 @@ from src.common.schemas import (
     ConfidenceScore,
     QueryRequest,
     QueryResponse,
+    RetrievalConfig,
+    RetrievalMode,
     SourceDocument,
     UnansweredReport,
 )
+from src.config import settings
 from src.generation.answer import GroundedAnswer, generate_grounded_answer
 from src.guardrails.financial_compliance import (
     apply_financial_disclaimers,
@@ -23,11 +26,42 @@ from src.guardrails.input_validator import validate_input
 from src.guardrails.output_safety import check_output_safety
 from src.guardrails.pii_detector import redact_pii
 from src.guardrails.prompt_injection import detect_prompt_injection
-from src.retrieval.retriever import Retriever, retrieve_scored
+from src.retrieval.retriever import Retriever, get_retriever, retrieve_scored
 from src.retrieval.scores import ScoredDocument
 
 router = APIRouter(tags=["Query"])
 logger = get_logger(__name__)
+
+
+def _resolve_retriever(mode: RetrievalMode, user: User, configured: Retriever) -> Retriever:
+    """The pipeline for this request, honouring a per-request mode override.
+
+    The configured retriever arrives as a dependency and is returned
+    unchanged for the default mode — which keeps it overridable in tests and
+    means the common path builds nothing extra. A pinned mode constructs a
+    fresh pipeline instead, because the stage choice is baked in at
+    construction.
+    """
+    if mode is RetrievalMode.DEFAULT:
+        return configured
+    return get_retriever(
+        user_roles=user.role_names,
+        hybrid=mode is RetrievalMode.HYBRID,
+    )
+
+
+def _retrieval_config(mode: RetrievalMode) -> RetrievalConfig:
+    hybrid = (
+        settings.hybrid_search_enabled
+        if mode is RetrievalMode.DEFAULT
+        else (mode is RetrievalMode.HYBRID)
+    )
+    return RetrievalConfig(
+        mode="hybrid" if hybrid else "dense",
+        reranked=settings.rerank_enabled,
+        hyde=settings.hyde_enabled,
+        top_k=settings.retrieval_top_k,
+    )
 
 
 def _to_source_documents(scored: list[ScoredDocument]) -> list[SourceDocument]:
@@ -124,6 +158,8 @@ async def query_documents(
     # retrieve_scored keeps the relevance scores attached, which is what the
     # confidence layer reads; a retriever without a score channel degrades to
     # unscored documents rather than erroring.
+    retriever = _resolve_retriever(request.retrieval_mode, user, retriever)
+    retrieval_config = _retrieval_config(request.retrieval_mode)
     scored = retrieve_scored(retriever, clean_question)
     documents = [item.document for item in scored]
 
@@ -142,6 +178,7 @@ async def query_documents(
             guardrail_flags=guardrail_flags,
             accessible_departments=departments,
             information_barriers=structured_barriers,
+            retrieval=retrieval_config,
         )
 
     # Generate answer, parse and score its citations. All of it happens in the
@@ -161,6 +198,7 @@ async def query_documents(
             guardrail_flags=[*guardrail_flags, "llm_generation_error"],
             accessible_departments=departments,
             information_barriers=structured_barriers,
+            retrieval=retrieval_config,
         )
 
     # Citations were parsed from grounded.answer above — i.e. before the
@@ -217,6 +255,7 @@ async def query_documents(
         guardrail_flags=guardrail_flags,
         accessible_departments=departments,
         information_barriers=structured_barriers,
+        retrieval=retrieval_config,
         confidence=ConfidenceScore(**grounded.confidence.as_dict()),
         claims=_to_claim_citations(grounded),
         unanswered=(

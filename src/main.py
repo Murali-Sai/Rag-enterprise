@@ -179,24 +179,15 @@ async def custom_redoc() -> HTMLResponse:
 # ── Server-rendered pages ────────────────────────────────────
 #
 # Templates, not a string literal. This module used to carry the landing page
-# as one 780-line inline HTML document — style, script and all — which was
-# tolerable while it was the only screen and stopped being so the moment a
-# second one existed. See src/web/.
+# as one 780-line inline HTML document — style, script and all. See src/web/.
+#
+# The query dashboard is not here: it is a Streamlit app in dashboard/, a
+# separate process and a separate container, reached at settings.dashboard_url.
 @app.get("/", include_in_schema=False)
 async def root(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "landing.html")
-
-
-@app.get("/dashboard", include_in_schema=False)
-async def dashboard(request: Request) -> HTMLResponse:
-    """The query dashboard.
-
-    Renders the shell only. Every number on the screen arrives from
-    `POST /query` and `GET /access` at run time, because a template that
-    baked in a score would be inventing one — and the scores this system
-    reports are the thing it is trying to be honest about.
-    """
-    return templates.TemplateResponse(request, "dashboard.html")
+    return templates.TemplateResponse(
+        request, "landing.html", {"dashboard_url": settings.dashboard_url}
+    )
 
 
 @app.exception_handler(GuardrailViolation)

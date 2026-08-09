@@ -100,6 +100,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     log_level: str = "INFO"
     environment: Environment = Environment.DEVELOPMENT
+    # Where the Streamlit dashboard is served. It is a separate process on a
+    # separate port — and, deployed, a separate host — so the landing page
+    # cannot link to it with a relative path. Compose and the deploy
+    # environment override this; the default is where `make dashboard` puts it.
+    dashboard_url: str = "http://localhost:8501"
 
     # Rate Limiting
     rate_limit: str = "20/minute"

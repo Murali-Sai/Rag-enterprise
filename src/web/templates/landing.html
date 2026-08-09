@@ -7,7 +7,7 @@
     <div class="kicker-row">
       <span><span class="status-dot">●</span> LIVE — RAG ENTERPRISE</span>
       <nav class="kicker-nav">
-        <a href="/dashboard">Dashboard</a>
+        <a href="{{ dashboard_url }}">Dashboard</a>
         <a href="#terminal">Terminal</a>
         <a href="/docs">API Docs</a>
         <a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank">GitHub</a>
@@ -27,7 +27,7 @@
       </dl>
 
       <div class="cta-row">
-        <a href="/dashboard" class="btn btn-primary">Open the dashboard →</a>
+        <a href="{{ dashboard_url }}" class="btn btn-primary">Open the dashboard →</a>
         <a href="#terminal" class="btn btn-ghost">Quick demo below</a>
         <a href="/docs" class="btn btn-ghost">Read the API docs</a>
         <a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank" class="btn btn-ghost">Source on GitHub</a>
@@ -134,7 +134,7 @@
       <div class="term-head">
         <div class="term-kicker">&gt; try it live</div>
         <h2>Query the filing index</h2>
-        <p>Pick a demo account, ask a question, watch the access barrier apply in real time. This is the short version — the <a href="/dashboard">dashboard</a> shows the retrieval scores, the per-claim citation verdicts and the confidence breakdown behind the same answer.</p>
+        <p>Pick a demo account, ask a question, watch the access barrier apply in real time. This is the short version — the <a href="{{ dashboard_url }}">dashboard</a> shows the retrieval scores, the per-claim citation verdicts and the confidence breakdown behind the same answer.</p>
       </div>
 
       <div class="term-panel">
@@ -191,7 +191,7 @@
 
     <div class="term-foot">
       <p>Personal portfolio project — not investment advice. Guardrail flags and disclaimers are real, generated live.</p>
-      <div class="links"><a href="/dashboard">Dashboard</a><a href="/redoc">ReDoc</a><a href="/docs">Swagger</a><a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank">GitHub</a></div>
+      <div class="links"><a href="{{ dashboard_url }}">Dashboard</a><a href="/redoc">ReDoc</a><a href="/docs">Swagger</a><a href="https://github.com/Murali-Sai/Rag-enterprise" target="_blank">GitHub</a></div>
     </div>
   </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-.PHONY: install dev test lint format eval docker-up docker-down seed ingest demo download-filings ingest-edgar mcp mcp-http
+.PHONY: install dev dashboard test lint format eval docker-up docker-down seed ingest demo download-filings ingest-edgar mcp mcp-http
 
 install:
 	pip install -e ".[dev,eval]"
@@ -51,8 +51,13 @@ demo: seed download-filings ingest-edgar ingest
 	@echo ""
 	@echo "Try: curl -X POST http://localhost:8000/auth/token -H 'Content-Type: application/json' -d '{\"username\":\"research_analyst\",\"password\":\"research1!\"}'"
 
+dashboard:
+	streamlit run dashboard/app.py --server.port=8501
+
 docker-up:
 	docker-compose up -d --build
+	@echo "API       -> http://localhost:8000/docs"
+	@echo "Dashboard -> http://localhost:8501"
 
 docker-down:
 	docker-compose down -v

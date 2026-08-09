@@ -153,19 +153,42 @@ Per company, current run:
 
 ## 5. What Phase 5 built
 
-**`GET /dashboard`** — a system demonstration, not an analyst tool. That choice
-was made explicitly (`handoffTo5.md` §5.1 asked for it) on the grounds that the
-distinctive things here — information barriers, citation verdicts, structured
-refusal — are invisible in a screen optimised for reading one answer. It traces
-one question through six stages: identity and the walls in force, the query,
-the ranked chunks with scores, the answer or the refusal, the per-claim
-verdicts, the confidence breakdown, the guardrail flags.
+**A Streamlit query dashboard** (`dashboard/app.py`, port 8501) — a system
+demonstration, not an analyst tool. That choice was made explicitly
+(`handoffTo5.md` §5.1 asked for it) on the grounds that the distinctive things
+here — information barriers, citation verdicts, structured refusal — are
+invisible in a screen optimised for reading one answer. It traces one question
+through six stages: identity and the walls in force, the query, the ranked
+chunks with scores, the answer or the refusal, the per-claim verdicts, the
+confidence breakdown, the guardrail flags.
+
+It was first built as a Jinja2 page served by the API, then rebuilt in
+Streamlit because Project 6 §5.2 names Streamlit or React. The Jinja2 landing
+page stays; only the dashboard moved. **The consequence is that the deployment
+is now two services**, which is what §5.3 of the spec describes and what
+`docker-compose.yml` now does — but Cloud Run currently runs one, so §9 has
+grown a step.
+
+**A per-request retrieval toggle.** §5.2 asks for "a toggle to compare hybrid
+vs. dense-only retrieval side by side," which was impossible while
+`get_retriever()` read the stage choice from global settings. `QueryRequest`
+now carries `retrieval_mode` (`default | dense | hybrid`), and the response
+reports the stages that actually ran in `retrieval`. Only this one stage is
+exposed per request: the eval harness measures stages by running under a
+configuration, and a per-request knob for each would make "which pipeline
+produced this result" a property of the request rather than of the run.
+
+**`GET /documents`** — what is indexed, rolled up from chunk provenance and
+filtered by the same where-clause retrieval uses. Research sees 9 documents
+and 8,162 chunks; admin sees 14 and 8,232. Reads metadata only
+(`get_all_metadata`), because materialising 8,232 chunk bodies to count them
+made the listing slower than a real query — 39s against under one.
 
 **`GET /access`** — the caller's roles, accessible departments and active
 barriers, with no LLM call and no vector store hit. It exists so the role
 switcher can show the barrier moving without spending a `gpt-4o` call per role.
 
-**Three new fields on the wire.** `QueryResponse.information_barriers`
+**New fields on the wire.** `QueryResponse.information_barriers`
 (name, description, blocked departments) and `.accessible_departments`, both
 of which were computed and then flattened into one `guardrail_flags` string;
 and `SourceDocument.relevance_score` / `.raw_score` / `.score_type`, which were
@@ -175,10 +198,18 @@ mapped documents rather than the scored channel behind them. The flattened
 already records.
 
 **`src/web/`.** `src/main.py` was 973 lines, of which 780 were one inline HTML
-string. It is now 220, and the pages are Jinja2 templates with extracted
-stylesheets. `pyproject.toml` declares `jinja2` and the template/static files as
-package data, because the Dockerfile `pip install .`s the project and a
-`src.web` installed without its templates is a package of nothing but `.py`.
+string. It is now ~210, and the landing page is a Jinja2 template with
+extracted stylesheets. `pyproject.toml` declares `jinja2` and the
+template/static files as package data, because the Dockerfile `pip install .`s
+the project and a `src.web` installed without its templates is a package of
+nothing but `.py`.
+
+**A compose port that never worked.** `docker-compose.yml` published
+`8000:8000` while `scripts/start.py` binds `$PORT`, defaulting to 8080. `.env`
+sets `APP_PORT=8000`, a variable `start.py` does not read. `make docker-up`
+produced a container that started cleanly and was unreachable — a worse
+failure than not starting at all. It is now `8000:8080` with `PORT` named
+explicitly in the compose environment so the two cannot drift.
 
 ### 5.1 Three rules the dashboard keeps — do not break them
 
@@ -310,13 +341,21 @@ Project 6 §6 is the portfolio phase. The case study is strong — the README
 carries the measurements, the retracted claims and the open defects. What is
 missing:
 
-1. **Redeploy.** §2. The live demo is the first thing a reviewer clicks and it
-   currently predates everything Phases 4 and 5 built.
-2. **Demo video.** The dashboard is the thing to record, and the shot is the
-   role switch: ask the ACME trading-desk question as `research_analyst`, watch
-   it decline at the gate with the Research-Trading Wall shown in force, then
-   hit "same question, different role" for `trader_desk` and watch the same
-   question answer at 0.877 confidence off `trading_desk_procedures.txt`.
+1. **Redeploy — now two services.** §2. The live demo is the first thing a
+   reviewer clicks and it predates everything Phases 4 and 5 built. The
+   dashboard is a second container and is not deployed at all: Cloud Run needs
+   a second service, with `RAG_API_URL` pointed at the API's public URL and
+   `DASHBOARD_URL` pointed back at the dashboard's, so the landing page links
+   resolve. `make docker-up` is the working reference for how the two wire
+   together.
+2. **Demo video.** The dashboard is the thing to record, and there are two
+   shots. The role switch: ask the ACME trading-desk question as
+   `research_analyst`, watch it decline at the gate with the Research-Trading
+   Wall shown in force, then switch to `trader_desk` and watch the same
+   question answer at high confidence off `trading_desk_procedures.txt`. And
+   the hybrid-vs-dense comparison the spec asks for: on the Apple revenue
+   question the two columns differ by one rank position, with both leaving a
+   Goldman Sachs chunk wrongly at rank 1 — the reranker defect, on screen.
 3. **Merge to `main`.** §3. Everything is on `phases-1-4`.
 4. Optional, if budget allows: the ablation re-run (§6), or a second run on the
    current corpus so the baseline in §4 is a mean rather than a single sample.

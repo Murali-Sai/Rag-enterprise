@@ -1,8 +1,8 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
-> **Live Demo**: [rag-enterprise-laa65asupq-uc.a.run.app](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-laa65asupq-uc.a.run.app/dashboard) &nbsp;|&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
+> **Live Demo**: [rag-enterprise-laa65asupq-uc.a.run.app](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;|&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
 >
-> ⚠️ The deployed build is stale — it predates the parser fix, the dashboard, and the current index. Run it locally (below) for the current behaviour.
+> ⚠️ The deployed build is stale — it predates the parser fix, the current index, and the query dashboard, which is now a second service and is not deployed at all. Run it locally (below) for the current behaviour: `make docker-up` brings up both.
 
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 
@@ -48,7 +48,7 @@ Unlike typical RAG demos with synthetic documents, this system downloads, parses
 
 9. **Evaluation**: 54 hand-written questions across seven strata, measuring Faithfulness, Answer Relevancy, Context Precision, and Context Recall — plus citation accuracy, coverage, and refusal correctness, computed outside RAGAS. Sixteen of the 54 correctly have no answer and are scored on whether the system declines.
 
-10. **A Dashboard for the Pipeline, Not the Answer**: `GET /dashboard` traces one question through six stages — the departments the role could search and the walls that removed the rest, the ranked chunks with their raw and normalised scores, the answer with clickable citations, the per-claim verdicts, the confidence breakdown, and every guardrail that fired. Switching roles re-runs the same question behind a different barrier.
+10. **A Dashboard for the Pipeline, Not the Answer**: a Streamlit client that traces one question through six stages — the departments the role could search and the walls that removed the rest, the ranked chunks with their raw and normalised scores, the answer with its citations, the per-claim verdicts, the confidence breakdown, and every guardrail that fired. Switching roles re-runs the same question behind a different barrier; a comparison mode runs it through dense and hybrid retrieval side by side.
 
 ## Demo Companies
 
@@ -113,8 +113,15 @@ cp .env.example .env
 ### Download Real SEC Filings & Run
 
 ```bash
-make demo    # Seeds users + downloads 10-K filings from EDGAR + ingests into ChromaDB
-make dev     # Starts FastAPI server at http://localhost:8000
+make demo       # Seeds users + downloads 10-K filings from EDGAR + ingests into ChromaDB
+make dev        # Starts FastAPI server at http://localhost:8000
+make dashboard  # Starts the Streamlit dashboard at http://localhost:8501 (needs the API up)
+```
+
+Or both in containers, which is the path a reviewer should take:
+
+```bash
+make docker-up  # API on :8000, dashboard on :8501, index baked in at build time
 ```
 
 Or run each step individually:
@@ -184,6 +191,23 @@ curl -s -X POST http://localhost:8000/query \
 | ops_manager | ops1234567! | operations | Trading, Compliance |
 | external_auditor | audit1234! | auditor | Compliance, SEC |
 | viewer_user | viewer123! | viewer | SEC Filings only |
+
+### API Surface
+
+Read from the OpenAPI schema rather than the route decorators — `main.py` includes its routers lazily, so `app.routes` does not show them and grepping for `@router.post` misses the `/auth` prefix.
+
+| Method | Path | Notes |
+|---|---|---|
+| `POST` | `/auth/token` | Login → JWT bearer. Not `/auth/login`. |
+| `POST` | `/auth/register` | |
+| `GET` | `/access` | Roles, accessible departments, barriers in force. No LLM call. |
+| `POST` | `/query` | Answer, citations, confidence, sources with scores, refusal report. Takes `retrieval_mode`. |
+| `GET` | `/documents` | What is indexed, filtered by the caller's access |
+| `POST` | `/documents/ingest` | Admin only |
+| `GET` | `/documents/supported-types` | Loader extensions, not indexed content |
+| `GET` | `/health`, `/health/ready` | |
+| `GET` | `/admin/users` | |
+| `GET` | `/`, `/docs`, `/redoc`, `/favicon.svg` | Landing page and branded docs |
 
 ## SEC EDGAR Integration
 
@@ -290,19 +314,27 @@ Off by default at runtime (one LLM call per citation, on the critical path); the
 
 All of it lives behind `generate_grounded_answer()` in `src/generation/answer.py`, which the REST API, the MCP server, and `evaluation/run_evaluation.py` all call. The eval harness bypasses the API route entirely, so anything implemented in the route would be invisible to the measurement meant to prove it works.
 
-## Query Dashboard (`GET /dashboard`)
+## Query Dashboard (Streamlit, port 8501)
 
 A screen for the pipeline, not for the answer. The choice was between an analyst tool — ask, read, click a citation, trust the result — and a demonstration of how the answer was produced. The distinctive things in this repo are the information barrier, the citation verdicts and the structured refusal, and none of them are visible in a screen that optimises for reading one answer, so the dashboard traces a single question through six stages:
 
 | Stage | What it shows | Where the data comes from |
 |---|---|---|
 | 00 Identity | Departments this role may search; the Chinese Walls in force, with the departments each removes | `GET /access` — no LLM call, so switching roles is free |
-| 01 Query | Six questions from the evaluation set, labelled with the stratum each exercises | — |
-| 02 Retrieval | The ranked chunks, each with its normalised relevance, its raw score, and the stage that produced it | `sources[].relevance_score`, `.raw_score`, `.score_type` |
-| 03 Answer **or** Declined | The answer with clickable citations, or the structured refusal | `answer`, `claims`, `unanswered` |
+| 01 Query | Six questions from the evaluation set, labelled with the stratum each exercises, and the dense/hybrid toggle | `retrieval_mode` on the request |
+| 02 Retrieval | The ranked chunks, each with its normalised relevance, its raw score, and the stage that produced it | `sources[].relevance_score`, `.raw_score`, `.score_type`, and `retrieval` |
+| 03 Answer **or** Declined | The answer with its citations, or the structured refusal | `answer`, `claims`, `unanswered` |
 | 04 Citations | Each claim, the blocks it cites, and the verdict where verification ran | `claims[].verdict` |
 | 05 Confidence | All four components with the label, never the composite alone | `confidence` |
 | 06 Guardrails | Every flag that fired | `guardrail_flags` |
+
+It runs as its own process and its own container, holding no retrieval logic, no scoring and no thresholds — if a number appears on it, it came off a response body.
+
+```bash
+make dashboard     # http://localhost:8501, expects the API on :8000
+```
+
+**Hybrid vs. dense, side by side.** The sidebar pins the search stage per request — `dense`, `hybrid`, or a comparison mode that asks the same question both ways and renders the two pipelines in adjacent columns. On the Apple revenue question, hybrid promotes the correct net-sales table from rank 3 to rank 2; both leave a Goldman Sachs chunk wrongly at rank 1, which is the reranker defect below. Across the whole evaluation set the difference is inside the noise floor — the comparison exists so that claim can be checked rather than taken on trust.
 
 Three rules the markup exists to keep:
 
@@ -314,9 +346,11 @@ Three rules the markup exists to keep:
 
 Role switching is the point. Ask *"What pre-trade controls does ACME Financial Holdings' internal trading desk procedures manual set?"* as `research_analyst` and the query declines at the retrieval gate with the Research-Trading Wall shown in force; the "same question, different role" control re-runs it as `trader_desk`, where the same question answers at 0.877 confidence off `trading_desk_procedures.txt`. The wall is the only thing that changed.
 
-`POST /query` grew two fields to make this possible: `information_barriers` (name, description, blocked departments) and `accessible_departments`. Both were already computed and then flattened into a single `guardrail_flags` string; the string stays, because it is what the 17a-4 audit trail already records.
+`POST /query` grew fields to make this possible: `information_barriers` (name, description, blocked departments), `accessible_departments`, per-chunk `relevance_score`/`raw_score`/`score_type`, and `retrieval` reporting the stages that actually ran. The first two were already computed and then flattened into a single `guardrail_flags` string; the string stays, because it is what the 17a-4 audit trail already records.
 
-The pages are Jinja2 templates in `src/web/`, served by the same FastAPI app — no second process, no CORS, no second deployment.
+`GET /documents` lists what is indexed, filtered by the same where-clause retrieval uses — a research analyst sees 9 documents and 8,162 chunks, an admin sees 14 and 8,232. The five it cannot see are the walled ones.
+
+The landing page remains a Jinja2 template in `src/web/`, served by the API.
 
 ## Compliance Audit Trail
 
@@ -369,11 +403,11 @@ Architecturally this turns the project into a **reusable AI capability**: the do
 ```
 rag-enterprise/
 ├── src/
-│   ├── main.py                          # FastAPI app + page routes
+│   ├── main.py                          # FastAPI app + landing page route
 │   ├── config.py                        # Settings (inc. EDGAR config)
-│   ├── web/                             # << NEW: server-rendered pages
-│   │   ├── templates/                   # base, landing, dashboard (Jinja2)
-│   │   └── static/                      # tokens.css + per-page css/js
+│   ├── web/                             # Server-rendered landing page
+│   │   ├── templates/                   # base, landing (Jinja2)
+│   │   └── static/                      # tokens.css + landing css/js
 │   ├── api/
 │   │   ├── routes/                      # auth, access, query, documents, health, admin
 │   │   ├── audit.py                     # Compliance audit trail (SEC 17a-4)
@@ -406,6 +440,9 @@ rag-enterprise/
 │   ├── ingest_edgar.py                  # Parse & ingest filings into ChromaDB
 │   ├── seed_users.py                    # Create demo IB users
 │   └── ingest_samples.py               # Ingest sample domain documents
+├── dashboard/                           # << NEW: Streamlit query dashboard
+│   └── app.py                           # HTTP client for the API; no logic of its own
+├── Dockerfile.dashboard                 # Thin image: streamlit + requests only
 ├── tests/                               # Unit + integration tests
 ├── evaluation/                          # Eval harness + 54 filing-grounded Q&A
 ├── data/edgar/                          # Downloaded 10-K filings (committed for deploy)
@@ -588,8 +625,19 @@ Or use the **interactive demo on the landing page** (pick a role, ask a question
 ### Local (Docker)
 
 ```bash
-docker-compose up -d --build
+make docker-up
 ```
+
+Two services. The API image bakes the filing index at build time, so the first build is slow (it downloads the filings from EDGAR and ingests them) and every start after that is instant. The dashboard image carries only `streamlit` and `requests` — it talks to the API over HTTP and shares none of its dependencies, which keeps it at ~800 MB against the API's multi-GB.
+
+| Service | Host port | Container port | Notes |
+|---|---|---|---|
+| `api` | 8000 | 8080 | `scripts/start.py` reads `$PORT`, defaulting to 8080 to match Cloud Run |
+| `dashboard` | 8501 | 8501 | `RAG_API_URL=http://api:8080` — the compose service name, not localhost |
+
+ChromaDB is not a third service: it runs in-process against a persistent directory, which is what keeps the baked index owned by the process that queries it. The named volume is initialised from the image on first run; a bind mount there would shadow the baked index with an empty host directory and every query would return nothing.
+
+The dashboard waits on the API's healthcheck before starting, because a cold API may be seeding users or ingesting.
 
 ### AWS (Terraform — reference architecture)
 

@@ -1,13 +1,63 @@
+# Two services: the API (which embeds ChromaDB) and the Streamlit dashboard.
+#
+# ChromaDB is not a third service. It runs in-process against a persistent
+# directory, which is what the project's tech table allows ("file-based or
+# containerized") and what the image bakes its index into at build time. A
+# separate Chroma container would mean the baked index no longer belongs to
+# the process that queries it, and a cold start would have to re-ingest.
+
 services:
-  app:
+  api:
     build: .
     ports:
-      - "8000:8000"
+      # Host 8000 -> container 8080. scripts/start.py reads $PORT and defaults
+      # to 8080, matching Cloud Run; the container has never listened on 8000.
+      # Publishing 8000:8000 produced a container that started cleanly and was
+      # unreachable, which is a worse failure than not starting at all.
+      - "8000:8080"
     env_file:
-      - .env
+      # Not required: a fresh clone has no .env, and compose refusing to start
+      # is a worse first experience than the API starting and telling you the
+      # LLM provider is unconfigured — which it already does, per query, with
+      # the variable names to set. Retrieval, RBAC and the refusal path all
+      # work without a key; only generation needs one.
+      - path: .env
+        required: false
+    environment:
+      # Named explicitly rather than left to the default, so the port the
+      # compose file publishes and the port the process binds cannot drift.
+      PORT: "8080"
     volumes:
+      # Named volume, initialised from the image's baked index on first run.
+      # A bind mount here would shadow it with an empty host directory and
+      # every query would return nothing.
       - chroma_data:/app/chroma_data
       - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      # The API seeds demo users and may ingest on first boot if the image was
+      # built without a baked index.
+      start_period: 180s
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      # Service name, not localhost: inside the compose network the API is a
+      # different host. This is the setting that makes the split deployment
+      # work, and the one most likely to be wrong outside compose.
+      RAG_API_URL: http://api:8080
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
