@@ -52,7 +52,7 @@ demo: seed download-filings ingest-edgar ingest
 	@echo "Try: curl -X POST http://localhost:8000/auth/token -H 'Content-Type: application/json' -d '{\"username\":\"research_analyst\",\"password\":\"research1!\"}'"
 
 dashboard:
-	streamlit run dashboard/app.py --server.port=8501
+	cd dashboard && streamlit run app.py --server.port=8501
 
 docker-up:
 	docker-compose up -d --build

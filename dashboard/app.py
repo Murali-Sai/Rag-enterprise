@@ -94,23 +94,104 @@ VERDICT_ICON = {
     "out_of_range": "🔴",
 }
 
+# The landing page's design system, re-expressed against Streamlit's component
+# tree. The dashboard is a separate process and cannot import tokens.css, so
+# the palette lives in .streamlit/config.toml and the typography here — the
+# two pages should read as one product, and the fonts are most of what makes
+# them read as two. Streamlit's widget chrome (radio dots, select carets) stays
+# Streamlit's; the parts a reader looks at do not.
 CSS = """
 <style>
-  .stApp { background:#07090b; }
-  section.main div[data-testid="stMarkdownContainer"] { color:rgba(232,236,232,.86); }
-  h1, h2, h3 { color:#efe9da !important; }
-  code { color:#f5a623 !important; }
-  .stage-note { font-family:'IBM Plex Mono',monospace; font-size:12px;
-                color:rgba(232,236,232,.45); }
-  .chunk { border:1px solid rgba(255,255,255,.09); border-radius:4px;
-           padding:9px 12px; margin-bottom:6px; }
-  .chunk .prov { font-family:monospace; font-size:12px; color:rgba(232,236,232,.6); }
-  .chunk .snip { font-size:12px; color:rgba(232,236,232,.4); margin-top:4px; }
-  .barrier { border:1px solid rgba(192,57,43,.4); border-left:3px solid #c0392b;
-             border-radius:4px; padding:10px 13px; margin-bottom:7px;
-             background:rgba(192,57,43,.06); }
-  .declined { border:1px solid rgba(122,162,247,.35); border-left:3px solid #7aa2f7;
-              border-radius:4px; padding:14px 16px; background:rgba(122,162,247,.06); }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,480;0,9..144,600;1,9..144,480&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --ink-inv:#efe9da;
+    --terminal:#07090b;
+    --terminal-panel:#0d1113;
+    --terminal-line:rgba(255,255,255,.09);
+    --terminal-text:rgba(232,236,232,.86);
+    --amber:#f5a623;
+    --wire:#4ade80;
+    --barrier:#c0392b;
+    --declined:#7aa2f7;
+    --font-display:'Fraunces',serif;
+    --font-body:'IBM Plex Sans',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+
+  html, body, [class*="st-"], [data-testid="stAppViewContainer"]{
+    font-family:var(--font-body);
+  }
+  .stApp{ background:var(--terminal); }
+  [data-testid="stHeader"]{ background:transparent; }
+
+  /* Display type, matching the landing page masthead and its Item headings. */
+  h1, h2, h3, h4{
+    font-family:var(--font-display) !important;
+    font-weight:500 !important;
+    letter-spacing:-.01em;
+    color:var(--ink-inv) !important;
+  }
+  h1{ font-weight:600 !important; }
+
+  code, kbd, [data-testid="stCode"]{
+    font-family:var(--font-mono) !important;
+    color:var(--amber) !important;
+  }
+
+  /* Sidebar reads as the terminal panel it sits beside. */
+  [data-testid="stSidebar"]{
+    background:var(--terminal-panel);
+    border-right:1px solid var(--terminal-line);
+  }
+  [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3{ font-size:1.05rem; }
+
+  /* Small caps labels, the landing page's .micro-label register. */
+  [data-testid="stCaptionContainer"]{
+    font-family:var(--font-mono) !important;
+    font-size:10.5px !important;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:rgba(232,236,232,.4) !important;
+  }
+
+  .stButton button, .stFormSubmitButton button{
+    font-family:var(--font-mono);
+    border-radius:3px;
+    border:1px solid var(--terminal-line);
+  }
+  [data-testid="stTextInput"] input, [data-testid="stSelectbox"] div[data-baseweb="select"]{
+    font-family:var(--font-mono);
+    border-radius:3px;
+  }
+  hr{ border-color:var(--terminal-line); }
+
+  .stage-note{ font-family:var(--font-mono); font-size:11.5px; line-height:1.6;
+               color:rgba(232,236,232,.42); }
+  .chunk{ border:1px solid var(--terminal-line); border-radius:4px;
+          padding:9px 12px; margin-bottom:6px; }
+  .chunk .prov{ font-family:var(--font-mono); font-size:11.5px;
+                color:rgba(232,236,232,.6); }
+  .chunk .snip{ font-size:12px; line-height:1.5; color:rgba(232,236,232,.4);
+                margin-top:4px; }
+
+  /* The signature diagonal hatch from the landing page's barrier band. */
+  .barrier{
+    border:1px solid rgba(192,57,43,.4); border-left:3px solid var(--barrier);
+    border-radius:4px; padding:10px 13px; margin-bottom:7px;
+    background:
+      repeating-linear-gradient(135deg, rgba(192,57,43,.10) 0 10px, rgba(192,57,43,0) 10px 20px),
+      rgba(192,57,43,.04);
+  }
+  .barrier b{ font-family:var(--font-mono); font-size:12.5px; color:var(--barrier); }
+
+  /* A refusal is a correct outcome; deliberately not the barrier's red. */
+  .declined{
+    border:1px solid rgba(122,162,247,.35); border-left:3px solid var(--declined);
+    border-radius:4px; padding:14px 16px; background:rgba(122,162,247,.06);
+  }
+  .declined b{ font-family:var(--font-mono); font-size:11px;
+               letter-spacing:.1em; text-transform:uppercase; color:var(--declined); }
 </style>
 """
 

@@ -1,0 +1,19 @@
+# Base theme, so Streamlit's own components are built in the project palette
+# rather than restyled afterwards by CSS fighting their defaults. The values
+# mirror src/web/static/css/tokens.css — the dashboard is a separate process
+# and cannot import that file, so this is the one place the palette is
+# duplicated. Change both together.
+
+[theme]
+base = "dark"
+primaryColor = "#f5a623"             # --amber
+backgroundColor = "#07090b"          # --terminal
+secondaryBackgroundColor = "#0d1113" # --terminal-panel
+textColor = "#e8ece8"                # --terminal-text, opaque
+font = "sans-serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

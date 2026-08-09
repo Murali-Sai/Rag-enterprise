@@ -18,7 +18,12 @@ WORKDIR /app
 # source change. Keep the pins in step with that extra.
 RUN pip install --no-cache-dir "streamlit>=1.40.0" "requests>=2.32.0"
 
-COPY app.py ./dashboard/app.py
+# The whole context — app.py plus .streamlit/config.toml — which is two files.
+# Streamlit resolves config.toml against the working directory rather than the
+# script, so the container runs from the same directory layout the local
+# `cd dashboard && streamlit run app.py` uses. Diverging there gives you a
+# themed dashboard in one and an unthemed one in the other.
+COPY . .
 
 ENV PYTHONUNBUFFERED=1
 # Where the API lives. Overridden by compose to the service name, and by the
@@ -39,7 +44,7 @@ EXPOSE 8501
 # default, which is unreachable from outside the container; headless
 # suppresses the browser-open attempt and the email prompt that would
 # otherwise block a non-interactive start.
-CMD streamlit run dashboard/app.py \
+CMD streamlit run app.py \
       --server.address=0.0.0.0 \
       --server.port=${PORT} \
       --server.headless=true \
