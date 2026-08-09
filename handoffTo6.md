@@ -498,10 +498,22 @@ exercise as often as you like.
   the same corpus it lost on all four metrics, every delta at or inside the
   n=20 noise floor. The honest statement is "not established as helpful", not
   "hybrid is worse" — and the old "costs 0.23 recall" claim was retracted when
-  it failed to reproduce. RRF is also ordinal, so enabling it discards the
-  score channel the confidence layer and the insufficient-context gate both
-  read: turning hybrid on silently disables the system's ability to say "I
-  don't know."
+  it failed to reproduce.
+
+  **Correction (2026-08-09).** This entry used to add that RRF's ordinality
+  "silently disables the system's ability to say 'I don't know.'" That is true
+  only with reranking *also* off, which is not a configuration anyone runs.
+  The pipeline is `dense (+BM25 → RRF) → cross-encoder rerank → top_k`: the
+  hybrid stage does emit `score=None` with `ScoreType.RRF`
+  (`retriever.py:218`), but the reranker re-wraps every document with a real
+  cross-encoder score immediately after (`reranker.py:64`), so the channel is
+  restored before confidence or the gate ever reads it. Verified against the
+  deployment — `retrieval_mode=hybrid` returns `score_type: cross_encoder` and
+  a retrieval confidence of 0.952, not null.
+
+  The structural cost is real but conditional, and it was stated
+  unconditionally. `rerank_enabled=False` plus hybrid is the combination that
+  actually loses the score channel.
 
 ---
 

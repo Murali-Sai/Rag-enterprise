@@ -200,11 +200,20 @@ class Settings(BaseSettings):
     # exact-match terms filings are full of (tickers, "Item 7A", dollar
     # figures) that a 384-dim embedding blurs together.
     #
-    # Off by default: the ablation in README ("Retrieval Pipeline Ablation")
-    # measured it lifting Faithfulness (+0.09) and Precision, but costing
-    # Context Recall -0.23 — five times the run-to-run noise floor. Lexical
-    # hits crowd semantically-relevant chunks out of a fixed fusion budget.
-    # Turn on once the candidate budget or fusion weighting is tuned.
+    # Off by default: measured against dense + rerank on the same corpus, it
+    # lost on all four metrics with every delta at or inside the n=20 noise
+    # floor. That supports "not established as helpful" — not "hybrid is
+    # worse", which one run at n=20 cannot support either way.
+    #
+    # This comment used to cite a Context Recall cost of -0.23, "five times the
+    # noise floor", from the README ablation. **That claim was retracted** — it
+    # did not reproduce on the fixed corpus, and the ablation table it came
+    # from is itself obsolete (measured on 9,572 chunks). It survived here
+    # after being withdrawn everywhere else, which is the hazard of putting a
+    # measurement in a comment: nothing re-runs it.
+    #
+    # Turn on once the candidate budget or fusion weighting is tuned — the
+    # weighting is not configurable today (Project 6 Phase 2.3 asks for it).
     hybrid_search_enabled: bool = False
 
     # Per-entity retrieval — when a question names two or more of the five

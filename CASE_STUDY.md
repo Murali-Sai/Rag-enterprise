@@ -144,13 +144,28 @@ One run at n=20 cannot support either claim, and I retracted an earlier,
 stronger claim I had made in this space (that hybrid "costs 0.23 recall") when it
 failed to reproduce on the fixed corpus.
 
-Hybrid ships **off** by default. Beyond the numbers, there is a structural cost:
-RRF is deliberately ordinal — it fuses ranks and discards the underlying scores,
-so its output says "this came first" and nothing about how relevant first was.
-That removes the score channel the confidence layer and the insufficient-context
-gate both read, so turning hybrid on silently disables the system's ability to
-say "I don't know." A retrieval gain would have to be large to be worth that, and
-no gain was measured at all.
+Hybrid ships **off** by default, on the numbers alone: no gain was measured, and
+the cost of carrying a second retriever is not free.
+
+I also used to claim a structural cost here, and it was overstated. RRF is
+deliberately ordinal — it fuses ranks and discards the underlying scores, so its
+output says "this came first" and nothing about how relevant first was, and the
+fusion stage does hand back documents with no score attached. I wrote that this
+removes the channel the confidence layer and the insufficient-context gate read,
+and so "silently disables the system's ability to say 'I don't know.'"
+
+That holds only if reranking is off too. The pipeline is `dense (+BM25 → RRF) →
+cross-encoder rerank → top_k`, and the reranker rescores every surviving
+document, so the channel is rebuilt before anything downstream reads it.
+Querying the deployment with `retrieval_mode=hybrid` returns cross-encoder
+scores and a retrieval confidence of 0.952 — not the null the claim predicted.
+
+I am leaving the correction visible rather than editing the claim away, because
+it is the same failure the retracted "costs 0.23 recall" line was: a mechanism
+that sounded right, reasoned about but never measured. The difference is that
+this one survived longer, since it was an argument about architecture rather
+than a number, and nothing in the test suite contradicts an unstated
+assumption. Checking it took one HTTP request.
 
 ### The reranker: the one clearly real effect, and it cuts both ways
 
