@@ -8,6 +8,7 @@ allowed to see.
 
 from langchain_core.documents import Document
 
+from src.config import settings
 from src.retrieval.bm25 import reset_bm25_cache
 from src.retrieval.retriever import HybridRetriever
 
@@ -114,3 +115,58 @@ class TestHybridRetrieverFusion:
         result = retriever.retrieve("apple revenue")
 
         assert len(result) == 1
+
+
+class TestFusionWeighting:
+    """The settings actually reaching the fusion call.
+
+    `test_fusion.py` covers the weighting arithmetic. This covers the wiring,
+    which is the half that fails silently: a knob that is read nowhere still
+    accepts values, logs them, and changes nothing.
+    """
+
+    def setup_method(self):
+        reset_bm25_cache()
+
+    def teardown_method(self):
+        reset_bm25_cache()
+
+    def _retrieve_with(self, monkeypatch, dense_weight: float, sparse_weight: float):
+        # Dense ranks the prose first; BM25 ranks the exact-term chunk first.
+        exact = Document(page_content="Item 7A quantitative disclosures", metadata={})
+        prose = Document(page_content="general discussion of market conditions", metadata={})
+        store = FakeVectorStore([prose, exact])
+
+        monkeypatch.setattr(settings, "hybrid_dense_weight", dense_weight)
+        monkeypatch.setattr(settings, "hybrid_sparse_weight", sparse_weight)
+
+        retriever = HybridRetriever(user_roles={"admin"}, vector_store=store, top_k=2)
+        return retriever.retrieve("Item 7A")
+
+    def test_favouring_dense_puts_the_dense_leader_first(self, monkeypatch):
+        result = self._retrieve_with(monkeypatch, dense_weight=1.0, sparse_weight=0.0)
+
+        assert result[0].page_content == "general discussion of market conditions"
+
+    def test_favouring_sparse_puts_the_lexical_leader_first(self, monkeypatch):
+        """Same corpus, same query, opposite order — so the setting is read."""
+        result = self._retrieve_with(monkeypatch, dense_weight=0.0, sparse_weight=1.0)
+
+        assert result[0].page_content == "Item 7A quantitative disclosures"
+
+    def test_weights_are_read_per_call_not_captured_at_construction(self, monkeypatch):
+        """Retrievers are built per request and the eval sweeps this between
+        runs, so a value captured in __init__ would go stale mid-sweep."""
+        store = FakeVectorStore(
+            [
+                Document(page_content="general discussion of market conditions", metadata={}),
+                Document(page_content="Item 7A quantitative disclosures", metadata={}),
+            ]
+        )
+        retriever = HybridRetriever(user_roles={"admin"}, vector_store=store, top_k=2)
+
+        monkeypatch.setattr(settings, "hybrid_dense_weight", 0.0)
+        monkeypatch.setattr(settings, "hybrid_sparse_weight", 1.0)
+        after = retriever.retrieve("Item 7A")
+
+        assert after[0].page_content == "Item 7A quantitative disclosures"

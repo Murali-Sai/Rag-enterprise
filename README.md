@@ -586,6 +586,10 @@ RERANK_ENABLED=false HYBRID_SEARCH_ENABLED=true  make eval  # + BM25 hybrid
 RERANK_ENABLED=true  HYBRID_SEARCH_ENABLED=true  make eval  # both
 HYDE_ENABLED=true    RERANK_ENABLED=true         make eval  # + HyDE query rewrite
 
+# Fusion weighting. Only the ratio matters, so 0.7/0.3 and 7/3 are one setting.
+# Both default to 1.0 — the hybrid rows above were measured equally weighted.
+HYBRID_SEARCH_ENABLED=true HYBRID_DENSE_WEIGHT=0.7 HYBRID_SPARSE_WEIGHT=0.3 make eval
+
 # Chunking is baked into an index, so comparing strategies needs one index each
 python scripts/build_semantic_index.py
 CHROMA_COLLECTION=rag_enterprise_semantic make eval

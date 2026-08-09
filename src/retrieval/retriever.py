@@ -205,7 +205,14 @@ class HybridRetriever:
             dense_results=len(dense_results),
             sparse_results=len(sparse_results),
         )
-        return reciprocal_rank_fusion([dense_results, sparse_results], top_k=self.top_k)
+        # Read per call rather than captured at construction, so changing the
+        # weighting does not need the retriever rebuilt — the eval harness
+        # sweeps this by setting the values between runs.
+        return reciprocal_rank_fusion(
+            [dense_results, sparse_results],
+            top_k=self.top_k,
+            weights=[settings.hybrid_dense_weight, settings.hybrid_sparse_weight],
+        )
 
     def retrieve_scored(self, query: str) -> list[ScoredDocument]:
         """Fused results, tagged RRF so downstream reads them as ordinal.

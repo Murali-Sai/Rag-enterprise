@@ -212,9 +212,26 @@ class Settings(BaseSettings):
     # after being withdrawn everywhere else, which is the hazard of putting a
     # measurement in a comment: nothing re-runs it.
     #
-    # Turn on once the candidate budget or fusion weighting is tuned — the
-    # weighting is not configurable today (Project 6 Phase 2.3 asks for it).
+    # Turn on once the candidate budget or fusion weighting is tuned.
     hybrid_search_enabled: bool = False
+
+    # How much each retriever counts for in the RRF sum. Only the ratio
+    # matters — the output is a ranking, so scaling both weights scales every
+    # score identically and reorders nothing.
+    #
+    # Both default to 1.0 rather than to the 0.7/0.3 Project 6 suggests,
+    # because the hybrid-vs-dense comparison in the README was measured at
+    # equal weighting. Shipping a different default would leave the one
+    # measurement of this pipeline describing a configuration the code no
+    # longer runs, and the result would read as a tuning gain rather than as
+    # an unmeasured change. 0.7/0.3 is a reasonable first thing to try; it is
+    # a starting point for an experiment, not a known-better setting.
+    #
+    # Raising the dense weight favours paraphrase, raising the sparse weight
+    # favours exact matches — tickers, "Item 7A", dollar figures — which is
+    # the trade this corpus actually presents.
+    hybrid_dense_weight: float = 1.0
+    hybrid_sparse_weight: float = 1.0
 
     # Per-entity retrieval — when a question names two or more of the five
     # companies in the corpus, retrieve for each of them separately and merge,
