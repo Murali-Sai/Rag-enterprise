@@ -19,8 +19,12 @@ dependencies = [
     "langchain-groq>=0.2.0,<1.0",
     "langchain-google-genai>=2.0.0,<3.0",
     "langchain-huggingface>=0.1.0,<1.0",
+    # Core, not an eval extra: OpenAI is the default provider for both
+    # generation (gpt-4o) and embeddings (text-embedding-3-small).
+    "langchain-openai>=0.2.0,<1.0",
 
-    # Embeddings
+    # Embeddings — the huggingface provider, and the cross-encoder reranker,
+    # which needs sentence-transformers regardless of embedding provider.
     "sentence-transformers>=3.0.0",
 
     # Vector Store
@@ -71,7 +75,6 @@ eval = [
     "jupyter>=1.0.0",
     "matplotlib>=3.9.0",
     "pandas>=2.2.0",
-    "langchain-openai>=0.2.0",
 ]
 # Heavy optional PII detection (~500MB with spaCy). Omit for Railway deploy.
 pii = [
