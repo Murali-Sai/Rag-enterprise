@@ -107,7 +107,28 @@ class Settings(BaseSettings):
     dashboard_url: str = "http://localhost:8501"
 
     # Rate Limiting
+    #
+    # NOTE: not currently enforced. `Limiter` is constructed in
+    # src/api/middleware.py and attached to app.state, but SlowAPIMiddleware is
+    # never added and no route carries @limiter.limit, so slowapi's
+    # default_limits never apply. Verified against the deployment: 40
+    # consecutive requests, zero 429s. Wiring it up is a three-line change;
+    # until someone makes it, treat this number as documentation of an
+    # intention rather than a control that exists.
     rate_limit: str = "20/minute"
+
+    # Whether POST /documents/ingest may write to the vector store.
+    #
+    # False in the image (see Dockerfile). The deployment ships a corpus
+    # verified to a specific digest and the demo's admin credentials are
+    # published — on the landing page, as a button — so anyone could otherwise
+    # add documents to the index the README's numbers describe. A demo whose
+    # corpus a visitor can edit cannot honestly claim a fingerprint.
+    #
+    # True by default, so running from source (`make dev`) keeps document
+    # upload. The image sets it false, which means the compose stack is
+    # read-only too — set ALLOW_RUNTIME_INGEST=true there if you need uploads.
+    allow_runtime_ingest: bool = True
 
     # Ingestion
     chunk_size: int = 512

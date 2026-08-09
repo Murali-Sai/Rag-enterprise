@@ -65,7 +65,11 @@ async def create_user(username: str, password: str, role_names: list[str]) -> Us
         )
         session.add(user)
         await session.commit()
-        await session.refresh(user)
+        # Load `roles` before the session closes. Without it the caller gets a
+        # detached instance and the first read of `user.roles` raises — which
+        # surfaced as /auth/register returning 500 *after* committing the user,
+        # so a successful registration looked like a failed one.
+        await session.refresh(user, attribute_names=["roles"])
 
         logger.info("user_created", username=username, roles=role_names)
         return user

@@ -8,6 +8,7 @@ from src.common.exceptions import AuthenticationError
 from src.retrieval.retriever import Retriever, get_retriever
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
@@ -29,6 +30,22 @@ async def get_current_user(
             detail="User not found",
         )
     return user
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
+) -> User | None:
+    """The caller, if they presented a token — for routes open to anonymous
+    users that grant more to an authenticated one.
+
+    A *missing* token yields None; a *malformed or expired* one still 401s.
+    Treating a bad token as "anonymous" would mean an admin whose token had
+    expired silently getting anonymous treatment, which on /auth/register reads
+    as the endpoint quietly ignoring the roles they asked for.
+    """
+    if credentials is None:
+        return None
+    return await get_current_user(credentials)
 
 
 def get_rbac_retriever(

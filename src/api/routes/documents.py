@@ -12,6 +12,7 @@ from src.common.schemas import (
     IndexedDocument,
     IndexedDocumentsResponse,
 )
+from src.config import settings
 from src.ingestion.loaders import get_supported_extensions
 from src.ingestion.pipeline import ingest_document
 from src.retrieval.retriever import RBACRetriever
@@ -27,6 +28,18 @@ async def ingest(
     access_roles: str,  # Comma-separated roles
     user: User = Depends(require_role("admin")),
 ) -> DocumentIngestResponse:
+    # The admin role is not a secret here: the demo's credentials are published
+    # so a visitor can watch the barriers come down. That makes "admin only" the
+    # wrong control for a write, and the deployment turns writes off entirely.
+    if not settings.allow_runtime_ingest:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "This deployment serves a fixed, verified corpus and does not accept "
+                "document uploads. Run it locally to ingest your own documents."
+            ),
+        )
+
     # Validate file extension
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename required")
