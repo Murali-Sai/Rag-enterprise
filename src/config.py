@@ -131,6 +131,20 @@ class Settings(BaseSettings):
     # to think about it. The image leaves it on.
     rate_limit_enabled: bool = True
 
+    # A coupling worth knowing about before it surprises someone: slowapi's
+    # default storage is in-memory and per process, so these numbers are per
+    # *instance*, not per service. The Cloud Run service runs
+    # `autoscaling.knative.dev/maxScale = 1`, which is the only reason the
+    # limit above is exact rather than approximate.
+    #
+    # Raising maxScale to N silently multiplies every limit here by N, because
+    # each instance counts on its own and a visitor's requests land wherever
+    # the load balancer sends them. Nothing errors and nothing logs; the limit
+    # just quietly stops meaning what it says. If maxScale ever goes above 1,
+    # the limiter needs shared storage (`storage_uri=` on the Limiter, backed
+    # by Redis or similar) — which is a bigger change than raising the number
+    # and should not be discovered afterwards.
+
     # Ceiling on POST /documents/ingest, in bytes. UploadFile spools to disk
     # past a threshold, so an unbounded upload is a disk-fill rather than a
     # memory exhaustion — slower to notice and no less effective. Ingest is off

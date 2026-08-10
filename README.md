@@ -321,6 +321,10 @@ Until 2026-08-10 this was configured and inert. `rate_limit = "20/minute"` sat i
 
 `POST /documents/ingest` is separately capped at 10 MB, counted as bytes are written rather than read off `Content-Length`, which a caller can lie about.
 
+One coupling to know before changing anything: the counter is **in-memory and per process**, so these are per-instance limits. The service runs `maxScale = 1`, which is the only reason they are exact. Raising maxScale to N multiplies every limit by N silently — nothing errors, nothing logs, the numbers just stop meaning what they say — and fixing that needs shared storage for the limiter, not a bigger number.
+
+Verified against revision `rag-enterprise-00008-fzj`: the 31st login returns 429, twelve asset loads return 200 while that same address is locked out, and the Cloud Run log records the limit against the real client IP rather than the `169.254.169.126` front end every visitor shares.
+
 ## Generation, Citations, and Confidence
 
 The quality layer most RAG systems skip. Four pieces, each of which exists because the one before it made the next measurable.
