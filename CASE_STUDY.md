@@ -1,18 +1,27 @@
 # RAG over SEC 10-K filings, with information barriers and a measured refusal path
 
 **I built a retrieval-augmented generation system over five companies' real SEC
-10-K filings that scores 0.698 faithfulness and 0.939 citation accuracy on a
-54-question hand-written evaluation suite — and correctly declines 85.2% of the
+10-K filings that scores 0.697 faithfulness and 0.928 citation accuracy on a
+54-question hand-written evaluation suite — and correctly declines 84.6% of the
 questions it should decline, including every question whose answer is not in the
 corpus or is behind an access barrier.**
 
 Shipped configuration: dense retrieval over `text-embedding-3-small` with a
 cross-encoder reranker, `gpt-4o` for generation, `gpt-4o-mini` as judge.
-Run `eval_20260809_015503`, against the 8,232-chunk index (`c2f8c13673cf5ca5`).
+**Means over three runs** (`eval_20260809_015503`, `_20260809_202437`,
+`_20260810_214534`) against the 8,232-chunk index (`c2f8c13673cf5ca5`), with
+the per-metric spread across those runs beneath.
 
-| Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
-|---|---|---|---|---|---|---|
-| 0.698 | 0.682 | 0.378 | 0.335 | **0.939** | 0.661 | **0.852** |
+| | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
+|---|---|---|---|---|---|---|---|
+| **mean (n=3)** | 0.697 | 0.681 | 0.391 | 0.338 | **0.928** | 0.642 | **0.846** |
+| *spread* | *0.007* | *0.004* | *0.035* | *0.016* | *0.017* | *0.040* | *0.019* |
+
+These were single-run figures until 2026-08-10, and quoting the best of three
+for citation accuracy (0.939) would have been worth 0.011 of flattery on the
+number this document leans on hardest. The spread row is the more useful half
+anyway: context precision moves 0.035 between identical runs, so a reported
+precision gain smaller than that is not a gain.
 
 Two of those columns are not RAGAS metrics and are the ones I care most about.
 **Citation accuracy** is measured by handing a judge one claim and *only* the
@@ -205,50 +214,76 @@ building a collection per strategy and pointing the eval at each — not flippin
 setting on a live index. Every chunk carries the strategy that produced it, so a
 collection can never be misattributed after the fact.
 
-**The measured comparison.** All three strategies, 2026-08-09, on the same
-54-question suite, the same `gpt-4o` generator and the same `gpt-4o-mini`
-judge — the first time the three have been comparable:
+**The measured comparison.** All three strategies, on the same 54-question
+suite, the same `gpt-4o` generator and the same `gpt-4o-mini` judge. **Two runs
+per strategy** (three for `recursive`), added 2026-08-10 — the first version of
+this table had one run each and said something considerably stronger.
+
+Means, with each strategy's own run-to-run spread beside it:
 
 | Strategy | Index | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Answer Correctness | Citation Accuracy | Refusal Correctness |
 |---|---|---|---|---|---|---|---|---|
-| `recursive` *(shipped)* | 8,232 (`c2f8c136`) | 0.693 | 0.678 | 0.382 | 0.347 | 0.464 | **0.921** | 0.852 |
-| `fixed` | 6,585 (`0740fec6`) | 0.788 | **0.689** | **0.470** | **0.446** | **0.492** | 0.876 | **0.870** |
-| `semantic` | 8,936 (`8068f567`) | **0.798** | 0.644 | 0.432 | 0.347 | 0.490 | 0.907 | 0.833 |
-| *noise floor (n=54)* | | *0.005* | *0.004* | *0.004* | *0.012* | *—* | *0.017* | *0.000* |
+| `recursive` *(shipped, n=3)* | 8,232 (`c2f8c136`) | 0.697 | 0.681 | 0.391 | 0.338 | 0.462 | **0.928** | 0.846 |
+| `fixed` *(n=2)* | 6,585 (`0740fec6`) | **0.790** | **0.690** | **0.474** | **0.468** | **0.488** | 0.883 | **0.861** |
+| `semantic` *(n=2)* | 8,936 (`8068f567`) | 0.781 | 0.646 | 0.430 | 0.360 | 0.477 | 0.915 | 0.833 |
+| *widest spread across strategies* | | *0.034* | *0.004* | *0.035* | *0.044* | *0.026* | *0.017* | *0.019* |
 
-The floor is a fresh two-run spread: the `recursive` row above and the earlier
-baseline were the same config against the same corpus, so their difference is
-run-to-run variation and nothing else. It is far tighter than the n=20 floors
-this table used to carry.
+**The second run cost the headline claim, and that is the finding.** The
+previous version of this table quoted floors of 0.005, 0.004 and 0.012 and
+concluded that `fixed` beat `recursive` by **19×, 22× and 8×** them. Those
+floors came from a single pair of `recursive` runs and were transferred to the
+other two strategies "on the assumption that variance is comparable across
+strategies, which is reasonable and unverified." It was unverified and it was
+wrong: measured per strategy, faithfulness varies 0.034 run-to-run on
+`semantic` against 0.007 on `recursive`, and context precision varies 0.035 on
+`recursive` itself — nine times the 0.004 that row claimed.
 
-**The shipped strategy loses.** `fixed` — the structure-blind baseline that
-exists so structure-awareness has something to prove itself against — beats
-`recursive` on faithfulness by **0.095 against a 0.005 floor**, context
-precision by 0.088 against 0.004, and context recall by 0.099 against 0.012.
-Nineteen, twenty-two and eight times their respective floors. `semantic` beats
-it on faithfulness too, by 0.105.
+Re-scored against the widest spread actually observed:
 
-Recursive keeps exactly one thing: citation accuracy, 0.921 against fixed's
-0.876, which is a real delta at three times its floor. Its chunks are larger
-and paragraph-aligned, so a cited claim more often sits whole inside one chunk.
-That is a genuine advantage and it is the only one.
+| | claimed 2026-08-09 | measured 2026-08-10 |
+|---|---|---|
+| Faithfulness | +0.095 vs 0.005 floor = **19×** | +0.093 vs 0.034 floor = **2.8×** |
+| Context precision | +0.088 vs 0.004 floor = **22×** | +0.082 vs 0.035 floor = **2.3×** |
+| Context recall | +0.099 vs 0.012 floor = **8×** | +0.130 vs 0.044 floor = **3.0×** |
 
-**What this can and cannot support.** Strategy and corpus cannot be separated —
-a chunking change rebuilds the index by definition, so `fixed` is 6,585 chunks
+The deltas barely moved. The floors moved by an order of magnitude, and the
+floors were the part that was measured once.
+
+**What survives.** `fixed` still beats the shipped default on all three, and
+the direction was never really in doubt — 2–3× a floor is a real effect. It is
+just not the rout the first table described. Two deltas that first table
+counted have since dissolved into noise: refusal correctness (+0.015 against a
+0.019 floor) and answer correctness (+0.026 against 0.026), both of which the
+earlier version either bolded or declined to call. Declining to call
+`answer_correctness` was the right instinct and it is now measured rather than
+intuited.
+
+`recursive` keeps citation accuracy — 0.928 against fixed's 0.883, a real
+0.045 at 2.6× its floor. Its chunks are larger and paragraph-aligned, so a
+cited claim more often sits whole inside one chunk. And `semantic` picked up a
+clear negative it did not have before: it *loses* answer relevancy by 0.034
+against a 0.004 floor, **8.6×**, which is the largest single effect anywhere in
+this table and points the opposite way from its faithfulness win.
+
+**Why the default did not change.** The trade is now legible: give up 0.045 of
+citation accuracy — the strongest number this project has, and the one the
+headline claim rests on — to buy 0.08–0.13 across faithfulness, precision and
+recall. That is a genuine engineering trade rather than a mistake to correct,
+and at 2–3× the noise it does not carry enough to justify invalidating the
+shipped index, its digest, the running deployment and every figure in this
+document. `recursive` stays. What changed is that the choice is now measured
+instead of assumed, and the case for revisiting it is written down.
+
+**What this still cannot support.** Strategy and corpus cannot be separated — a
+chunking change rebuilds the index by definition, so `fixed` is 6,585 chunks
 against recursive's 8,232, and "fixed wins" means the pipeline under that
-strategy wins, not that structure-blindness is better in the abstract. One run
-each for `fixed` and `semantic`; the floor is transferred from `recursive`'s
-pair on the assumption that variance is comparable across strategies, which is
-reasonable and unverified. And `answer_correctness` has no floor at all yet —
-it was added the same day, so its +0.028 is uncallable and is not claimed here.
-
-**Reading it honestly:** the deltas on faithfulness and precision are an order
-of magnitude past anything variance explains, so the direction is not in doubt
-even if the exact numbers move. The default the system ships was chosen before
-this comparison existed, and the comparison does not support it. That is now
-an open architecture question rather than a settled decision — switching would
-invalidate the shipped index and every published figure, so it deserves a
-second run per strategy before anyone acts on it.
+strategy wins, not that structure-blindness is better in the abstract. And two
+runs is enough to show a one-run floor was too tight; it is not enough to
+pin variance properly. The floor used above is the widest observed rather than
+any strategy's own, which is the conservative reading and the one worth
+quoting. Against `recursive`'s own 0.007 faithfulness spread the same delta
+reads as 13× — the choice between those two numbers is a judgment call, and
+quoting the flattering one is how the first version of this table happened.
 
 This is also the clearest argument in the project for the spec's instruction to
 build the comparison at all: the missing row was not a formality. It was the
@@ -286,9 +321,12 @@ left untested.
 **The parser fix did work on what it was second-aimed at.** Refusal correctness
 moved 0.796 → 0.852 and `exact_figure` 0.692 → 0.846. Counted as rows rather than
 means: 11 answerable questions were declined before, **6** now. That attribution
-is safe because refusal correctness is the most stable metric in the set — it did
-not move at all across two runs in which 27 of 54 answers were textually
-different.
+is safe because refusal correctness is among the most stable metrics in the set:
+it held at 0.852 across two runs in which 27 of 54 answers were textually
+different, and a third on 2026-08-10 came in at 0.833. Its spread is 0.019, not
+the 0.000 this paragraph claimed when two runs were all there was — a 0.056
+move still clears it threefold, but "did not move at all" was a statement about
+sample size wearing the costume of a statement about the metric.
 
 **And it cost something.** Aggregate context recall fell 0.383 → 0.335, with AAPL
 0.569 → 0.403 and JPM 0.267 → 0.167. Against a measured n=54 recall spread of
@@ -309,6 +347,14 @@ stratum exists to record that, not to claim it is solved.
 faithfulness noise floor was 0.138. I predicted it would fall with √n to roughly
 0.087 at n=50. Measured at n=54 it is **0.014** — an order of magnitude, where
 sampling alone predicts a factor of 1.6.
+
+A caveat this section did not carry until 2026-08-10: that 0.014 is
+`recursive`'s spread on its own corpus, and a floor measured on one
+configuration is not a property of the metric. `semantic` varies 0.034 on
+faithfulness over the same suite and judge. The judge-budget finding holds —
+tightening it collapsed the floor by an order of magnitude, and both runs now
+score 38 of 38 — but "the faithfulness floor is 0.014" was over-general, and
+believing it is what put a 19× claim in the chunking table above.
 
 The cause was in the run files. `max_tokens=1024` was being applied to the judge
 as well as to generation, and RAGAS faithfulness emits one structured verdict per

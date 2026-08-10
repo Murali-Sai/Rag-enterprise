@@ -450,17 +450,22 @@ re-running none. ~$3 for the full set.
 were measured on 2026-08-09 against the same 54-question suite, generator and
 judge (`eval_20260809_202437` recursive, `_203012` fixed, `_203636` semantic).
 `fixed` — the structure-blind baseline that `recursive` exists to beat — beats
-it on faithfulness by 19× the noise floor, context precision by 22× and recall
-by 8×. `semantic` beats it on faithfulness too. `recursive` wins citation
+it on faithfulness, context precision and recall. `recursive` wins citation
 accuracy alone.
 
-Nothing was changed on the strength of it. Switching the default invalidates
-the shipped index, its digest, the deployment and every published figure, and
-these are single runs for `fixed` and `semantic` against a floor transferred
-from `recursive`'s pair. **Get a second run per strategy before acting**, and
-note that strategy and corpus are inseparable by construction — `fixed` is
-6,585 chunks against 8,232, so what won is the pipeline under that strategy,
-not chunking in isolation.
+**Resolved 2026-08-10.** The second run per strategy was taken
+(`eval_20260810_214534` recursive, `_215136` fixed, `_215754` semantic). The
+19×/22×/8× multiples this section used to quote were wrong — not in the deltas,
+which held almost exactly, but in the floors, which came from one pair of
+`recursive` runs and were transferred to the others. Re-scored against the
+widest per-strategy spread they are **2.8×, 2.3× and 3.0×**. `recursive` stays
+the default: the trade is 0.045 of citation accuracy for 0.08–0.13 elsewhere,
+which at 2–3× the noise does not justify invalidating the shipped index, its
+digest, the deployment and every published figure. See `CASE_STUDY.md`.
+
+Strategy and corpus are inseparable by construction — `fixed` is 6,585 chunks
+against 8,232, so what won is the pipeline under that strategy, not chunking in
+isolation.
 
 The `fixed` index lives in the `rag_enterprise_fixed` collection inside
 `chroma_data/`, alongside `rag_enterprise_semantic`. `build_index_dist.py`

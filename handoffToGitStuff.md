@@ -43,16 +43,25 @@ described in `handoffTo6.md` §2.1 and §2.2a.
 
 ### 2.1 The result that matters
 
-`fixed` — the structure-blind chunking baseline that `recursive` exists to beat
-— **beat the shipped default** on faithfulness by 19× the run-to-run noise
-floor, context precision by 22×, recall by 8×. `semantic` beat it on
-faithfulness too. `recursive` wins citation accuracy alone.
+~~`fixed` beat the shipped default by 19×, 22× and 8× the noise floor.~~
+**Re-measured 2026-08-10 and cut to 2.8×, 2.3× and 3.0×.** The second run per
+strategy happened; this is what it found.
 
-Nothing was changed on the strength of it, deliberately. See `CASE_STUDY.md`
-for the full table and the caveats — single runs, and strategy is inseparable
-from corpus. **Do not switch the default without a second run per strategy**;
-switching invalidates the shipped index, its digest, the deployment and every
-published figure.
+The deltas held almost exactly (+0.093, +0.082, +0.130). The *floors* were the
+problem: they came from one pair of `recursive` runs and were transferred to
+the other strategies on an explicitly unverified assumption. Measured per
+strategy they are 5–9× wider — faithfulness varies 0.034 on `semantic` against
+0.007 on `recursive`. Two deltas that table counted, refusal correctness and
+answer correctness, are now noise outright.
+
+`recursive` stays the default. The trade is 0.045 of citation accuracy — the
+strongest number in the project — for 0.08–0.13 elsewhere, and at 2–3× the
+noise that does not carry enough to invalidate the shipped index, its digest,
+the deployment and every published figure. `CASE_STUDY.md` has the re-scoring.
+
+**The lesson worth keeping:** a floor measured once is a claim, not a
+constant. Every multiple in that table was computed against a denominator with
+n=1, and the denominator was where all the error was.
 
 ---
 
@@ -215,11 +224,11 @@ meter at once, and it is free.
 
 ## 7. Open work, ranked
 
-1. **The chunking result needs a second run per strategy** (~$1.60) before
-   anyone acts on it. It currently contradicts the shipped default on single
-   runs.
-2. **CI items in §3.2** — integration tests, action versions, codecov token,
-   README badge.
+1. ~~The chunking result needs a second run per strategy.~~ **Done
+   2026-08-10.** It cut the claim from 19×/22×/8× to 2.8×/2.3×/3.0× and the
+   default stayed put. See §2.1.
+2. ~~CI items in §3.2~~ — **done**, except branch protection. Both suites run,
+   actions bumped to v7, codecov gated on a token, badge added.
 3. **The mojibake ships.** Sample documents carry mangled em dashes from a
    Windows-encoded ingest, visible in the first chunk of the headline demo
    (`ACME FINANCIAL HOLDINGS â€… TRADING DESK PROCEDURES`). Fixing it needs a

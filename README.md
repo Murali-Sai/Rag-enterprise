@@ -237,18 +237,20 @@ Chunking is baked into an index at ingestion time, so these are not runtime swit
 | `recursive` *(default)* | Paragraph → line → sentence → word → character | Stacks on the EDGAR parser, which has already split the filing at Item boundaries, so a chunk stays inside one section |
 | `semantic` | Where consecutive sentence embeddings diverge | Cuts where the subject changes rather than where the budget runs out. Hand-implemented (~50 lines) — `langchain-experimental` requires `langchain-core` 1.x against this project's deliberate `<1.0` pin, and is sunset |
 
-**All three, measured 2026-08-09** on the same 54-question suite, generator and judge. The baseline was not beaten:
+**All three, measured on the same 54-question suite, generator and judge.** Means over two runs per strategy, three for `recursive`. The baseline was not beaten:
 
 | Strategy | Chunks | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy |
 |---|---|---|---|---|---|---|
-| `recursive` *(default)* | 8,232 | 0.693 | 0.678 | 0.382 | 0.347 | **0.921** |
-| `fixed` | 6,585 | 0.788 | **0.689** | **0.470** | **0.446** | 0.876 |
-| `semantic` | 8,936 | **0.798** | 0.644 | 0.432 | 0.347 | 0.907 |
-| *noise floor* | | *0.005* | *0.004* | *0.004* | *0.012* | *0.017* |
+| `recursive` *(default, n=3)* | 8,232 | 0.697 | 0.681 | 0.391 | 0.338 | **0.928** |
+| `fixed` *(n=2)* | 6,585 | **0.790** | **0.690** | **0.474** | **0.468** | 0.883 |
+| `semantic` *(n=2)* | 8,936 | 0.781 | 0.646 | 0.430 | 0.360 | 0.915 |
+| *widest spread across strategies* | | *0.034* | *0.004* | *0.035* | *0.044* | *0.017* |
 
-`fixed` beats the shipped default on faithfulness by 19× the run-to-run noise floor, on context precision by 22×, and on recall by 8×. `recursive` keeps citation accuracy alone (3× the floor), which its larger paragraph-aligned chunks plausibly explain — a cited claim more often sits whole inside one chunk.
+`fixed` beats the shipped default on faithfulness (+0.093), context precision (+0.082) and context recall (+0.130) — 2.3–3.0× the run-to-run noise. `recursive` keeps citation accuracy, +0.045 at 2.6×, which its larger paragraph-aligned chunks plausibly explain: a cited claim more often sits whole inside one chunk.
 
-Strategy and corpus can't be separated here (a chunking change rebuilds the index), and these are single runs against a floor transferred from `recursive`'s pair. The direction is an order of magnitude past variance; the exact numbers are not settled. **The default was chosen before this comparison existed and the comparison does not support it** — see `CASE_STUDY.md` for why that's an open question rather than a pending change.
+**Until 2026-08-10 this table read 19×, 22× and 8×.** The deltas were right; the floors were measured on one strategy's pair and transferred to the others. Measured per strategy they are 5–9× wider, and re-scoring against the widest observed spread turns a rout into a 2–3× effect. Two deltas the earlier table counted — refusal correctness and answer correctness — are now inside the noise entirely.
+
+The default stays `recursive`: the trade is 0.045 of citation accuracy, the strongest number here, against 0.08–0.13 elsewhere, and at 2–3× the noise that does not justify invalidating the shipped index, its digest, the deployment and every published figure. Strategy and corpus still can't be separated (a chunking change rebuilds the index). See `CASE_STUDY.md` for the full re-scoring.
 
 ### Deduplication — 7.8% of this corpus is redundant
 
@@ -504,13 +506,14 @@ Three more things about this dataset are worth stating before the numbers, becau
 
 ### Current scores
 
-One run on the 54-question set (`eval_20260809_015503`), against the current 8,232-chunk corpus (`c2f8c13673cf5ca5`). Shipped configuration: dense retrieval, cross-encoder rerank, per-entity retrieval for comparatives.
+Mean of three runs on the 54-question set (`eval_20260809_015503`, `_20260809_202437`, `_20260810_214534`), against the current 8,232-chunk corpus (`c2f8c13673cf5ca5`). Shipped configuration: dense retrieval, cross-encoder rerank, per-entity retrieval for comparatives.
 
-> **One run, not a mean of two.** The previous figures were a two-run mean; these are not, so single-metric moves have to be read against the n=54 noise floor below — and that floor is a lower bound, not a bound.
+| | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
+|---|---|---|---|---|---|---|---|
+| **mean (n=3)** | 0.697 | 0.681 | 0.391 | 0.338 | **0.928** | 0.642 | **0.846** |
+| *spread* | *0.007* | *0.004* | *0.035* | *0.016* | *0.017* | *0.040* | *0.019* |
 
-| Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
-|---|---|---|---|---|---|---|
-| 0.698 | 0.682 | 0.378 | 0.335 | **0.939** | 0.661 | **0.852** |
+> **Read the spread row before the mean row.** These were single-run figures until 2026-08-10. Context precision moves 0.035 between runs that differ in nothing at all, so a reported precision gain smaller than that is not a gain — a lesson learned expensively in the chunking comparison above.
 
 Per stratum, and this is where the system's actual shape shows:
 
@@ -526,7 +529,7 @@ Per stratum, and this is where the system's actual shape shows:
 
 **The refusal path is still the strongest thing here.** All three unanswerable strata score 1.000, as they have in every run — the system declines every question it should decline, structures the refusal, and labels it low confidence. Out-of-corpus questions are caught by the retrieval gate before any generation call is spent. RBAC-blocked questions never retrieve the document at all.
 
-**Over-refusal is still the weakest, and it improved.** Refusal correctness moved 0.796 → 0.852 and `exact_figure` moved 0.692 → 0.846. Counted as rows rather than as a mean: 11 answerable questions declined before, 6 now, plus 2 questions answered that should have declined. This is the one metric the move is safe to attribute to, because refusal correctness is the most stable in the set — it did not move at all across two runs in which 27 of 54 answers were textually different (spread 0.000). Six false refusals is still six; the reranker (below) is still the cause.
+**Over-refusal is still the weakest, and it improved.** Refusal correctness moved 0.796 → 0.852 and `exact_figure` moved 0.692 → 0.846. Counted as rows rather than as a mean: 11 answerable questions declined before, 6 now, plus 2 questions answered that should have declined. This is the one metric the move is safe to attribute to, because refusal correctness is among the most stable in the set. It held at 0.852 across two runs in which 27 of 54 answers were textually different — though a third run on 2026-08-10 came in at 0.833, so its spread is 0.019 rather than the 0.000 this paragraph used to claim. The 0.056 move still clears that threefold; "did not move at all" did not survive a third sample. Six false refusals is still six; the reranker (below) is still the cause.
 
 **Goldman Sachs still scores exactly 0.000 context recall, and that retires the explanation.** Page furniture was the stated cause: GS carried 214 bare running-header chunks — `"Goldman Sachs 2025 Form 10-K | 123"` — and `_strip_page_furniture()` took them to **0**. GS recall did not move off 0.000, and GS context precision fell 0.271 → 0.050. Whatever is wrong with Goldman retrieval, the furniture was not it. Per company:
 
