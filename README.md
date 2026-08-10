@@ -514,6 +514,8 @@ Mean of three runs on the 54-question set (`eval_20260809_015503`, `_20260809_20
 | *spread* | *0.007* | *0.004* | *0.035* | *0.016* | *0.017* | *0.040* | *0.019* |
 
 > **Read the spread row before the mean row.** These were single-run figures until 2026-08-10. Context precision moves 0.035 between runs that differ in nothing at all, so a reported precision gain smaller than that is not a gain — a lesson learned expensively in the chunking comparison above.
+>
+> **These three runs predate the entity-scoping fix** (below), which is now shipped. Its own run scores 0.717 / 0.678 / 0.409 / 0.340 / 0.931 / 0.889 — better on five of seven, and only refusal correctness moves past its floor. That is one run, and one run is what this table just finished learning not to quote as a mean, so the figures above stay as the last properly-replicated measurement until a fresh set of three exists.
 
 Per stratum, and this is where the system's actual shape shows:
 
@@ -529,7 +531,13 @@ Per stratum, and this is where the system's actual shape shows:
 
 **The refusal path is still the strongest thing here.** All three unanswerable strata score 1.000, as they have in every run — the system declines every question it should decline, structures the refusal, and labels it low confidence. Out-of-corpus questions are caught by the retrieval gate before any generation call is spent. RBAC-blocked questions never retrieve the document at all.
 
-**Over-refusal is still the weakest, and it improved.** Refusal correctness moved 0.796 → 0.852 and `exact_figure` moved 0.692 → 0.846. Counted as rows rather than as a mean: 11 answerable questions declined before, 6 now, plus 2 questions answered that should have declined. This is the one metric the move is safe to attribute to, because refusal correctness is among the most stable in the set. It held at 0.852 across two runs in which 27 of 54 answers were textually different — though a third run on 2026-08-10 came in at 0.833, so its spread is 0.019 rather than the 0.000 this paragraph used to claim. The 0.056 move still clears that threefold; "did not move at all" did not survive a third sample. Six false refusals is still six; the reranker (below) is still the cause.
+**Over-refusal was the weakest thing here, and entity-scoped reranking fixed most of it.** Refusal correctness moved 0.796 → 0.852 with the parser fix, then **0.846 → 0.889** with the scoping change below — the second move is 2.3× the metric's 0.019 spread, and no other metric moved beyond its own floor. Counted as rows: 11 answerable questions were declined originally, 6–7 after the parser fix, **4 now**.
+
+The cause was a scoring artefact, not a threshold. A cross-encoder scores "does this passage answer this query?", and no single chunk answers *"compare Apple and Tesla"* — so every chunk of Apple's filing was judged a half-answer and scored like one, landing at relevances of 0.03 down to 0.0008 and tripping the insufficient-context gate on questions retrieval had answered correctly. Scoring each company's leg against the question scoped to that company moved the Apple/Tesla supplier comparison from 0.021 to 0.569, and lifted the JPMorgan/Goldman comparison — which already passed — from 0.673 to 0.914.
+
+Two fixes that looked obvious were measured and rejected. Lowering the threshold: the failures sit at 0.003–0.03 against a 0.15 gate while healthy questions score 0.8–0.99, so no threshold separates them. Adding a ticker filter for single-company questions: it raises slot purity from 3.90/5 to 5.00/5 but *lowers* mean retrieval confidence 0.832 → 0.789, admits zero new questions and newly refuses two.
+
+The 4 that remain are two the model itself declines despite good retrieval, and two the cross-encoder scores low regardless of scoping.
 
 **Goldman Sachs still scores exactly 0.000 context recall, and that retires the explanation.** Page furniture was the stated cause: GS carried 214 bare running-header chunks — `"Goldman Sachs 2025 Form 10-K | 123"` — and `_strip_page_furniture()` took them to **0**. GS recall did not move off 0.000, and GS context precision fell 0.271 → 0.050. Whatever is wrong with Goldman retrieval, the furniture was not it. Per company:
 

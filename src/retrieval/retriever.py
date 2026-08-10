@@ -7,7 +7,7 @@ from src.auth.rbac import get_accessible_departments
 from src.common.logging import get_logger
 from src.config import settings
 from src.retrieval.bm25 import get_bm25_index
-from src.retrieval.entities import detect_entities, entity_filter
+from src.retrieval.entities import detect_entities, entity_filter, scope_query
 from src.retrieval.fusion import reciprocal_rank_fusion
 from src.retrieval.hyde import build_retrieval_query
 from src.retrieval.reranker import rerank_with_scores
@@ -300,12 +300,22 @@ class MultiEntityRetriever:
     question, which is the wrong thing to hold fixed. A comparison is two
     questions and costs two questions' worth of context.
 
+    Each leg is scored against the question scoped to its own company rather
+    than against the whole comparison, because a cross-encoder asked whether a
+    passage answers "compare A and B" correctly judges any single chunk to be
+    half an answer and scores it accordingly. See `scope_query()` for the
+    measurement that motivated it.
+
     The merged list is ordered by relevance across companies, so citation [1]
-    is still the best-matching passage overall. Ordering is only meaningful
-    when the underlying scores are comparable — the cross-encoder scores every
-    (query, passage) pair against the same query with the same model, so they
-    are. Under RRF, which is ordinal, `relevance` is None for every document
-    and the merge falls back to interleaving by rank.
+    is still the best-matching passage overall. That ordering rests on a
+    weaker assumption than it used to: the legs share a model but no longer
+    share a query, so their logits come from different (query, passage)
+    distributions and are comparable by construction of the model rather than
+    by identity of the input. In exchange the numbers now mean "how well does
+    this passage answer the question about *its* company", which is the thing
+    worth ranking across a comparison. Under RRF, which is ordinal, `relevance`
+    is None for every document and the merge falls back to interleaving by
+    rank.
 
     The split is decided per query, at retrieve() time, because the retriever
     is constructed before the question is known.
@@ -333,8 +343,14 @@ class MultiEntityRetriever:
         if len(entities) < 2:
             return retrieve_scored(self._plain(), query)
 
+        # Each leg runs on the question scoped to its own company. The cross
+        # encoder scores "does this passage answer this query?", and no single
+        # chunk answers "compare A and B", so scoring A's chunks against the
+        # whole comparison marked every one of them down — see scope_query().
+        scoped = {ticker: scope_query(query, ticker, entities) for ticker in entities}
         per_entity = [
-            retrieve_scored(self._build(entity_filter(ticker)), query) for ticker in entities
+            retrieve_scored(self._build(entity_filter(ticker)), scoped[ticker])
+            for ticker in entities
         ]
         merged = _merge_by_relevance(per_entity)
 
@@ -343,6 +359,7 @@ class MultiEntityRetriever:
             entities=list(entities),
             per_entity=[len(group) for group in per_entity],
             merged=len(merged),
+            scoped_queries=[scoped[ticker] for ticker in entities],
         )
         return merged
 
