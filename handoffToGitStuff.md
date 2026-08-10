@@ -111,9 +111,23 @@ OPENAI_API_KEY= ./.venv/Scripts/python.exe -m pytest tests/unit -q
    repository secret or drop the step.
 4. **No badge in the README.** Now that CI means something, a status badge is
    worth adding — it was actively misleading before, so this had to come second.
-5. **No branch protection.** Everything today went straight to `main`. If the
-   repo is going in front of recruiters, a protected `main` plus PRs is a
-   better story than 40 direct pushes, though it is cosmetic.
+5. ~~No branch protection.~~ **Added 2026-08-10**, as two rulesets rather than
+   one, because they earn their keep differently:
+
+   - **`main: no force-push, no deletion`** — no bypass for anyone, owner
+     included. Neither operation has a legitimate use on this branch, and the
+     history is what makes `evaluation/results/` checkable.
+   - **`main: PR with green CI`** — requires a PR and green `lint`,
+     `test (unit)` and `test (integration)` before merge, **with repository
+     admin set as a bypass actor**. So `git push origin main` still works for
+     the owner. That is deliberate: a solo repo where the owner cannot fix
+     something at 2am is worse than one with a slightly softer badge, and the
+     rule still binds every other contributor and every automation.
+
+   Be honest about what the second one is worth. With a self-bypass it is a
+   default and a signal, not a wall. If the point is the recruiter-facing
+   story, the thing that actually tells is a PR history — the ruleset only
+   makes PRs the path of least resistance.
 
 ### 3.3 Repo hygiene worth a look
 
