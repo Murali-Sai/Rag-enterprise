@@ -1,5 +1,7 @@
 # RAG Enterprise — SEC EDGAR Filing Analyzer
 
+[![CI](https://github.com/Murali-Sai/Rag-enterprise/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Murali-Sai/Rag-enterprise/actions/workflows/ci.yml)
+
 > **Live Demo** &nbsp;|&nbsp; [Query dashboard](https://rag-enterprise-dashboard-laa65asupq-uc.a.run.app) &nbsp;·&nbsp; [Landing page](https://rag-enterprise-laa65asupq-uc.a.run.app) &nbsp;·&nbsp; [API docs](https://rag-enterprise-laa65asupq-uc.a.run.app/docs)
 >
 > Two Cloud Run services: the API with the filing index shipped inside the image, and the Streamlit dashboard talking to it over HTTP.
@@ -617,6 +619,16 @@ python scripts/analyze_duplicates.py
 make test          # Run all tests
 make test-cov      # Run with coverage
 make lint          # Lint + type check
+```
+
+CI runs both suites — `tests/unit` and `tests/integration` — on every push and
+pull request, gated behind ruff's `check` and `format --check`. The runner is
+deliberately **keyless**: no `OPENAI_API_KEY` is set for it. A test that reaches
+for a real client passes locally off `.env` and fails everywhere else, so
+reproduce that condition before trusting a green local run:
+
+```bash
+OPENAI_API_KEY= pytest tests/ -q
 ```
 
 ## Deployment
