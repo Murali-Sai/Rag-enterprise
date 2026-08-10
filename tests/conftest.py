@@ -7,6 +7,38 @@ from src.auth.jwt_handler import create_access_token
 from src.auth.repository import init_db
 
 
+@pytest.fixture(autouse=True)
+def _rate_limit_off():
+    """Off for every test unless one asks for it.
+
+    The limiter keys on client IP and every test shares one, so a suite that
+    left it on would have tests failing according to how many requests the
+    tests before them happened to make — a green run that goes red when a
+    test is added elsewhere in the file. The tests that care about the limit
+    turn it back on through `rate_limited`.
+    """
+    from src.api.middleware import limiter
+
+    previous, limiter.enabled = limiter.enabled, False
+    yield
+    limiter.enabled = previous
+
+
+@pytest.fixture
+def rate_limited(_rate_limit_off):
+    """Turn the limiter on, with the counters cleared.
+
+    Depends on `_rate_limit_off` so it is guaranteed to run after it rather
+    than being undone by it.
+    """
+    from src.api.middleware import limiter
+
+    limiter.enabled = True
+    limiter.reset()
+    yield limiter
+    limiter.reset()
+
+
 @pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.new_event_loop()

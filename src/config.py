@@ -108,14 +108,35 @@ class Settings(BaseSettings):
 
     # Rate Limiting
     #
-    # NOTE: not currently enforced. `Limiter` is constructed in
-    # src/api/middleware.py and attached to app.state, but SlowAPIMiddleware is
-    # never added and no route carries @limiter.limit, so slowapi's
-    # default_limits never apply. Verified against the deployment: 40
-    # consecutive requests, zero 429s. Wiring it up is a three-line change;
-    # until someone makes it, treat this number as documentation of an
-    # intention rather than a control that exists.
+    # Enforced per client IP, on POST /query and the two auth routes only.
+    # Deliberately not a blanket default limit: the landing page pulls three
+    # static assets plus a favicon per load, so a global 20/minute would spend
+    # a visitor's budget on stylesheets and lock them out of the demo they came
+    # to try. What is worth limiting is what costs money or can be brute
+    # forced, and that is these three routes.
     rate_limit: str = "20/minute"
+    # Login and registration. A different surface: this is where a password is
+    # guessed at, not where money is spent.
+    #
+    # Higher than /query rather than lower, which looks backwards until you
+    # watch someone use the demo. The landing page logs in once per role-button
+    # click and switching roles *is* the demonstration — it is how a visitor
+    # sees the information barriers move. Five roles, clicked through a couple
+    # of times while comparing what each can retrieve, is ordinary use and must
+    # not trip anything. Meanwhile the demo credentials are published on that
+    # same page, so throttling guesses at *those* accounts protects nothing;
+    # what this is worth keeping for is any account that is not one of the five.
+    auth_rate_limit: str = "30/minute"
+    # Escape hatch for tests and for anyone running locally who does not want
+    # to think about it. The image leaves it on.
+    rate_limit_enabled: bool = True
+
+    # Ceiling on POST /documents/ingest, in bytes. UploadFile spools to disk
+    # past a threshold, so an unbounded upload is a disk-fill rather than a
+    # memory exhaustion — slower to notice and no less effective. Ingest is off
+    # in the deployment (see allow_runtime_ingest below), so this guards the
+    # from-source and compose paths.
+    max_upload_bytes: int = 10 * 1024 * 1024
 
     # Whether POST /documents/ingest may write to the vector store.
     #

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 
 from src.api.audit import log_query_audit
 from src.api.deps import get_current_user, get_rbac_retriever
+from src.api.middleware import limiter
 from src.api.routes.access import to_information_barriers
 from src.auth.models import User
 from src.auth.rbac import get_accessible_departments, get_information_barriers_for_user
@@ -114,11 +115,21 @@ def _to_claim_citations(grounded: GroundedAnswer) -> list[ClaimCitation]:
 
 
 @router.post("/query", response_model=QueryResponse)
+@limiter.limit(settings.rate_limit)
 async def query_documents(
-    request: QueryRequest,
+    request: Request,
+    response: Response,
+    payload: QueryRequest,
     user: User = Depends(get_current_user),
     retriever: Retriever = Depends(get_rbac_retriever),
 ) -> QueryResponse:
+    """The expensive route, and the only one that reaches an LLM.
+
+    `request` and `response` are the rate limiter's, which requires parameters
+    of exactly those names and types; the body moved to `payload` to make room.
+    FastAPI treats a lone Pydantic parameter as the whole body regardless of
+    its name, so the wire format is unchanged.
+    """
     guardrail_flags: list[str] = []
 
     # The access state this query runs under. Computed before the guardrails
@@ -132,15 +143,15 @@ async def query_documents(
     structured_barriers = to_information_barriers(barriers)
 
     # Input guardrails
-    validate_input(request.question)
+    validate_input(payload.question)
 
-    injection_result = detect_prompt_injection(request.question)
+    injection_result = detect_prompt_injection(payload.question)
     if injection_result.is_blocked:
         guardrail_flags.append(f"injection_blocked: {injection_result.reason}")
         return QueryResponse(
             answer="Your query was blocked by our safety system. Please rephrase your question.",
             sources=[],
-            query=request.question,
+            query=payload.question,
             guardrail_flags=guardrail_flags,
             accessible_departments=departments,
             information_barriers=structured_barriers,
@@ -150,16 +161,16 @@ async def query_documents(
         guardrail_flags.append(f"injection_warning: score={injection_result.risk_score:.2f}")
 
     # Clean PII from input
-    clean_question = redact_pii(request.question)
-    if clean_question != request.question:
+    clean_question = redact_pii(payload.question)
+    if clean_question != payload.question:
         guardrail_flags.append("pii_redacted_from_input")
 
     # Retrieve relevant documents (RBAC-filtered with information barriers).
     # retrieve_scored keeps the relevance scores attached, which is what the
     # confidence layer reads; a retriever without a score channel degrades to
     # unscored documents rather than erroring.
-    retriever = _resolve_retriever(request.retrieval_mode, user, retriever)
-    retrieval_config = _retrieval_config(request.retrieval_mode)
+    retriever = _resolve_retriever(payload.retrieval_mode, user, retriever)
+    retrieval_config = _retrieval_config(payload.retrieval_mode)
     scored = retrieve_scored(retriever, clean_question)
     documents = [item.document for item in scored]
 
@@ -174,7 +185,7 @@ async def query_documents(
         return QueryResponse(
             answer="No relevant documents found for your query within your access level.",
             sources=[],
-            query=request.question,
+            query=payload.question,
             guardrail_flags=guardrail_flags,
             accessible_departments=departments,
             information_barriers=structured_barriers,
@@ -194,7 +205,7 @@ async def query_documents(
                 "check the LLM_PROVIDER and API key environment variables."
             ),
             sources=_to_source_documents(scored),
-            query=request.question,
+            query=payload.question,
             guardrail_flags=[*guardrail_flags, "llm_generation_error"],
             accessible_departments=departments,
             information_barriers=structured_barriers,
@@ -220,7 +231,7 @@ async def query_documents(
 
     # Financial compliance guardrails
     fin_compliance = check_financial_compliance(
-        query=request.question,
+        query=payload.question,
         response=answer,
         user_roles=user.role_names,
     )
@@ -240,7 +251,7 @@ async def query_documents(
         user_id=user.id,
         username=user.username,
         user_roles=list(user.role_names),
-        query=request.question,
+        query=payload.question,
         retrieved_departments=list({doc.metadata.get("department", "") for doc in documents}),
         documents_accessed=len(documents),
         guardrail_flags=guardrail_flags,
@@ -251,7 +262,7 @@ async def query_documents(
     return QueryResponse(
         answer=clean_answer,
         sources=_to_source_documents(scored),
-        query=request.question,
+        query=payload.question,
         guardrail_flags=guardrail_flags,
         accessible_departments=departments,
         information_barriers=structured_barriers,

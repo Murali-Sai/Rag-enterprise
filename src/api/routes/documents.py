@@ -1,4 +1,3 @@
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -19,6 +18,11 @@ from src.retrieval.retriever import RBACRetriever
 from src.retrieval.vector_store import get_vector_store
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
+
+# Read granularity for uploads. Large enough that the loop is not the
+# bottleneck, small enough that the overshoot past the cap before it trips is
+# bounded by this rather than by the file.
+_UPLOAD_CHUNK_BYTES = 1024 * 1024
 
 
 @router.post("/ingest", response_model=DocumentIngestResponse, status_code=status.HTTP_201_CREATED)
@@ -53,10 +57,32 @@ async def ingest(
 
     roles_list = [r.strip() for r in access_roles.split(",")]
 
-    # Save to temp file and ingest
+    # Save to temp file and ingest, refusing anything over the cap.
+    #
+    # Copied a block at a time and checked as it goes rather than trusting
+    # `file.size`: that is the client's Content-Length, so a caller who lies
+    # about it walks straight past a check that reads it. Counting what was
+    # actually written is the only number that cannot be talked out of.
+    #
+    # The partial file is removed on the way out. Leaving it behind would mean
+    # an upload rejected for being too large still consumed the disk the cap
+    # exists to protect, which is the same failure wearing a 413.
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
+        written = 0
+        while chunk := file.file.read(_UPLOAD_CHUNK_BYTES):
+            written += len(chunk)
+            if written > settings.max_upload_bytes:
+                tmp.close()
+                Path(tmp_path).unlink(missing_ok=True)
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail=(
+                        f"File exceeds the {settings.max_upload_bytes // (1024 * 1024)} MB "
+                        "upload limit."
+                    ),
+                )
+            tmp.write(chunk)
 
     try:
         chunks = ingest_document(

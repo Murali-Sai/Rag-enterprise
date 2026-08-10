@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from src.api.deps import get_optional_user
+from src.api.middleware import limiter
 from src.auth.jwt_handler import create_access_token
 from src.auth.models import User
 from src.auth.repository import authenticate_user, create_user
@@ -16,8 +17,11 @@ SELF_SERVICE_ROLES = frozenset({"viewer"})
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(settings.auth_rate_limit)
 async def register(
-    request: UserCreate,
+    request: Request,
+    response: Response,
+    payload: UserCreate,
     caller: User | None = Depends(get_optional_user),
 ) -> UserResponse:
     """Create a user. Anonymous callers get `viewer`; other roles need an admin.
@@ -32,7 +36,7 @@ async def register(
     was upstream of them: nothing stopped a caller from choosing which side of
     the wall to stand on.
     """
-    requested = set(request.roles)
+    requested = set(payload.roles)
     if not requested <= SELF_SERVICE_ROLES and (caller is None or "admin" not in caller.role_names):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -43,7 +47,7 @@ async def register(
         )
 
     try:
-        user = await create_user(request.username, request.password, request.roles)
+        user = await create_user(payload.username, payload.password, payload.roles)
     except AuthenticationError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
 
@@ -56,9 +60,18 @@ async def register(
 
 
 @router.post("/token", response_model=TokenResponse)
-async def login(request: TokenRequest) -> TokenResponse:
+@limiter.limit(settings.auth_rate_limit)
+async def login(request: Request, response: Response, payload: TokenRequest) -> TokenResponse:
+    """This is where a password is guessed at, not where money is spent.
+
+    `request` and `response` are both the limiter's: it keys on the first and
+    writes X-RateLimit-* into the second, and raises rather than degrades if
+    either is missing. The failure is worth naming because it only shows on
+    the *success* path — a wrong password raises before the injection point,
+    so a suite that only tests rejection sees nothing wrong.
+    """
     try:
-        user = await authenticate_user(request.username, request.password)
+        user = await authenticate_user(payload.username, payload.password)
     except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

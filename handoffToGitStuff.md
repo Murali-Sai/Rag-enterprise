@@ -168,11 +168,19 @@ index just built with MiniLM — the exact misreport that line exists to prevent
 `scripts/start.py` now reads the env directly; anything else doing late
 overrides needs the same care.
 
-**The rate limit does not exist.** `rate_limit = "20/minute"` is configured,
-constructed, attached to `app.state` — and never enforced, because
-`SlowAPIMiddleware` is not added and no route carries `@limiter.limit`.
-Verified against the deployment: 40 consecutive requests, zero 429s. Do not
-cite it as a control. Wiring it is a three-line change nobody has made.
+**~~The rate limit does not exist.~~ Fixed 2026-08-10** — it is enforced now,
+on `/query` (20/min) and the two auth routes (30/min), keyed on the first
+`X-Forwarded-For` hop. It was never the three-line change this said it was:
+slowapi requires the endpoint to take parameters named exactly `request` and
+`response`, and all three routes had named their Pydantic body `request`.
+
+Carry the lesson rather than the fact. The bug that survived the first round of
+tests was `headers_enabled=True` raising when an endpoint has no `response`
+parameter — which only happens on the **success** path, because a wrong
+password raises before the injection point. Every rejection test passed while
+every successful login returned 500. Rate-limit suites test refusal by
+instinct; the half that matters to a visitor is the other one, and only a live
+request found it.
 
 **`compare_eval_runs.py` calls identical `config` blocks a noise floor.** It
 fingerprints *settings*, not source. Change behaviour without changing a

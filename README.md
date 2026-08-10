@@ -311,6 +311,16 @@ Comparison is done on raw vectors rather than a vector-store distance score: Chr
 | PII Redaction | Redact SSN, credit cards | GLBA / GDPR compliance |
 | Output Safety | Flag hallucinations, unsafe content | Accuracy in financial context |
 
+### Rate limiting
+
+`POST /query` is capped at **20/minute per IP** and the two auth routes at **30/minute**, with `X-RateLimit-*` and `Retry-After` on every limited response.
+
+Three things about that are deliberate. **It is not a blanket limit** — the landing page pulls three assets and a favicon per load, so a global cap would spend a visitor's budget on stylesheets and lock them out of the demo they came to try; static files and `/health` are unlimited. **Auth is looser than query**, which looks backwards until you watch someone use it: switching roles *is* the demonstration, the page logs in once per role click, and the demo credentials are published anyway, so throttling guesses at those five accounts protects nothing. **The key is the first `X-Forwarded-For` hop**, because behind Cloud Run `request.client.host` is Google's front end for every visitor on earth and keying on it would put the whole internet in one bucket. That header is spoofable, and that trade is made knowingly: the limit exists to stop casual scripted abuse running up a bill on a public unauthenticated demo, not to stop a determined attacker who was never going to be stopped by a per-IP counter.
+
+Until 2026-08-10 this was configured and inert. `rate_limit = "20/minute"` sat in settings, a `Limiter` was built and attached to `app.state`, and nothing consulted it — no middleware, no decorated route. Forty consecutive requests against the deployment returned zero 429s. It is now enforced, and `tests/unit/test_rate_limit.py` pins both halves: that the expensive routes refuse, and that the demo stays usable while they do.
+
+`POST /documents/ingest` is separately capped at 10 MB, counted as bytes are written rather than read off `Content-Length`, which a caller can lie about.
+
 ## Generation, Citations, and Confidence
 
 The quality layer most RAG systems skip. Four pieces, each of which exists because the one before it made the next measurable.

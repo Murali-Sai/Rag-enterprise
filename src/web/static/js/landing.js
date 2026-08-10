@@ -24,6 +24,15 @@ async function selectRole(el, username, password) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
+    // 429 is not a failed login and must not be reported as one. Role
+    // switching is the demonstration, so a visitor comparing all five roles is
+    // the likeliest person to meet the limiter — telling them their password
+    // was wrong would send them looking for a bug that is not there.
+    if (res.status === 429) {
+      status.className = 'status-line err';
+      status.innerHTML = '&gt; rate limited — too many logins from this address, wait a minute<span class="cursor"></span>';
+      return;
+    }
     if (!res.ok) throw new Error('Login failed');
     const data = await res.json();
     token = data.access_token;
