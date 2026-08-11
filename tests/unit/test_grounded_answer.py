@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 from langchain_core.documents import Document
 
+from src.config import settings
 from src.generation.answer import generate_grounded_answer
 from src.generation.insufficient import LOW_RETRIEVAL_CONFIDENCE, MODEL_REFUSED
 from src.generation.verification import CitationReport
@@ -165,6 +166,32 @@ class TestLowRetrievalConfidence:
 
         generate.assert_not_called()
         assert result.unanswered.reason == LOW_RETRIEVAL_CONFIDENCE
+
+    def test_the_calibrated_floor_admits_every_answerable_probe(self):
+        """The gate must not be why an answerable question is declined.
+
+        0.0031 is the lowest score any in-corpus question reached across the
+        49-item held-out probe set in gate_calibration_v1.json — Microsoft's
+        dividend, which the corpus does disclose. The shipped threshold has to
+        sit below it, and the previous value of 0.15 did not: it refused that
+        question, and in the eval suite it refused one retrieving context
+        scoring 1.000 context recall.
+
+        Pinned as a test because the number looks like a knob and reads as far
+        too low to anyone who has not seen the measurement. Raising it back
+        toward 0.15 buys nothing — with the gate open the model refused 24 of
+        24 out-of-corpus questions by itself — and costs answerable ones.
+        """
+        lowest_answerable_probe = 0.0031
+        assert settings.insufficient_context_threshold < lowest_answerable_probe
+
+        with generating(ANSWER) as generate:
+            # 0.6 * logistic(-5.0) + 0.4 * logistic(-6.0) ~= 0.006, which is
+            # roughly what that Microsoft question looks like at the gate.
+            result = generate_grounded_answer("q", retrieved(-5.0, -6.0), verify=False)
+
+        generate.assert_called_once()
+        assert result.unanswered is None
 
     def test_gate_cannot_fire_without_a_retrieval_signal(self):
         """RRF-scored results carry no relevance, so there is nothing to

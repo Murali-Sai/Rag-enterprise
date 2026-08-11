@@ -17,6 +17,17 @@ Order of operations matters here:
 1. Retrieval confidence is checked *before* generating. It is the only
    signal available pre-generation, and refusing early skips the expensive
    call entirely rather than paying for an answer built on bad chunks.
+
+   That check is a cost guard, not the refusal mechanism. It reads as one —
+   it is the first thing in the function and it returns the same structured
+   report the model's own refusal produces — so it is worth being explicit
+   that the correctness of this system's refusals does not rest on it. With
+   the gate held open, the model declined 24 of 24 out-of-corpus questions
+   unprompted (scripts/probe_refusal.py), including one the gate scored 0.975
+   and would have admitted anyway. The threshold is set low enough that it
+   cannot be the reason an answerable question is declined; see
+   `settings.insufficient_context_threshold` for the measurement that fixes
+   the value.
 2. Citations are parsed from the raw answer, before the route appends
    disclaimers or redacts PII. Parsing afterwards would scan text the model
    never wrote, and redaction can rewrite the interior of a claim between

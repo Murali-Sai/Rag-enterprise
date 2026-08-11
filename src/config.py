@@ -310,15 +310,41 @@ class Settings(BaseSettings):
     # Below this retrieval confidence the system returns a structured account
     # of what it searched instead of generating an answer (Project 6 §3.4).
     #
-    # The scale is the normalized relevance in src/retrieval/scores.py. On
-    # the default reranked pipeline that is a logistic over cross-encoder
-    # logits, which is strongly bimodal — a relevant passage lands near 1.0
-    # and an irrelevant one near 0.0 — so the threshold has a wide basin to
-    # sit in and 0.15 is conservative. It is not equally calibrated for the
-    # plain-dense path, where Chroma relevance scores cluster far lower; the
-    # effect there is that the gate rarely fires, which is the safe direction
-    # to be wrong in.
-    insufficient_context_threshold: float = 0.15
+    # The scale is the normalized relevance in src/retrieval/scores.py. On the
+    # default reranked pipeline that is a logistic over a cross-encoder logit.
+    #
+    # This was 0.15 on the reasoning that the logit is bimodal, so the gate had
+    # a wide basin to sit in. Measured, it does not: what the cross-encoder
+    # scores is *topic* match, and it has no notion of which company a passage
+    # is about. On the 49-item held-out probe set in
+    # evaluation/datasets/gate_calibration_v1.json (run scripts/calibrate_gate.py):
+    #
+    #   Citigroup's CET1 ratio          0.9750   out of corpus
+    #   Bank of America net interest    0.8994   out of corpus
+    #   the current price of Bitcoin    0.2962   out of corpus
+    #   ...
+    #   Microsoft's dividend            0.0031   in corpus, answerable
+    #
+    # Ten of 24 out-of-corpus probes cleared 0.15, because the corpus does
+    # discuss CET1 ratios and net interest income — for other banks. Meanwhile
+    # 0.15 refused questions retrieving context that scores 1.000 context
+    # recall. The two labels overlap across almost the whole range, so no
+    # threshold on this number separates answerable from unanswerable.
+    #
+    # What settles the value is scripts/probe_refusal.py: with the gate open,
+    # the model refused 24 of 24 out-of-corpus questions on its own, including
+    # the one scoring 0.975. The gate was never what made those refusals
+    # correct. So it stops being a correctness mechanism and becomes a cost
+    # guard — decline to pay for a generation that is certain to be a refusal —
+    # and the binding constraint on the number is that it must never be the
+    # reason an answerable question is declined.
+    #
+    # 0.001 is the most it can be while satisfying that: the lowest in-corpus
+    # probe scored 0.0031, and this leaves a margin below it. It still
+    # short-circuits 12 of the 24 out-of-corpus probes without an LLM call.
+    # Raising it trades answerable questions for savings on refusals the model
+    # already gets right.
+    insufficient_context_threshold: float = 0.001
 
     # RAGAS eval judge — separate from LLM_PROVIDER (the runtime generation
     # model) so switching the app's provider doesn't silently change what

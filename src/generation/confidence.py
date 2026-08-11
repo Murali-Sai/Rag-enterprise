@@ -98,6 +98,20 @@ def retrieval_confidence(scored: list[ScoredDocument]) -> float | None:
     other four slots are filler — which is the normal shape of a top-5 over
     a corpus of 10-K prose. Using the mean alone would mark those answers
     down for the padding around the chunk that actually answered.
+
+    **Read this number as topic match, not as P(the answer is here).** Under
+    the reranked pipeline it derives from a cross-encoder logit, which is
+    trained to rank passages against a query and never to emit a calibrated
+    probability. Measured on the held-out probe set (§ scripts/calibrate_gate.py)
+    it scores "Citigroup's standardized CET1 capital ratio" at 0.975 against a
+    corpus containing no Citigroup filing — the corpus discusses CET1 ratios,
+    and the model has no representation of *which company* a passage is about.
+    An answerable question about Microsoft's dividend scored 0.0031.
+
+    It stays in the composite, and stays weighted first, because topic match is
+    a real signal and the composite is reported rather than acted on. What
+    changed is the gate that acts on it: see
+    `settings.insufficient_context_threshold`.
     """
     relevances = [r for r in (item.relevance for item in scored) if r is not None]
     if not relevances:
