@@ -1,27 +1,39 @@
 # RAG over SEC 10-K filings, with information barriers and a measured refusal path
 
 **I built a retrieval-augmented generation system over five companies' real SEC
-10-K filings that scores 0.697 faithfulness and 0.928 citation accuracy on a
-54-question hand-written evaluation suite — and correctly declines 84.6% of the
+10-K filings that scores 0.853 faithfulness and 0.936 citation accuracy on a
+54-question hand-written evaluation suite — and correctly declines 94.4% of the
 questions it should decline, including every question whose answer is not in the
 corpus or is behind an access barrier.**
 
 Shipped configuration: dense retrieval over `text-embedding-3-small` with a
-cross-encoder reranker, `gpt-4o` for generation, `gpt-4o-mini` as judge.
-**Means over three runs** (`eval_20260809_015503`, `_20260809_202437`,
-`_20260810_214534`) against the 8,232-chunk index (`c2f8c13673cf5ca5`), with
-the per-metric spread across those runs beneath.
+cross-encoder reranker, per-entity retrieval, `gpt-4o` for generation,
+`gpt-4o-mini` as judge. **Means over three runs** (`eval_20260811_195440`,
+`_20260811_200218`, `_20260811_200901`) against the 8,232-chunk index
+(`c2f8c13673cf5ca5`), with the per-metric spread across those runs beneath.
 
 | | Faithfulness | Answer Relevancy | Context Precision | Context Recall | Citation Accuracy | Citation Coverage | Refusal Correctness |
 |---|---|---|---|---|---|---|---|
-| **mean (n=3)** | 0.697 | 0.681 | 0.391 | 0.338 | **0.928** | 0.642 | **0.846** |
-| *spread* | *0.007* | *0.004* | *0.035* | *0.016* | *0.017* | *0.040* | *0.019* |
+| **mean (n=3)** | **0.853** | 0.763 | 0.429 | 0.386 | **0.936** | 0.729 | **0.944** |
+| *spread* | *0.063* | *0.013* | *0.008* | *0.021* | *0.018* | *0.022* | *0.000* |
+| *previous baseline (n=3)* | *0.697* | *0.681* | *0.391* | *0.338* | *0.928* | *0.642* | *0.846* |
 
-These were single-run figures until 2026-08-10, and quoting the best of three
-for citation accuracy (0.939) would have been worth 0.011 of flattery on the
-number this document leans on hardest. The spread row is the more useful half
-anyway: context precision moves 0.035 between identical runs, so a reported
-precision gain smaller than that is not a gain.
+The spread row is the more useful half. Faithfulness moves **0.063** between
+identical runs — nine times what the previous baseline suggested, and the single
+most important correction on this page, because it is the denominator under every
+faithfulness claim made anywhere in this document. Context precision, by
+contrast, tightened from 0.035 to 0.008.
+
+Against the previous baseline, five metrics clear their own floor: faithfulness
++0.156 (2.5×), answer relevancy +0.082 (6.5×), refusal correctness +0.099 (5.2×),
+citation coverage +0.087 (2.2×), answer correctness +0.063 (2.4×). **Context
+precision (+0.037) and context recall (+0.048) do not** — both land at roughly
+1.1× their floors, and neither is a claim. Citation accuracy moved +0.008 against
+a 0.018 floor: unchanged, which is the part worth stating, because it means the
+gains did not come out of the number this document leans on hardest.
+
+These were single-run figures until 2026-08-10, and quoting the best of three for
+citation accuracy would have been worth about 0.011 of flattery on that number.
 
 Two of those columns are not RAGAS metrics and are the ones I care most about.
 **Citation accuracy** is measured by handing a judge one claim and *only* the
@@ -82,24 +94,35 @@ a run that pooled them is not comparable to one that did not and nothing in the
 numbers reveals which it was.
 
 *The three refusal strata stay separate.* They fail at different stages —
-`out_of_corpus` at the retrieval gate, `no_answer` only at the model,
+`out_of_corpus` at the model (it was the retrieval gate until the gate was
+measured and found not to be doing that job), `no_answer` at the model,
 `rbac_blocked` at the where-clause — and so they point at different fixes.
 
 Per stratum, which is where the shape shows:
 
 | Stratum | n | Faithfulness | Answer Relevancy | Citation Accuracy | Refusal Correctness |
 |---|---|---|---|---|---|
-| `interpretive` | 14 | 0.827 | 0.793 | 0.929 | 0.929 |
-| `exact_figure` | 13 | 0.696 | 0.581 | 0.955 | 0.846 |
-| `comparative` | 8 | 0.426 | 0.576 | 0.891 | 0.625 |
-| `ambiguous` | 6 | 0.833 | 0.883 | 0.900 | 0.667 |
+| `interpretive` | 14 | 0.942 | 0.838 | 0.966 | 0.929 |
+| `exact_figure` | 13 | 0.840 | 0.634 | 0.921 | **1.000** |
+| `comparative` | 8 | 0.710 | 0.796 | 0.887 | **1.000** |
+| `ambiguous` | 6 | 0.870 | 0.883 | 0.900 | 0.667 |
 | `no_answer` | 5 | — | — | — | **1.000** |
 | `out_of_corpus` | 4 | — | — | — | **1.000** |
 | `rbac_blocked` | 4 | — | — | — | **1.000** |
 
 The refusal path is the strongest thing in the system: all three unanswerable
-strata score a perfect 1.000, and have in every run. Comparatives are the
-weakest, at 0.426 faithfulness.
+strata score a perfect 1.000, and have in every run ever recorded. Comparatives
+used to be the weakest stratum by a wide margin — 0.426 faithfulness and 0.625
+refusal correctness — and are now 0.710 and 1.000, because a comparison is two
+questions and was finally retrieved and scored as two.
+
+**`ambiguous` is the one answerable stratum that has not moved**, and it is the
+only place the system still gets a refusal decision wrong. It sits at 0.667 in
+every baseline, before and after every fix, because nothing in the system
+addresses it — see *Ambiguity is not handled*. The three refusal errors in all
+three runs are identical: two ambiguous questions answered about one arbitrarily
+chosen company, and one Goldman question the model declines despite good
+retrieval.
 
 ---
 
@@ -183,19 +206,66 @@ Cross-encoder reranking moved answer relevancy **0.480 → 0.719**, a delta of
 margin. It also moved context precision **0.696 → 0.466**, a loss of 0.230
 against a 0.001 floor.
 
-That precision loss is not cosmetic; it is the system's biggest live defect.
-`ms-marco-MiniLM` assigns uniformly negative logits to financial-table prose, and
-because relevance is a logistic squash of that logit, the whole retrieved set can
-land under the 0.15 insufficient-context threshold — at which point the system
-declines *without ever calling the LLM*. On "What was Apple's total net revenue
-for its most recent fiscal year?" it ranked a *Foreign pretax earnings* chunk
-first at −2.33 and pushed the actual net-sales table from rank 1 to rank 5, for a
-set relevance of 0.077.
+That precision loss is not cosmetic; it was for a long time the system's biggest
+live defect. `ms-marco-MiniLM` assigns uniformly negative logits to
+financial-table prose, and because relevance is a logistic squash of that logit,
+the whole retrieved set can land under the 0.15 insufficient-context threshold —
+at which point the system declines *without ever calling the LLM*. On "What was
+Apple's total net revenue for its most recent fiscal year?" it ranked a *Foreign
+pretax earnings* chunk first at −2.33 and pushed the actual net-sales table from
+rank 1 to rank 5, for a set relevance of 0.077.
 
-The tempting fix — lower the threshold — is the wrong one. It tunes the gate to
-the test set and relocates the failure downstream into ungrounded answers. The
-real options are a financial-domain cross-encoder, rerank-then-restore-order, or
-dropping the reranker and keeping the dense ordering.
+I wrote here that the tempting fix — lower the threshold — was the wrong one,
+because it "tunes the gate to the test set and relocates the failure downstream
+into ungrounded answers." Both halves were testable and I did not test either.
+Both turned out to be wrong, and the correction is the third entry in this
+document's running theme.
+
+**On tuning to the test set.** That objection is about method, and method has an
+answer: don't tune on the test set. `evaluation/datasets/gate_calibration_v1.json`
+is a 49-item probe set held out from the suite — out-of-corpus items labelled by
+construction, in-corpus items carrying a literal string that must be found in
+that company's chunks before the item is allowed to influence anything. On it,
+the premise the 0.15 threshold rested on collapses. Out-of-corpus questions score
+across the whole range: Citigroup's CET1 ratio **0.9750**, Bank of America net
+interest income 0.8994, the price of Bitcoin 0.2962 — against an answerable
+question about Microsoft's dividend at **0.0031**. Ten of 24 out-of-corpus probes
+already cleared 0.15.
+
+The reason is the one this document keeps rediscovering in different costumes: a
+cross-encoder scores *topic* match and has no representation of which company a
+passage is about. The corpus really does discuss CET1 ratios and net interest
+income — for other banks. It is the same blindness that had Goldman Sachs
+questions answered off Tesla's filing, appearing on the gate side rather than the
+retrieval side.
+
+**On relocating the failure downstream.** That objection is empirical, and it is
+simply false. With the gate held open, the model refused **24 of 24**
+out-of-corpus questions on its own, including the one the gate scored 0.975. The
+gate had never been what made those refusals correct; the suite could not show
+this, because all four of its out-of-corpus questions sit below the gate and none
+had ever reached the model. And the predicted downstream damage went the other
+way: over a fresh three-run baseline, faithfulness rose **0.697 → 0.853**, the
+largest effect measured in this project, at 2.5× its own 0.063 noise floor.
+Refusal correctness rose 0.846 → 0.944 with a run-to-run spread of exactly zero,
+and all three unanswerable strata stayed at 1.000.
+
+Admitting those questions did not produce ungrounded answers. The context had
+been good enough to ground them the whole time — which is what a refused question
+retrieving **1.000 context recall** had been saying all along.
+
+So the gate stops being a correctness mechanism and becomes a cost guard, pinned
+at 0.001, below the lowest answerable probe. The options I listed instead — a
+financial-domain cross-encoder, rerank-then-restore-order, dropping the reranker —
+remain open and remain unmeasured. What is now measured is that none of them were
+needed for this particular failure.
+
+I am leaving the wrong version above rather than deleting it, for the same reason
+as the RRF claim before it: it is the same failure in a new place. A mechanism
+that sounded right, argued from plausible premises, never checked. What made it
+durable this time is that it came with a number attached — "0.003–0.03 against a
+0.15 gate" was real, and it made a claim resting on four data points look like a
+measurement.
 
 ---
 
@@ -218,6 +288,16 @@ collection can never be misattributed after the fact.
 suite, the same `gpt-4o` generator and the same `gpt-4o-mini` judge. **Two runs
 per strategy** (three for `recursive`), added 2026-08-10 — the first version of
 this table had one run each and said something considerably stronger.
+
+> **This table is measured on the pre-fix pipeline** and is left that way
+> deliberately. The `recursive` row is the *old* baseline, not the 0.853 headline
+> above, because `fixed` and `semantic` were never re-run against the entity
+> fixes or the recalibrated gate. Swapping in the new `recursive` figures would
+> compare three strategies across two different pipelines and manufacture a
+> chunking result out of a retrieval change — which is a more subtle version of
+> the error that produced the retracted 19× claim below. Re-running the other two
+> strategies costs about $3.20; until then this comparison is valid only against
+> itself.
 
 Means, with each strategy's own run-to-run spread beside it:
 
@@ -297,11 +377,11 @@ See below for what that did and did not fix.
 
 ---
 
-## Three defects the measurement found, and one hypothesis it killed
+## Three defects the measurement found, and four hypotheses it killed
 
-**Goldman Sachs scores exactly 0.000 context recall — and the obvious explanation
-is wrong.** Slicing per company rather than per stratum surfaced a hard failure
-the aggregate hid. GS carried 214 bare running-header chunks
+**Goldman Sachs scored exactly 0.000 context recall for twelve runs — and the
+obvious explanation was wrong.** Slicing per company rather than per stratum
+surfaced a hard failure the aggregate hid. GS carried 214 bare running-header chunks
 (`"Goldman Sachs 2025 Form 10-K | 123"`), and on the GS revenue question two of
 five retrieved slots were page numbers. That looked conclusive. I stripped the
 furniture — those 214 chunks went to **0** — and re-measured:
@@ -313,9 +393,39 @@ furniture — those 214 chunks went to **0** — and re-measured:
 | Context Precision | 0.722 | 0.619 | 0.158 | **0.050** | 0.305 |
 
 GS recall did not move off 0.000, and GS context precision *fell*, 0.271 → 0.050.
-The furniture was real and it is gone; it was not the cause. This is now the
-best-isolated open defect in the project — a hard zero on one company and not the
-other four, with the leading hypothesis eliminated by measurement rather than
+The furniture was real and it is gone; it was not the cause.
+
+**A second hypothesis was found and fixed, and it moved Goldman off zero.** The
+hard zero held across twelve runs. Its cause was that `MultiEntityRetriever`
+applied a ticker filter only when a question named *two or more* companies, so a
+question naming one searched all five filings plus the synthetic sample
+documents. Asked for Goldman's total net revenues and return on average common
+equity, retrieval returned two GS chunks, one Tesla, one JPMorgan, and one from a
+fabricated sample reading *"Total Net Revenue: $38.2B / Return on Equity (ROE):
+14.8%"* — a perfect-looking answer about a company that is not Goldman Sachs.
+Banks hid it best precisely because their tables are structurally identical:
+every one of them reports total net revenues and a return on equity, so the wrong
+company's figures are not merely retrievable but convincing.
+
+GS-only context recall is **0.125** on the current baseline. Three of four GS
+questions still score 0.000, and GS context precision is 0.000 — the chunks are
+Goldman's, which the filter now guarantees, but they are not the chunks the
+ground truth is built from. Every GS ground-truth figure *is* in the corpus
+(`58,283`, `14.3%`, `727,338`, `Platform Solutions`, `Value-at-Risk` all appear
+among 2,888 indexed GS chunks), so what remains is a ranking failure inside one
+company's filing.
+
+A third hypothesis died on 2026-08-11. GS indexes only **one** chunk under
+`Quantitative and Qualitative Disclosures About Market Risk`, against 4–8 for the
+non-banks, which looked like a parser bug on the section most relevant to a
+trading desk. It is not: GS and JPMorgan both incorporate Item 7A by reference
+(*"…are set forth in Management's Discussion and Analysis … in Part II, Item 7"*),
+and JPMorgan shows the identical 1-chunk stub for Items 7 and 8 beside a
+2,705-chunk incorporated Annual Report. One chunk is the correct parse of a
+cross-reference.
+
+This remains the best-isolated open defect in the project — one company far below
+the other four, with three hypotheses now eliminated by measurement rather than
 left untested.
 
 **The parser fix did work on what it was second-aimed at.** Refusal correctness
@@ -327,6 +437,12 @@ different, and a third on 2026-08-10 came in at 0.833. Its spread is 0.019, not
 the 0.000 this paragraph claimed when two runs were all there was — a 0.056
 move still clears it threefold, but "did not move at all" was a statement about
 sample size wearing the costume of a statement about the metric.
+
+> The current pipeline's three runs give a refusal-correctness spread of 0.000
+> again — the same three questions wrong in all three. That is a stronger claim
+> than the one retracted here, because it is three runs rather than two and
+> because the *identity* of the failures is stable, not just the count. It is
+> still not a claim that the metric cannot move.
 
 **And it cost something.** Aggregate context recall fell 0.383 → 0.335, with AAPL
 0.569 → 0.403 and JPM 0.267 → 0.167. Against a measured n=54 recall spread of
