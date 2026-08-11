@@ -462,9 +462,61 @@ All GS ground-truth figures are present in the corpus — `58,283`, `14.3%`,
 coverage: Financial Statements 1,226 / MD&A 833 / Business 425 / Risk Factors
 403 / Market Risk 1.
 
-**Next step, untried:** dump the retrieved contexts for the three failing GS
-questions beside their ground truths and find which claims are unsupported and
-why. Costs nothing — retrieval only.
+**Diagnosed 2026-08-11, retrieval only, free.** Locating each ground-truth
+figure in the corpus and then asking where the pipeline loses it splits the
+failure into three stages — not in the candidate set, in the candidate set but
+dropped by the reranker, or in the final top-5. The two failing GS questions
+fail at *different* stages:
+
+| Question | Figures | Where lost |
+|---|---|---|
+| total net revenues and ROE | `15.0%`, `58,283` | **in candidates at ranks 3 and 6, dropped by the reranker** |
+| quantitative market-risk disclosures | 7 figures | **never retrieved at all** — not in the 20-candidate set |
+
+The second is the interesting one. Its top-ranked chunk scores **0.994** and is
+GS's entire Item 7A: a 272-character cross-reference reading *"…are set forth
+in Management's Discussion and Analysis … in Part II, Item 7."* A perfect
+*title* match containing no answer, crowding out the section that holds one.
+
+**The fixed candidate budget is a real contributing cause, confirmed and then
+found insufficient.** `rerank_candidate_k` is 20 regardless of filing size —
+4.3% of Apple's 460 chunks but 0.7% of Goldman's 2,888. Sweeping it with
+`scripts/eval_retrieval_free.py`:
+
+| | k=20 | k=50 | k=100 |
+|---|---|---|---|
+| GS | 0.067 | 0.117 | **0.167** |
+| JPM | 0.071 | 0.107 | **0.143** |
+| AAPL | 0.500 | 0.500 | 0.500 |
+| MSFT | 0.210 | 0.210 | 0.210 |
+| TSLA | 0.306 | 0.250 | 0.250 |
+| overall | 0.242 | 0.239 | **0.248** |
+
+Exactly the predicted shape: the two starved filings gain 150% and 101% while
+the two small ones do not move at all, because 20 candidates already covered
+their whole relevant region. **Do not ship this as a fix.** TSLA *loses* 0.056,
+and overall nets flat — a larger pool is also more opportunity for a weak ranker
+to promote the wrong chunk, so recall gained at the candidate stage is given
+back at the rerank stage.
+
+And at k=100, six of the seven market-risk figures *still* never enter the
+candidate set, while the cross-reference stub still ranks first. So the binding
+constraint is not the budget: **neither the bi-encoder nor the cross-encoder
+represents financial tables well.** The question is thematic and the answer is a
+table of numbers, and a table of numbers does not embed like the sentence asking
+about it. That is the same root cause as the reranker's uniformly negative
+logits on financial-table prose (§7.2), reached from the opposite direction.
+
+Worth knowing: **174 chunks corpus-wide are short cross-references**, and 90% of
+them are in the two banks (GS 109, JPM 47, against AAPL 3). Removing them is a
+re-ingest and would only free slots, not surface the tables, so it is worth
+doing *with* §10.1 rather than for its own sake.
+
+**Next steps, in order of expected value:** a financial-domain embedding model
+or reranker; table-aware chunking that prepends section context to numeric
+tables so a table embeds nearer the question that asks for it; and only then
+a size-proportional candidate budget, which is worth revisiting once the ranker
+can exploit a bigger pool.
 
 ### 7.2 The reranker's precision cost is still real
 

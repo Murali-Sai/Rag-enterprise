@@ -424,9 +424,47 @@ and JPMorgan shows the identical 1-chunk stub for Items 7 and 8 beside a
 2,705-chunk incorporated Annual Report. One chunk is the correct parse of a
 cross-reference.
 
+**A fourth hypothesis was tested, confirmed, and still turned out not to be the
+fix — which is the most useful result of the four.** `rerank_candidate_k` is 20
+for every question regardless of filing size: 4.3% of Apple's 460 chunks, and
+0.7% of Goldman's 2,888. If large filings retrieve badly because their candidate
+budget is proportionally starved, raising it should help them and leave the small
+ones alone. Swept with a free retrieval-only eval:
+
+| | k=20 | k=50 | k=100 |
+|---|---|---|---|
+| GS | 0.067 | 0.117 | **0.167** |
+| JPM | 0.071 | 0.107 | **0.143** |
+| AAPL | 0.500 | 0.500 | 0.500 |
+| MSFT | 0.210 | 0.210 | 0.210 |
+| TSLA | 0.306 | 0.250 | 0.250 |
+| overall | 0.242 | 0.239 | 0.248 |
+
+The predicted shape appears exactly: the two starved filings gain 150% and 101%,
+the two small ones do not move at all. And it is still not shippable — TSLA
+*loses* 0.056 and the overall figure nets flat, because a larger candidate pool
+is also more opportunity for a weak ranker to promote the wrong chunk. Recall
+won at the candidate stage is handed back at the rerank stage.
+
+Tracing where each ground-truth figure is lost says why. The two failing GS
+questions fail at different stages: one has its figures in the candidate set at
+ranks 3 and 6 and the *reranker* drops them; the other never retrieves them at
+all, and its top-ranked chunk scores **0.994** while being GS's entire Item 7A —
+272 characters reading *"…are set forth in Management's Discussion and Analysis
+… in Part II, Item 7."* A perfect title match with no answer in it. At k=100,
+six of that question's seven figures still never enter the candidate set.
+
+So the binding constraint is not the budget and not the filtering. **Neither the
+bi-encoder nor the cross-encoder represents financial tables well.** The question
+is thematic; the answer is a table of numbers; a table of numbers does not embed
+like the sentence asking about it. That is the same root cause as the reranker's
+uniformly negative logits on financial-table prose, arrived at from the opposite
+direction — which is the strongest evidence in this document that the reranker,
+not the corpus, is what Goldman is actually stuck behind.
+
 This remains the best-isolated open defect in the project — one company far below
-the other four, with three hypotheses now eliminated by measurement rather than
-left untested.
+the other four, with four hypotheses now eliminated by measurement rather than
+left untested, and the fourth eliminated *after* being confirmed.
 
 **The parser fix did work on what it was second-aimed at.** Refusal correctness
 moved 0.796 → 0.852 and `exact_figure` 0.692 → 0.846. Counted as rows rather than
