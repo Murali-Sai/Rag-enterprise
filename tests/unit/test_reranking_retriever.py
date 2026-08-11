@@ -260,7 +260,19 @@ class TestMultiEntityRetrieval:
     a generation failure rather than the retrieval-budget bug it is.
     """
 
-    def test_one_company_named_takes_the_ordinary_path(self):
+    def test_one_company_named_is_filtered_to_that_company(self):
+        """This used to assert the opposite — that naming one company added no
+        entity clause — on the reasoning that a single-company question needs
+        no budget split. It needs no split; it needs the filter.
+
+        Unfiltered, "What was Goldman Sachs' total net revenues and return on
+        average common shareholders' equity" retrieved two GS chunks, one
+        Tesla, one JPMorgan, and one from a fabricated sample document reading
+        "Total Net Revenue: $38.2B / Return on Equity (ROE): 14.8%". Nothing in
+        a ground truth about Goldman Sachs can be supported by those, which is
+        how GS scored a hard 0.000 context recall while every other company
+        scored between 0.167 and 0.506.
+        """
         store = FakeVectorStore([Document(page_content="a")])
         retriever = get_retriever(user_roles={"admin"}, vector_store=store)
 
@@ -269,7 +281,42 @@ class TestMultiEntityRetrieval:
         ):
             retriever.retrieve("What was Apple's total net revenue?")
 
-        assert store.last_filter is None  # no entity clause added
+        assert store.last_filter == {"ticker": {"$eq": "AAPL"}}
+
+    def test_the_entity_filter_is_added_to_the_barrier_not_instead_of_it(self):
+        """The one way this change could do real damage.
+
+        A ticker clause that replaced the department clause would drop the
+        information barrier — the control this whole system exists to
+        demonstrate — while every retrieval test still passed, because the
+        documents come back either way.
+        """
+        store = FakeVectorStore([Document(page_content="a")])
+        retriever = get_retriever(user_roles={"research"}, vector_store=store)
+
+        with patch(
+            "src.retrieval.reranker.get_reranker", return_value=FakeCrossEncoder({"a": 1.0})
+        ):
+            retriever.retrieve("What was Apple's total net revenue?")
+
+        assert store.last_filter == {
+            "$and": [
+                {"department": {"$in": ["general", "research", "sec_filings"]}},
+                {"ticker": {"$eq": "AAPL"}},
+            ]
+        }
+
+    def test_a_question_naming_nobody_still_searches_everything(self):
+        """The only case where an unfiltered search is what was asked for."""
+        store = FakeVectorStore([Document(page_content="a")])
+        retriever = get_retriever(user_roles={"admin"}, vector_store=store)
+
+        with patch(
+            "src.retrieval.reranker.get_reranker", return_value=FakeCrossEncoder({"a": 1.0})
+        ):
+            retriever.retrieve("What are the main risks disclosed in these filings?")
+
+        assert store.last_filter is None
 
     def test_two_companies_each_get_their_own_filtered_retrieval(self):
         store = FilterRecordingStore(

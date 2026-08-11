@@ -539,7 +539,15 @@ Two fixes that looked obvious were measured and rejected. Lowering the threshold
 
 The 4 that remain are two the model itself declines despite good retrieval, and two the cross-encoder scores low regardless of scoping.
 
-**Goldman Sachs still scores exactly 0.000 context recall, and that retires the explanation.** Page furniture was the stated cause: GS carried 214 bare running-header chunks — `"Goldman Sachs 2025 Form 10-K | 123"` — and `_strip_page_furniture()` took them to **0**. GS recall did not move off 0.000, and GS context precision fell 0.271 → 0.050. Whatever is wrong with Goldman retrieval, the furniture was not it. Per company:
+**Goldman Sachs scored exactly 0.000 context recall across 12 runs. It is 0.125 now — the cause was that single-company questions were never filtered to that company.**
+
+Page furniture was the first suspect and was wrong: GS carried 214 bare running-header chunks (`"Goldman Sachs 2025 Form 10-K | 123"`), `_strip_page_furniture()` took them to 0, and GS recall did not move while GS context precision *fell* 0.271 → 0.050.
+
+The actual cause was upstream. `MultiEntityRetriever` applied a ticker filter only when a question named **two or more** companies, so a question naming one searched all five filings plus the synthetic sample documents. Asked for Goldman Sachs' total net revenues and return on average common equity, retrieval returned two GS chunks, one Tesla, one JPMorgan, and one from `annual_report_10k.txt` — a fabricated sample reading *"Total Net Revenue: $38.2B / Return on Equity (ROE): 14.8%"*. No ground-truth claim about Goldman Sachs can be supported by those. Banks suffer worst because their tables are structurally identical: every one reports total net revenues and a return on equity, so the wrong company's figures are not merely retrievable but convincing.
+
+Filtering single-company questions to their company moved, against a three-run baseline: faithfulness **0.697 → 0.800** (3.0× its floor), citation accuracy 0.928 → 0.954, context precision 0.392 → 0.430, context recall 0.338 → 0.383, and GS-only recall 0.000 → 0.125.
+
+**It is improved, not fixed.** Three of four GS questions still score 0.000. And the change cost two Apple revenue questions, which now refuse — not because retrieval failed but because it succeeded: one of them retrieves context scoring **1.000 context recall** and the gate declines it anyway. That is the remaining defect, and it is a calibration problem rather than a retrieval one — `retrieval_confidence` reads a cross-encoder logit through a logistic as though it were a probability, and the model is only trained to rank. Dense financial tables score low while containing the answer. Per company:
 
 | | AAPL | MSFT | JPM | GS | TSLA |
 |---|---|---|---|---|---|

@@ -287,12 +287,13 @@ class RerankingRetriever:
 
 
 class MultiEntityRetriever:
-    """Gives each company a question names its own retrieval budget.
+    """Keeps a question's answer inside the filings it asked about.
 
-    A single-company question delegates straight to the ordinary pipeline and
-    costs nothing extra. A question naming two or more of the five companies
-    runs the pipeline once per company, each restricted to that company's
-    filing by a metadata filter, and merges the results.
+    A question naming one company is restricted to that company's filing. A
+    question naming two or more runs the pipeline once per company, each
+    restricted the same way, and merges the results. A question naming none
+    searches everything, which is the only case where that is what was asked
+    for.
 
     Each company gets a full `top_k` slots rather than a share of one. The
     alternative — splitting five slots two ways — starves both halves of the
@@ -340,8 +341,30 @@ class MultiEntityRetriever:
 
     def retrieve_scored(self, query: str) -> list[ScoredDocument]:
         entities = detect_entities(query)
-        if len(entities) < 2:
+        if not entities:
             return retrieve_scored(self._plain(), query)
+
+        # One company named: filter to its filing, but leave the query alone —
+        # there is nothing to scope and the cross-encoder already has the
+        # question it wants.
+        #
+        # This branch used to fall through to the unfiltered pipeline, on the
+        # reasoning that a single-company question needs no budget split. It
+        # does not need a split; it does need the filter. Asked for Goldman
+        # Sachs' net revenues, retrieval returned two GS chunks, one Tesla, one
+        # JPMorgan, and one from `annual_report_10k.txt` — a fabricated sample
+        # document reading "Total Net Revenue: $38.2B / Return on Equity (ROE):
+        # 14.8%", which is a perfect-looking answer about a company that is not
+        # Goldman Sachs. No ground-truth claim about GS can be supported by
+        # those, which is how GS scored a hard 0.000 context recall while every
+        # other company scored 0.167 to 0.506.
+        #
+        # Banks suffer worst because their tables are structurally identical:
+        # every one of them reports total net revenues and a return on equity,
+        # so the wrong company's figures are not merely retrievable but
+        # *convincing*.
+        if len(entities) == 1:
+            return retrieve_scored(self._build(entity_filter(entities[0])), query)
 
         # Each leg runs on the question scoped to its own company. The cross
         # encoder scores "does this passage answer this query?", and no single
