@@ -18,11 +18,32 @@ Aliases are matched on word boundaries. Tickers match case-sensitively —
 lowercase "gs" appears inside ordinary prose far too often, and a false
 positive here silently halves the retrieval budget for a single-company
 question.
+
+Case-sensitivity is not enough for the shortest tickers, and that becomes a
+live problem the moment a sixth company is added. See
+`MIN_TICKER_MATCH_LENGTH`.
 """
 
 import re
 
 from src.edgar.client import COMPANY_REGISTRY
+
+# Below this length a ticker is matched by company name only, never as a bare
+# symbol. Uppercase alone does not disambiguate a one-character ticker:
+# Citigroup is "C" and Ford is "F", and `\bC\b` matches "C-suite", "Item 7C"
+# and "Class C shares" — 18 times in the current corpus, against 12 for `\bF\b`
+# — while `\bMS\b`, `\bBAC\b` and every other candidate ticker match zero.
+#
+# A false positive here is the quiet kind. It scopes a question to the wrong
+# company's filing at the database level, so retrieval returns a full set of
+# confident, well-formed chunks about a company nobody asked about. That is the
+# same failure class as the Goldman defect, which cost twelve runs of 0.000
+# context recall before anyone noticed.
+#
+# Two characters is the floor rather than three because "GS" is in the registry
+# and works: uppercase two-letter sequences are rare in a question, where this
+# runs, even though they are common in a filing's headings.
+MIN_TICKER_MATCH_LENGTH = 2
 
 # Surface forms per ticker, beyond the ticker itself. Ordered longest-first
 # within each entry only for readability; matching is by regex alternation,
@@ -44,8 +65,30 @@ _NAME_PATTERNS: dict[str, re.Pattern[str]] = {
     for ticker, aliases in COMPANY_ALIASES.items()
 }
 _TICKER_PATTERNS: dict[str, re.Pattern[str]] = {
-    ticker: re.compile(rf"\b{re.escape(ticker)}\b") for ticker in COMPANY_REGISTRY
+    ticker: re.compile(rf"\b{re.escape(ticker)}\b")
+    for ticker in COMPANY_REGISTRY
+    if len(ticker) >= MIN_TICKER_MATCH_LENGTH
 }
+
+
+def unmatchable_tickers() -> tuple[str, ...]:
+    """Registry entries this module cannot detect at all.
+
+    A ticker too short to match as a symbol and with no alias is invisible to
+    `detect_entities`, so every question about that company silently falls
+    through to an unfiltered search of the whole corpus — the exact behaviour
+    that produced Goldman Sachs' twelve runs of 0.000 context recall.
+
+    Surfaced as a function rather than raised at import so that adding a
+    company is not blocked by a partly-filled registry, and checked by a test
+    so it cannot be forgotten. If this returns anything, add aliases in
+    `COMPANY_ALIASES` before ingesting that company.
+    """
+    return tuple(
+        ticker
+        for ticker in COMPANY_REGISTRY
+        if len(ticker) < MIN_TICKER_MATCH_LENGTH and not COMPANY_ALIASES.get(ticker)
+    )
 
 
 def detect_entities(query: str) -> tuple[str, ...]:
@@ -57,9 +100,11 @@ def detect_entities(query: str) -> tuple[str, ...]:
     """
     positions: dict[str, int] = {}
     for ticker in COMPANY_REGISTRY:
+        # Both lookups are `.get`: a company may have no aliases, and a ticker
+        # below MIN_TICKER_MATCH_LENGTH has no symbol pattern at all.
         found = [
             match.start()
-            for pattern in (_NAME_PATTERNS.get(ticker), _TICKER_PATTERNS[ticker])
+            for pattern in (_NAME_PATTERNS.get(ticker), _TICKER_PATTERNS.get(ticker))
             if pattern is not None
             for match in [pattern.search(query)]
             if match is not None
