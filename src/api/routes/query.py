@@ -34,6 +34,13 @@ router = APIRouter(tags=["Query"])
 logger = get_logger(__name__)
 
 
+# One rate-limit bucket for every path that reaches the generation pipeline.
+# slowapi keys on the request path by default, so `/query` and `/v1/ask` would
+# otherwise hold a budget each and a client alternating between them would get
+# twice the limit — silently, since nothing errors and nothing logs.
+QUERY_LIMIT_SCOPE = "query"
+
+
 def _resolve_retriever(mode: RetrievalMode, user: User, configured: Retriever) -> Retriever:
     """The pipeline for this request, honouring a per-request mode override.
 
@@ -115,7 +122,7 @@ def _to_claim_citations(grounded: GroundedAnswer) -> list[ClaimCitation]:
 
 
 @router.post("/query", response_model=QueryResponse)
-@limiter.limit(settings.rate_limit)
+@limiter.shared_limit(settings.rate_limit, scope=QUERY_LIMIT_SCOPE)
 async def query_documents(
     request: Request,
     response: Response,
@@ -129,6 +136,29 @@ async def query_documents(
     of exactly those names and types; the body moved to `payload` to make room.
     FastAPI treats a lone Pydantic parameter as the whole body regardless of
     its name, so the wire format is unchanged.
+
+    A thin shell over `answer_query` so that `/v1/ask`, the name Project 6
+    §5.1 gives this endpoint, can be a second decorated route over the same
+    implementation. It cannot simply call this function: slowapi keys a limit
+    on the **request path**, so a delegating alias gets its own budget and
+    doubles what a client can spend. `shared_limit` with an explicit scope is
+    what puts both paths in one bucket, and a test pins it.
+    """
+    return await answer_query(request, response, payload, user, retriever)
+
+
+async def answer_query(
+    request: Request,
+    response: Response,
+    payload: QueryRequest,
+    user: User,
+    retriever: Retriever,
+) -> QueryResponse:
+    """Everything the query endpoint does, minus the routing and the limit.
+
+    Undecorated on purpose: each *route* is rate limited exactly once, and this
+    is called after that has already happened. Adding a limit here would charge
+    a request twice.
     """
     guardrail_flags: list[str] = []
 

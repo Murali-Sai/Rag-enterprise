@@ -214,6 +214,13 @@ Read from the OpenAPI schema rather than the route decorators — `main.py` incl
 | `GET` | `/health`, `/health/ready` | |
 | `GET` | `/admin/users` | |
 | `GET` | `/`, `/docs`, `/redoc`, `/favicon.svg` | Landing page and branded docs |
+| `POST` | `/v1/ask` | Alias of `/query` — the name Project 6 §5.1 gives it |
+| `GET` | `/v1/documents` | Alias of `/documents` |
+| `POST` | `/v1/ingest` | Alias of `/documents/ingest` |
+
+The `/v1` routes are aliases over the same handlers (`src/api/routes/v1.py`), not a second implementation, and the unversioned paths stay because the dashboard, the landing page and every example in this file use them.
+
+**They share a rate-limit bucket, and that took more than delegation.** slowapi keys a limit on the *request path*, so an alias that merely calls the decorated handler gets its own budget: measured, 21 requests alternating between `/query` and `/v1/ask` all returned 200 against a 20/minute limit, because each path had spent only half of it. Adding an endpoint name would have quietly doubled what one client can spend on the only route that reaches an LLM. Both routes now carry `@limiter.shared_limit(..., scope="query")` and delegate to an undecorated `answer_query`, so each request is charged once against one bucket.
 
 ## SEC EDGAR Integration
 

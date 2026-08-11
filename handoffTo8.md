@@ -41,14 +41,24 @@ only — the live deployment is Cloud Run), GitHub Actions.
 
 ## 2. State in one paragraph
 
-`main` is at `792e80e`, clean, pushed, **CI green with all three legs actually
-running**. 413 tests pass with no `OPENAI_API_KEY` set. Two Cloud Run services
-are live and **current with the repo** — revision `rag-enterprise-00009-hgr`,
-deployed and smoke-tested this session. Two commits landed: the retrieval
-confidence gate was measured and recalibrated, and the three-run baseline was
-re-established on the pipeline that actually ships. **Faithfulness 0.697 →
-0.853, refusal correctness 0.846 → 0.944.** The top three items on the previous
-handoff's ranked work list are all closed.
+`main` is clean, pushed, **CI green with all three legs actually running**. 420
+tests pass with no `OPENAI_API_KEY` set. Two Cloud Run services are live —
+revision `rag-enterprise-00009-hgr`, deployed and smoke-tested this session.
+
+Five commits landed. The retrieval confidence gate was measured and
+recalibrated; the three-run baseline was re-established on the pipeline that
+actually ships (**faithfulness 0.697 → 0.853, refusal correctness 0.846 →
+0.944**); a free retrieval eval was added that reproduces the paid per-company
+ranking for $0.00004; and the `/v1` endpoint names Project 6 §5.1 asks for were
+mounted over the existing handlers.
+
+**The deployed revision predates the last two commits.** It has the gate fix and
+the baseline, not the free eval script (which never runs in the image) or the
+`/v1` routes. Redeploy when convenient; nothing user-facing regressed, the new
+paths are simply absent live.
+
+The top three items on the previous handoff's ranked list are closed, as is
+§8.1 gap 1.
 
 ---
 
@@ -333,6 +343,7 @@ Three analysis tools:
 | `scripts/summarize_runs.py` | Mean + spread + per-stratum over N runs. **Use this for any baseline claim** | free |
 | `scripts/compare_eval_runs.py` | Diffs exactly two runs, per metric and per question | free |
 | `scripts/calibrate_gate.py` | Gate score distribution over the held-out probe set | ~$0.0003 |
+| `scripts/eval_retrieval_free.py` | Answer-figure hit rate and entity purity per company, no LLM | ~$0.00004 |
 | `scripts/probe_refusal.py` | Model's unaided refusal rate with the gate held open | ~$0.30 |
 
 `summarize_runs.py` exists because the mean/spread tables were assembled by
@@ -492,7 +503,7 @@ That was optimistic by four items.
 
 | # | Requirement | State | Cost |
 |---|---|---|---|
-| 1 | **§5.1** — `POST /v1/ask`, `GET /v1/documents`, `POST /v1/ingest` | Routes are `POST /query`, `GET /documents`, `POST /documents/ingest`. **No `/v1` prefix exists anywhere in `src/`** | ~30 min, zero risk. Add `/v1` aliases to the same handlers and keep the current paths |
+| 1 | **§5.1** — `POST /v1/ask`, `GET /v1/documents`, `POST /v1/ingest` | **Closed 2026-08-11.** `src/api/routes/v1.py` mounts all three as aliases over the existing handlers; `/query`, `/documents` and `/documents/ingest` are unchanged because the dashboard, landing page and every published example use them | done |
 | 2 | **§1.1** — metadata carrying *"source file, section heading, page number"* | `source_file` and `section_name` present; **no `page` key on any chunk** (verified across 4,000). `parser.py` computes page numbers only to strip running headers, then discards them | Re-ingest → new digest → invalidates every published figure. Or document that page numbers are stripped as furniture by design for text-based EDGAR filings |
 | 3 | **§5.3** — compose with *"the API service, ChromaDB, and the frontend"* | Two services, `api` and `dashboard`; Chroma runs embedded inside the API container | ~1 hr, or defend the embedded choice in writing |
 | 4 | **§6.1** — demo video under 4 minutes | Deliberately dropped; nothing public promises one | Owner's call |
@@ -580,31 +591,26 @@ codepoints before believing an encoding bug.
 
 ## 10. Open work, ranked
 
-### 10.1 Close the `/v1` route gap *(~30 min, free, §8.1)*
-
-The cheapest spec-compliance win available and the only unmet requirement with
-no measurement cost. Add `/v1/ask`, `/v1/documents`, `/v1/ingest` as aliases.
-
-### 10.2 Decide the fabricated-documents question *(§7.4)*
+### 10.1 Decide the fabricated-documents question *(§7.4)*
 
 Removing them fixes §7.4 and the mojibake at once, but changes the corpus digest
 and invalidates published figures — so it is the same expensive class as a
 re-ingest, and worth doing *with* any other re-ingest rather than alone.
 
-### 10.3 Goldman's remaining 0.000s *(§7.1)*
+### 10.2 Goldman's remaining 0.000s *(§7.1)*
 
 Free to investigate. Best-isolated defect in the project, three hypotheses down.
 
-### 10.4 Ambiguity detection *(§7.3)*
+### 10.3 Ambiguity detection *(§7.3)*
 
 The only answerable stratum that has never moved, and 2 of 3 remaining refusal
 errors.
 
-### 10.5 Page-number metadata *(§8.1 #2)*
+### 10.4 Page-number metadata *(§8.1 #2)*
 
 Only worth doing bundled with another re-ingest.
 
-### 10.6 Optional
+### 10.5 Optional
 
 Re-run `fixed` and `semantic` against the current pipeline (~$3.20) so the
 chunking table describes one system rather than two. Re-run the six-config
@@ -682,7 +688,7 @@ OPENAI_API_KEY= ./.venv/Scripts/python.exe -m pytest tests/ -q
 ./.venv/Scripts/python.exe -m ruff format --check src tests
 ```
 
-413 tests, ruff clean, format clean. The last is the one CI trips on, and **when
+420 tests, ruff clean, format clean. The last is the one CI trips on, and **when
 it trips the test job reports *skipped*, not failed** — a red badge saying
 "formatting" can hide a suite that never ran. Check the job list, not the badge:
 
