@@ -139,6 +139,24 @@ def split_documents(
 
         return _tag_chunks(_drop_stubs(split_documents_semantically(documents)), strategy)
 
+    if strategy == ChunkingStrategy.TABLE_CONTEXT:
+        # Recursive splitting, then the table post-pass. Stubs are dropped
+        # first so the pass sees the same chunk population `recursive`
+        # produces — the two strategies differ only in the enrichment, which
+        # is the property that makes comparing their collections meaningful.
+        from src.ingestion.table_context import add_table_context
+
+        splitter = create_text_splitter(chunk_size, chunk_overlap)
+        chunks = add_table_context(_drop_stubs(splitter.split_documents(documents)))
+        logger.info(
+            "documents_split",
+            strategy=strategy.value,
+            input_docs=len(documents),
+            output_chunks=len(chunks),
+            chunk_size=chunk_size or settings.chunk_size,
+        )
+        return _tag_chunks(chunks, strategy)
+
     if strategy == ChunkingStrategy.SEMANTIC:
         # Caller forced a size; that is the fixed-size path by definition, and
         # recording it as "semantic" would misattribute the collection.

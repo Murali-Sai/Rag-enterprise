@@ -58,6 +58,36 @@ quantized/ONNX bge-class reranker, and it is worth a paid run only after the
 latency problem is solved. Screen JSONs were scratch; the numbers above are
 the record.
 
+**§7.1 table-context chunking: built, measured, refuted — twice.** The
+`table_context` strategy (fourth peer of fixed/recursive/semantic,
+`src/ingestion/table_context.py`) detects table-shaped chunks and prepends the
+caption the splitter severed into the previous chunk's tail — the repair §7.1
+named as its second-ranked next step. The full screen matrix, free eval,
+overall / GS:
+
+| | recursive | + provenance+caption | + caption only |
+|---|---|---|---|
+| ms-marco (shipped) | 0.242 / 0.067 | 0.245 / 0.067 | 0.233 / 0.067 |
+| bge-base | **0.376 / 0.133** | 0.339 / 0.095 | 0.328 / 0.067 |
+
+Three things were learned, all worth keeping. First, the mechanism works:
+enriched table chunks enter the GS market-risk candidate set at ranks 5–20,
+where at k=100 on the plain corpus zero of them ever appeared. Second, it does
+not help: a caption says what a table is *about*, not which figures it holds,
+so enrichment surfaces thematically-adjacent wrong tables that displace the
+figure-bearing prose bge was already promoting — both variants lose to
+bge-on-plain-recursive. Third, the crowding hypothesis (shared provenance
+prefix caused v1's loss) was refuted by v2: removing the shared prefix made it
+*worse*, so the displacement is the captions themselves, not their common
+text. Do not re-run this idea with a longer caption window; the failure is
+structural. The untried paths for GS's market-risk 0.000 are now a
+financial-domain **bi-encoder** (whole-corpus re-embed) or accepting that
+7-figures-across-4-tables is beyond this architecture's reach and saying so.
+The strategy stays in the codebase, off by default, same status as hybrid:
+measured, negative, documented. Collection `rag_enterprise_tblctx` (8,259
+chunks, 1,128 tagged, caption-only variant) is kept beside the other
+comparison collections; the measured corpus was never touched.
+
 **§7.4 decided (2026-08-12): the fabricated documents leave `sec_filings`.**
 Not executed — removal changes the corpus digest, so it is bundled with the
 next deliberate re-ingest along with §8.1 #2's page metadata. Until then §7.4's

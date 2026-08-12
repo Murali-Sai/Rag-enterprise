@@ -35,6 +35,15 @@ class ChunkingStrategy(str, Enum):
     # Splits where consecutive sentence embeddings diverge, i.e. where the
     # subject changes rather than where the character budget runs out.
     SEMANTIC = "semantic"
+    # Recursive splitting plus a post-pass that re-attaches to each table
+    # chunk the words the split severed from it: the caption sentence
+    # stranded in the previous chunk's tail, and the filing's provenance.
+    # Exists because the ground-truth figures for Goldman's market-risk
+    # question sit in bare tables ("CET1 capital | $ | 104,297 ...") whose
+    # captions — "The table below presents inf" — end mid-word in the chunk
+    # before, leaving the table with no thematic vocabulary for an embedder
+    # to match against a question. See src/ingestion/table_context.py.
+    TABLE_CONTEXT = "table_context"
 
 
 class Environment(str, Enum):
