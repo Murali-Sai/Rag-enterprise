@@ -14,9 +14,14 @@ the result into HTTP and apply the compliance layer on top.
 
 Order of operations matters here:
 
+0. Underspecified questions are refused before anything else — a question
+   that needs a company and names none has no correct answer for retrieval
+   to find, so neither the gate nor the model gets a say. See
+   src/retrieval/ambiguity.py for the measurement.
 1. Retrieval confidence is checked *before* generating. It is the only
-   signal available pre-generation, and refusing early skips the expensive
-   call entirely rather than paying for an answer built on bad chunks.
+   retrieval signal available pre-generation, and refusing early skips the
+   expensive call entirely rather than paying for an answer built on bad
+   chunks.
 
    That check is a cost guard, not the refusal mechanism. It reads as one —
    it is the first thing in the function and it returns the same structured
@@ -51,6 +56,7 @@ from src.generation.confidence import (
     score_confidence,
 )
 from src.generation.insufficient import (
+    AMBIGUOUS_ENTITY,
     LOW_RETRIEVAL_CONFIDENCE,
     MODEL_REFUSED,
     UnansweredReport,
@@ -58,6 +64,7 @@ from src.generation.insufficient import (
     render_unanswered,
 )
 from src.generation.verification import CitationReport, unverified_report, verify_citations
+from src.retrieval.ambiguity import clarification_detail, is_underspecified
 from src.retrieval.scores import ScoredDocument, as_scored, documents_of
 
 logger = get_logger(__name__)
@@ -109,6 +116,37 @@ def generate_grounded_answer(
 
     retrieval = retrieval_confidence(scored)
     threshold = settings.insufficient_context_threshold
+
+    # A property of the question, not of what was retrieved — checked first
+    # because no retrieval result can repair an underspecified question, only
+    # pick a company on the asker's behalf. Like the gate below, this skips
+    # the LLM call; unlike the gate, it is a correctness mechanism, and the
+    # only one this pipeline has for the ambiguous stratum (0.667 in every
+    # baseline before it existed). The retrieved documents still ride along
+    # in the report: what a vague search returned is exactly the evidence
+    # that the question admits several answers.
+    if is_underspecified(question):
+        report = build_unanswered_report(
+            AMBIGUOUS_ENTITY,
+            documents,
+            detail=clarification_detail(),
+        )
+        parsed = parse_citations("", len(documents))
+        empty = unverified_report(parsed)
+        logger.info(
+            "ambiguous_entity",
+            reason=AMBIGUOUS_ENTITY,
+            documents=len(documents),
+        )
+        return GroundedAnswer(
+            answer=render_unanswered(report),
+            documents=documents,
+            parsed=parsed,
+            citations=empty,
+            confidence=score_confidence("", parsed, empty, retrieval),
+            unanswered=report,
+            generated=False,
+        )
 
     if retrieval is not None and retrieval < threshold:
         report = build_unanswered_report(

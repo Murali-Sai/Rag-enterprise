@@ -206,7 +206,7 @@ class AccessProfile(BaseModel):
 class UnansweredReport(BaseModel):
     """What was searched, when the system declines to answer."""
 
-    reason: str = Field(description="low_retrieval_confidence | model_refused")
+    reason: str = Field(description="low_retrieval_confidence | model_refused | ambiguous_entity")
     summary: str
     searched: list[str] = Field(
         default_factory=list, description="Passages consulted, best match first"

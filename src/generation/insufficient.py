@@ -8,7 +8,7 @@ in the corpus or in the retrieval is to go and look. This module turns the
 refusal into something actionable: what was searched, what came back, and
 which filings are worth opening by hand.
 
-Two paths reach here, and they are different failures:
+Three paths reach here, and they are different failures:
 
 - **low_retrieval_confidence** — the retrieved chunks scored badly, so
   nothing is generated at all. Caught before the generation call, which also
@@ -16,9 +16,15 @@ Two paths reach here, and they are different failures:
 - **model_refused** — retrieval looked fine and the model still declined.
   The chunks were on topic but did not contain the specific fact. The
   generated refusal is kept; the structure is added alongside it.
+- **ambiguous_entity** — the question itself is underspecified: it needs a
+  company and names none, so any answer would be about a company chosen by
+  the ranker rather than the asker. Also caught before generation. See
+  src/retrieval/ambiguity.py.
 
 The distinction is worth preserving because they point at different fixes:
-the first is a retrieval problem, the second a corpus or chunking one.
+the first is a retrieval problem, the second a corpus or chunking one, and
+the third is not the system's failure at all — the structured report is the
+fix, because it tells the asker what to add.
 """
 
 from dataclasses import dataclass
@@ -27,6 +33,7 @@ from langchain_core.documents import Document
 
 LOW_RETRIEVAL_CONFIDENCE = "low_retrieval_confidence"
 MODEL_REFUSED = "model_refused"
+AMBIGUOUS_ENTITY = "ambiguous_entity"
 
 _REASON_SUMMARY = {
     LOW_RETRIEVAL_CONFIDENCE: (
@@ -35,6 +42,11 @@ _REASON_SUMMARY = {
     ),
     MODEL_REFUSED: (
         "Relevant filings were retrieved, but they do not state what the question asks for."
+    ),
+    AMBIGUOUS_ENTITY: (
+        "The question does not say which company it is about, and the corpus "
+        "answers it differently for each one. Answering would mean picking a "
+        "company the question never named."
     ),
 }
 

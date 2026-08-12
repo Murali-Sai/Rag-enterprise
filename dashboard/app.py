@@ -85,6 +85,12 @@ DECLINE_GLOSS = {
         "topic but did not state what the question asked for — a corpus or chunking gap "
         "rather than a retrieval one."
     ),
+    "ambiguous_entity": (
+        "The question needs a company and names none — 'the bank' matches two filings and "
+        "'the company' five, so any answer would be about a company the ranker picked "
+        "rather than the one you meant. Declined before generation; naming the company "
+        "gets an answer."
+    ),
 }
 
 VERDICT_ICON = {
