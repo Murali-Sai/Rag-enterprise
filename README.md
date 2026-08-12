@@ -543,7 +543,7 @@ Per stratum, and this is where the system's actual shape shows:
 | `out_of_corpus` | 4 | — | — | — | **1.000** |
 | `rbac_blocked` | 4 | — | — | — | **1.000** |
 
-Comparatives were the weakest stratum in every previous baseline and are no longer: refusal correctness 0.625 → **1.000**, faithfulness 0.426 → 0.710. `exact_figure` went 0.846 → **1.000** on the same metric. `ambiguous` is unchanged at 0.667 and is the only answerable-stratum weak spot left — see *Ambiguity is not handled*, below.
+Comparatives were the weakest stratum in every previous baseline and are no longer: refusal correctness 0.625 → **1.000**, faithfulness 0.426 → 0.710. `exact_figure` went 0.846 → **1.000** on the same metric. `ambiguous` — unchanged at 0.667 through every fix in the table above — has since been closed by a mechanical detector and scored **1.000 on one confirming run** (`eval_20260812_180308`), which put overall refusal correctness at **0.981**; see *Ambiguity*, below.
 
 **The refusal path is still the strongest thing here.** All three unanswerable strata score 1.000, as they have in every run — the system declines every question it should decline, structures the refusal, and labels it low confidence. RBAC-blocked questions never retrieve the document at all.
 
@@ -603,7 +603,7 @@ The historical table below is the parser-fix-era measurement (2026-08-09, n=1) t
 
 MSFT's faithfulness remains the separate open defect — its filing text is recovered at only ~71%.
 
-**Ambiguity is not handled.** Two of the three underspecified questions ("How much did the bank set aside for credit losses?", "What are the company's main risks?") were answered about one arbitrarily-chosen company, with no flag that the question admitted others. There is no ambiguity-detection mechanism; the stratum exists to say so.
+**Ambiguity.** For most of this project's life, two of the three underspecified questions ("How much did the bank set aside for credit losses?", "What are the company's main risks?") were answered about one arbitrarily-chosen company, with no flag that the question admitted others — the only answerable-stratum defect no retrieval fix ever touched, because it was never a retrieval failure. It is now handled by a mechanical detector (`src/retrieval/ambiguity.py`): a question that needs a company and names none is refused before generation with a structured `ambiguous_entity` report that lists the five companies and asks the asker to name one. No LLM call, and deliberately biased toward silence — a false negative is the old behaviour, a false positive would refuse an answerable question. The stratum scored **1.000 on one confirming run**, the first time it moved.
 
 ### Retrieval Pipeline Ablation
 

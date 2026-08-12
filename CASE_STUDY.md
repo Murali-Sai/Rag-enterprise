@@ -116,13 +116,16 @@ used to be the weakest stratum by a wide margin — 0.426 faithfulness and 0.625
 refusal correctness — and are now 0.710 and 1.000, because a comparison is two
 questions and was finally retrieved and scored as two.
 
-**`ambiguous` is the one answerable stratum that has not moved**, and it is the
-only place the system still gets a refusal decision wrong. It sits at 0.667 in
-every baseline, before and after every fix, because nothing in the system
-addresses it — see *Ambiguity is not handled*. The three refusal errors in all
-three runs are identical: two ambiguous questions answered about one arbitrarily
-chosen company, and one Goldman question the model declines despite good
-retrieval.
+**`ambiguous` was the one answerable stratum that had not moved** — 0.667 in
+every baseline, before and after every retrieval fix, because it was never a
+retrieval failure: the pipeline answered underspecified questions about
+whichever company ranked best, fluently and with no flag. It is now handled
+mechanically (see *Ambiguity*, below) and scored **1.000 on one confirming run**
+(`eval_20260812_180308`), taking overall refusal correctness 0.944 → **0.981**
+on that run. The remaining refusal error is the one Goldman question the model
+declines despite good retrieval. Single run, not a new three-run baseline; the
+detector is deterministic and a suite-level test pins exactly which questions it
+touches, which is why one run was bought rather than three.
 
 ---
 
@@ -488,10 +491,22 @@ sample size wearing the costume of a statement about the metric.
 change can only ever be suggestive. Both facts are the measurement, and both are
 in the repo.
 
-**Ambiguity is not handled at all.** Two of three underspecified questions were
-answered about one arbitrarily chosen company with no flag that the question
-admitted others. There is no ambiguity-detection mechanism; the `ambiguous`
-stratum exists to record that, not to claim it is solved.
+**Ambiguity.** For most of this project's life, two of three underspecified
+questions were answered about one arbitrarily chosen company with no flag that
+the question admitted others, and the stratum existed to record that. It is now
+handled, and the shape of the fix is the finding: this was the only defect on
+the answerable side that no retrieval change ever touched, because retrieval was
+doing its job — it was asked an underspecified question and answered it. The
+detector (`src/retrieval/ambiguity.py`) is two literal signals gated on entity
+detection finding nothing: a definite reference to an unnamed company ("the
+bank" matches two filings, "the company" five), or a company-scoped financial
+metric with no subject at all. No LLM call, same argument as entity detection:
+a classifier in front of retrieval would put another model's judgment inside
+the measurement chain. Both signals bias deliberately toward silence — a missed
+ambiguous question falls through to the old behaviour, while a false positive
+would refuse an answerable question, which is the failure the answerable half
+of `refusal_correctness` exists to catch. The stratum moved 0.667 → **1.000**
+on one confirming run, the first time it moved at all.
 
 ---
 
