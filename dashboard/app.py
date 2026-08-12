@@ -505,13 +505,25 @@ def main() -> None:
         if stale or st.button("Re-authenticate", use_container_width=True):
             label, username, password, _ = next(r for r in ROLES if r[0] == choice)
             try:
-                state.token = login(username, password)
-                state.access = get_access(state.token)
+                # Spinner, not silence. This runs on first page load, before
+                # anything else on the page, and it blocks the whole script
+                # run — sidebar and main column both. The API scales to zero to
+                # stay inside the budget, so a cold container is ~50s to boot;
+                # against a 120s timeout that is up to two minutes of a bare
+                # header with no indication anything is happening, which reads
+                # as a broken link rather than a waking service.
+                with st.spinner("signing in — first load wakes the API, which can take a minute…"):
+                    state.token = login(username, password)
+                    state.access = get_access(state.token)
                 state.role_label = label
             except requests.RequestException as error:
                 state.token = None
                 state.role_label = None
                 st.error(f"Login failed: {error}")
+                st.caption(
+                    "The API sleeps when idle and takes about a minute to wake. "
+                    "If this persists, reload the page."
+                )
 
         if state.token:
             st.success(f"Authenticated as `{state.access['username']}`")

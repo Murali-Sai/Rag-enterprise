@@ -666,13 +666,25 @@ Only worth doing bundled with another re-ingest.
 
 Re-run `fixed` and `semantic` against the current pipeline (~$3.20) so the
 chunking table describes one system rather than two. Re-run the six-config
-retrieval ablation (~$3, only meaningful as a complete set). Set a **GCP billing
-budget alert at $10** — suggested across four handoffs, still never done, free,
-and the one safety net that watches every meter at once:
+retrieval ablation (~$3, only meaningful as a complete set).
+
+**Keep an instance warm.** Container boot is ~50s and both services scale to
+zero, so a visitor arriving cold waits about that long before the landing page
+appears — the single largest gap between "works" and "a recruiter will not
+assume it is broken". A Cloud Scheduler job pinging `/health` every 10 minutes
+keeps an instance alive (Cloud Run holds one for ~15 minutes after a request,
+and request-based billing does not charge for idle CPU), so this costs
+effectively nothing and stays inside the free tier. **Not `min-instances=1`**,
+which is ~$50/month against a $10 ceiling and is the classic bill shock.
 
 ```bash
-gcloud billing budgets create --billing-account=$(gcloud beta billing projects describe rag-enterprise-498519 --format="value(billingAccountName)" | cut -d/ -f2) --display-name="rag-enterprise $10 ceiling" --budget-amount=10USD --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0
+gcloud scheduler jobs create http rag-enterprise-keepwarm \
+  --location=us-central1 --schedule="*/10 * * * *" \
+  --uri="https://rag-enterprise-laa65asupq-uc.a.run.app/health" --http-method=GET
 ```
+
+The startup warmup (§4.1) already moved the cross-encoder load off the first
+query; this is what would hide the remaining container boot.
 
 ---
 
@@ -724,8 +736,51 @@ The OpenAI key on the service is for *embeddings only*, ~$0.000005/query.
 
 **What would break the ceiling**, in order of likelihood: setting
 `min-instances` above 0 (~$50/month, the classic Cloud Run bill shock);
-accumulating deploy images (~$1/month per dozen); sustained abuse (~$4/day —
-now much harder, the rate limit is enforced).
+accumulating deploy images (~$1/month per dozen); sustained abuse.
+
+### 12.1 What public traffic actually costs — corrected 2026-08-11
+
+Earlier handoffs put sustained abuse at "~$4/day, now much harder, the rate
+limit is enforced". **That is about an order of magnitude low**, and the reason
+it is wrong matters more than the number.
+
+Per query, on the live configuration: ~$0.0017 Gemini generation (~3,000 input
+and ~300 output tokens), ~$0.00018 Cloud Run (2 vCPU and 2 GiB for the measured
+3.4s), ~$0.000005 OpenAI embedding. **≈ $0.002 per query.**
+
+| Scenario | Queries | Cost |
+|---|---|---|
+| A recruiter tries it properly | 10 | $0.02 |
+| Shared in a team Slack | 250 | $0.50 |
+| A LinkedIn post that lands | ~600 | $1.20 |
+| Front page of Hacker News for a day | ~6,000 | ~$12 |
+| **Saturated 24/7** | ~25,000/day | **~$50/day** |
+
+**The rate limit is not what caps this.** It keys on the first
+`X-Forwarded-For` hop, which is spoofable — §6.2 of the previous handoff
+records that as knowingly traded away, because behind Cloud Run the socket
+address is Google's front end for every visitor on earth. An attacker rotating
+that header gets unlimited buckets, and the demo credentials are published on
+the landing page, so a token is free to mint.
+
+**`autoscaling.knative.dev/maxScale = 1` is the actual cost cap.** One instance
+at ~3.4s per query serves about 25,000 queries a day and nothing above that is
+reachable. It is doing considerably more work than the rate limit is, which is
+a third reason not to raise it (the other two: the rate limit becomes
+approximate, and per-instance in-memory storage multiplies every limit by N).
+
+### 12.2 The budget alert exists now
+
+Created 2026-08-11 after being recommended in five consecutive handoffs:
+budget `3b36cbd7-514f-463c-a833-596367fc5c62` on billing account
+`01B00D-542937-FBEC97`, **$10/month**, scoped to this project, alerting at 50%,
+90% and 100% of current spend. Enabling `billingbudgets.googleapis.com` was a
+prerequisite and is now on.
+
+**It notifies; it does not cap.** Billing data lags by hours, so this converts
+an unbounded silent risk into "you find out the same day". If it ever fires,
+the response is `gcloud run services update-traffic rag-enterprise --to-revisions=<rev>=0`
+or taking the service down — not waiting to see.
 
 **The owner delegates the judgment and holds the ceiling.** Surface the cost and
 what it buys, make the call, report actual spend afterwards.
