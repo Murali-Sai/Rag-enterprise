@@ -109,6 +109,19 @@ ENV WARM_MODELS_ON_STARTUP=true
 # than at build time, and the first visitor pays for it.
 RUN python -c "from src.retrieval.reranker import get_reranker; get_reranker()"
 
+# Bake the fallback embedding model too, then cut HuggingFace off entirely.
+# Even with both models cached, huggingface_hub revalidates against the hub at
+# load time — measured as several seconds of the ~19s post-warmup first query —
+# and makes container boot depend on huggingface.co being reachable, a real
+# availability risk for a demo. Offline mode skips validation and reads the
+# cache directly. The embedding bake must come first: it is what start.py loads
+# when a fresh clone ingests at boot with no OpenAI key, and going offline
+# without it would break exactly the reviewer path the optional index COPY
+# exists to protect. Loaded through the same call path start.py uses so the
+# baked artifact cannot drift from the one the code asks for.
+RUN python -c "from langchain_huggingface import HuggingFaceEmbeddings; from src.config import settings; HuggingFaceEmbeddings(model_name=settings.embedding_model)"
+ENV HF_HUB_OFFLINE=1
+
 # Create non-root user and hand over ownership of the baked data + caches
 RUN groupadd -r appuser && useradd -r -g appuser appuser \
     && mkdir -p /app/.cache/huggingface /app/data/edgar /app/chroma_data /app/audit_logs \
