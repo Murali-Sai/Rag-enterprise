@@ -96,6 +96,14 @@ ENV EMBEDDING_PROVIDER=openai
 # hand every visitor write access to the index the published numbers describe.
 ENV ALLOW_RUNTIME_INGEST=false
 
+# Load the cross-encoder in the background at boot rather than on whichever
+# query happens to be first. Both services scale to zero to stay inside the
+# budget, so the first visitor after an idle period paid 23.1s for a query that
+# takes 3.4s warm — almost all of it this model. Set here rather than as a
+# deploy flag so it survives a deploy that forgets it, and left off by default
+# in config.py so the test suite does not load a model it never uses.
+ENV WARM_MODELS_ON_STARTUP=true
+
 # The cross-encoder is the one model still downloaded from HuggingFace, and it
 # sits in the request path: without this it fetches on the first query rather
 # than at build time, and the first visitor pays for it.

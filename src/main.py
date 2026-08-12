@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -113,6 +114,34 @@ from Apple, JPMorgan, Tesla, Microsoft, and Goldman Sachs.
 """
 
 
+async def _warm_models() -> None:
+    """Load the cross-encoder so the first real query does not pay for it.
+
+    `get_reranker()` is a lazy singleton, so without this the model loads on
+    whichever request happens to be first. Measured against the live
+    deployment: a warm landing page serves in 0.10s and a steady-state query
+    in 3.4s, but the *first* query after a cold start took 23.1s — essentially
+    all of it this load.
+
+    Run in a thread rather than on the event loop because it is blocking CPU
+    and disk work, and started as a background task rather than awaited in
+    `lifespan` because awaiting it would move those seconds into container
+    startup, where Cloud Run holds the request that triggered the cold start.
+    The landing page needs neither the model nor the index, so it should not
+    wait for them. This way the container reports ready immediately and the
+    model loads while the visitor is reading the page and logging in.
+    """
+    try:
+        from src.retrieval.reranker import get_reranker
+
+        await asyncio.get_running_loop().run_in_executor(None, get_reranker)
+        logger.info("models_warm")
+    except Exception as exc:  # noqa: BLE001
+        # A warmup is an optimisation, never a reason to fail startup. If it
+        # breaks, the lazy path still works and the first query is merely slow.
+        logger.warning("model_warmup_failed", error=str(exc))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ANN201
     # Startup
@@ -122,9 +151,16 @@ async def lifespan(app: FastAPI):  # noqa: ANN201
     await init_db()
     logger.info("database_ready")
 
+    # Off by default so the test suite and local runs do not pay to load a
+    # cross-encoder they may never use; the Dockerfile turns it on, the same
+    # way it pins ALLOW_RUNTIME_INGEST.
+    warmup = asyncio.create_task(_warm_models()) if settings.warm_models_on_startup else None
+
     yield
 
     # Shutdown
+    if warmup is not None and not warmup.done():
+        warmup.cancel()
     logger.info("shutting_down")
 
 

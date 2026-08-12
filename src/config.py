@@ -307,6 +307,24 @@ class Settings(BaseSettings):
     citation_judge_provider: LLMProvider = LLMProvider.OPENAI
     citation_judge_model: str = "gpt-4o-mini"
 
+    # Load the cross-encoder at startup instead of on the first query that
+    # needs it. Both services scale to zero to stay inside the budget, so a
+    # visitor arriving after an idle period pays the cold start: measured
+    # against the live deployment, 50.9s for the landing page (image pull and
+    # boot) and then 23.1s for their first query, against 0.10s and 3.4s once
+    # warm. Nearly all of that 23s is this model.
+    #
+    # Off by default so the test suite and local runs do not load a model they
+    # may never use. The Dockerfile turns it on, the same way it pins
+    # ALLOW_RUNTIME_INGEST, so the property cannot be lost by a deploy that
+    # forgets a flag.
+    #
+    # This only moves the cost off the first *query*. The container boot itself
+    # is unchanged, and the thing that hides that from visitors is keeping an
+    # instance warm — a scheduled ping, not min-instances, which would cost
+    # ~$50/month against a $10 ceiling.
+    warm_models_on_startup: bool = False
+
     # Below this retrieval confidence the system returns a structured account
     # of what it searched instead of generating an answer (Project 6 §3.4).
     #
