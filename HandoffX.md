@@ -3,6 +3,70 @@
 Written 2026-08-11, end of session. **Self-contained**: assumes no memory of any
 previous session and no reading of the earlier handoffs.
 
+---
+
+## Addendum, 2026-08-12 — read this first, it supersedes parts of the page below
+
+Where this addendum and the body disagree, the addendum wins.
+
+**Live revisions are now API `rag-enterprise-00012-2lq`, dashboard
+`rag-enterprise-dashboard-00006-4zs`** (supersedes §3). `main` is past
+`a6dd19f`, clean, pushed, CI-checked on push.
+
+**§10.1 keep-warm: done.** Cloud Scheduler job `rag-enterprise-keepwarm`
+(us-central1, `*/10 * * * *`, GET `/health`) exists, is ENABLED, and its first
+scheduled fire succeeded; `/health` answers in ~0.17s warm.
+`cloudscheduler.googleapis.com` had to be enabled and now is. The
+`HF_HUB_OFFLINE=1` follow-up is also done: the Dockerfile now bakes the
+fallback MiniLM embedder *and then* goes offline, so boot no longer depends on
+huggingface.co — the embedder bake first, or the fresh-clone ingest path
+breaks.
+
+**§7.3 ambiguity: closed.** `src/retrieval/ambiguity.py` refuses
+entity-underspecified questions before generation with a third structured
+reason, `ambiguous_entity`, from the shared entry point. Two mechanical
+signals, both gated on `detect_entities()` finding nothing: a definite
+reference ("the company", "the bank"), or a financial-metric question naming
+nothing capitalized at all — the second guard keeps out-of-corpus questions
+(Netflix, NVIDIA) on their measured, working path through the model. A
+suite-level test pins that exactly the three ambiguous-refuse questions fire
+and the other fifty-one do not. Confirmed end-to-end by **one paid run**,
+`eval_20260812_180308`: ambiguous stratum 0.667 → **1.000**, refusal
+correctness 0.944 → **0.981** (53/54; the survivor is the known Goldman
+`model_refused`). Answerable aggregates all inside their §4.3 floors. This is
+one run, not a new three-run baseline — bought as a wiring check because the
+detector is deterministic and test-pinned, so do not quote 0.981 as a mean.
+
+**§7.1/§7.2 reranker: diagnosis validated, fix not shipped.** Free-eval screen
+of drop-in cross-encoders, all at k=20, baseline overall 0.242:
+
+| Model | overall Δ | GS Δ | JPM Δ | MSFT Δ | TSLA Δ | ms / 20 pairs |
+|---|---|---|---|---|---|---|
+| ms-marco-L6 (shipped) | — | — | — | — | — | 54 |
+| ms-marco-L12 | −0.018 | 0 | 0 | 0 | −0.083 | ~2× |
+| mxbai-rerank-xsmall | +0.033 | 0 | +0.095 | +0.050 | −0.042 | unmeasured |
+| **bge-reranker-base** | **+0.134** | +0.067 | +0.095 | +0.300 | −0.042 | **4,531** |
+
+bge-base recovers exactly the chunks §7.1 diagnosed ms-marco as dropping (GS
+revenues/ROE 0.33 → 0.67) while the never-retrieved market-risk table stays at
+0 — the reranker was one of the two failures, and the candidate-set failure
+remains. **Not shipped**: 84× rerank latency (~3.4s → ~8s warm queries on 2
+vCPU), ~1.1 GB heavier image, and bge's logit distribution maps to a 0.50
+*minimum* confidence, so the 0.001 gate would be inert and needs
+recalibration on the probe set before any swap. The forward path is a
+quantized/ONNX bge-class reranker, and it is worth a paid run only after the
+latency problem is solved. Screen JSONs were scratch; the numbers above are
+the record.
+
+**§7.4 decided (2026-08-12): the fabricated documents leave `sec_filings`.**
+Not executed — removal changes the corpus digest, so it is bundled with the
+next deliberate re-ingest along with §8.1 #2's page metadata. Until then §7.4's
+behaviour stands.
+
+**Cost this session: ~$0.85** (one eval run ~$0.80, Cloud Build ~$0.05; the
+reranker screen was four free-eval runs at ~$0.00016 total). Keep-warm pings
+are inside Cloud Run's request-based free behaviour and Scheduler's free tier.
+
 Supersedes `handoffTo8.md`, written earlier the same day. Its §4 (the measured
 baseline) and §5 (the evaluation apparatus) are still accurate and are repeated
 here; everything else moved. The older handoffs stay in the repo because their
