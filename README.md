@@ -10,9 +10,21 @@
 >
 > Until 2026-08-09 the demo also embedded locally with MiniLM over a differently-built 8,099-chunk corpus, which made every retrieval number unreproducible here too. That half is now closed.
 
+![Demo: a cited answer from Apple's 10-K, then a structured refusal of an underspecified question](docs/demo.gif)
+
+*One question traced through the pipeline — RBAC walls, ranked chunks with cross-encoder scores, a cited answer ($416,161M, [1][3]), the confidence composite — then an underspecified question ("the company's main risks?") refused before generation with a structured `ambiguous_entity` report instead of a guess.*
+
 Production-grade Retrieval Augmented Generation system that queries **real SEC 10-K filings** from the EDGAR API. Features role-based access control with information barriers (Chinese Walls), financial compliance guardrails, MNPI detection, regulatory audit trails, and RAGAS evaluation — built for investment banking workflows at firms like **JPMC, Morgan Stanley, and Goldman Sachs**.
 
 Unlike typical RAG demos with synthetic documents, this system downloads, parses, and indexes **actual annual reports** from Apple, JPMorgan, Tesla, Microsoft, and Goldman Sachs.
+
+**Measured, not asserted** — 54 hand-written evaluation questions over an 8,232-chunk index, three-run baseline:
+
+| Faithfulness | Citation Accuracy | Refusal Correctness | Correct refusals on unanswerable questions |
+|:---:|:---:|:---:|:---:|
+| **0.85** | **0.94** | **0.98** | **16/16** |
+
+Every number has a noise floor, several published claims are retractions of earlier ones, and the negative results stay in [CASE_STUDY.md](CASE_STUDY.md) on purpose — they are why the remaining numbers are believable. (Refusal correctness 0.98 is one confirming run after the ambiguity fix; the three-run mean before it was 0.94.)
 
 ## Architecture
 
@@ -66,7 +78,7 @@ Unlike typical RAG demos with synthetic documents, this system downloads, parses
 | MSFT | Microsoft Corp. | AI/cloud narrative, enables AAPL comparison |
 | GS | Goldman Sachs | Second IB — enables JPM vs GS comparison |
 
-Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chunked into ~500-1000 total vectors.
+Each company's most recent 10-K is downloaded, parsed into 5-6 sections, and chunked — 8,232 vectors across the five filings (460 for Apple's compact filing up to 3,122 for JPMorgan's).
 
 ## Tech Stack
 
