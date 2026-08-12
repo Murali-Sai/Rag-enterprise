@@ -434,8 +434,7 @@ def render_confidence(data: dict) -> None:
     )
     st.progress(
         min(1.0, max(0.0, completeness)),
-        text=f"answer completeness (×0.2) — {completeness:.3f} "
-        f"{words.get(completeness, '')}",
+        text=f"answer completeness (×0.2) — {completeness:.3f} {words.get(completeness, '')}",
     )
 
     if confidence["label"] == "low" and completeness == 0.0:
