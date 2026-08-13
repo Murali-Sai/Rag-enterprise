@@ -491,6 +491,46 @@ sample size wearing the costume of a statement about the metric.
 change can only ever be suggestive. Both facts are the measurement, and both are
 in the repo.
 
+**A wrong answer that scored well, and the fix that followed.** Driving the
+dashboard by hand — not running a test — turned up the most instructive failure
+in the project. Asked for Goldman's total net revenues and return on average
+common equity, the system answered *"$58,283 million … 2.1%"*, with citations
+and high confidence. Every number was real and every number was in the
+retrieved chunk. It was still wrong: 2.1% belongs to the Platform Solutions
+segment, the word "Total" is where the firmwide table starts, and the firmwide
+figure — 15.0% over $108,726 million of average common equity — is the first
+row of the **next** chunk, which was never retrieved. The three segments sum to
+the firmwide row exactly, so the corpus was complete and correct; a table
+crossed a chunk boundary and the half that survived read like an answer.
+
+No amount of reranking fixes that, because the retrieved chunk really is
+relevant — what is missing is its continuation. The fix reads the next row, the
+way a person would: after reranking selects the final set, a chunk that looks
+like a table gets the following chunk appended, matched on source, section and
+`chunk_index + 1`. Query-time by choice — chunking is baked into an index, so
+re-chunking would mean re-embedding, a new corpus digest, and the invalidation
+of every published figure here.
+
+Measured against the identical config without it: context precision **+0.066**,
+citation coverage **+0.058**, answer correctness **+0.053**, answer relevancy
+**+0.036**, each clearing its noise floor; citation accuracy paid **−0.026**
+against an 0.018 floor, a small real cost, because a stitched chunk puts more
+text behind a single citation number. The largest single movement was another
+split table — *"JPMorgan's total assets and CET1 capital ratio"*, answer
+correctness +0.577.
+
+**The precision result refuted the prediction written into the code.** Longer
+chunks were expected to dilute relevance and cost precision. Precision rose,
+because RAGAS context precision asks whether the retrieved context is *useful
+for answering*, and a table with its continuation is more useful than a table
+without one. Completion beat dilution — which is not what the intuition said,
+and is why the run was bought.
+
+It narrows the Goldman defect rather than closing it. The evaluation phrases
+that question differently, retrieves a chunk set containing neither figure, and
+is unchanged at 0.333: expansion extends what was retrieved and cannot rescue a
+ranking that never surfaced the table.
+
 **Ambiguity.** For most of this project's life, two of three underspecified
 questions were answered about one arbitrarily chosen company with no flag that
 the question admitted others, and the stratum existed to record that. It is now

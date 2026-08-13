@@ -88,6 +88,56 @@ measured, negative, documented. Collection `rag_enterprise_tblctx` (8,259
 chunks, 1,128 tagged, caption-only variant) is kept beside the other
 comparison collections; the measured corpus was never touched.
 
+**§7.1 narrowed (2026-08-13): table continuation shipped and measured.**
+Found by driving the dashboard, not by a test. Asked for Goldman's total net
+revenues and ROE, the system answered "$58,283 million … 2.1%" — cited, high
+confidence, and wrong: 2.1% is the Platform Solutions segment, and the
+firmwide 15.0% over $108,726m of average common equity is the **first row of
+the next chunk**, unretrieved. The segments sum to the firmwide row exactly
+(13,117 + 3,093 + 90 = 16,300), so the corpus is complete; the table crosses a
+chunk boundary and one side of it reads like an answer.
+
+`src/retrieval/expansion.py` appends the following chunk (same source, same
+section, `chunk_index + 1`) to any final-set chunk that looks like a table.
+Query-time, so no re-ingest and the digest is untouched — `table_expansion_enabled`,
+default on. Measured, `eval_20260813_194605` against `eval_20260812_180308`
+(same config otherwise):
+
+| | Δ | floor | verdict |
+|---|---|---|---|
+| context precision | **+0.066** | 0.035 | claim |
+| citation coverage | **+0.058** | 0.022 | claim |
+| answer correctness | **+0.053** | 0.026 | claim |
+| answer relevancy | **+0.036** | 0.013 | claim |
+| citation accuracy | **−0.026** | 0.018 | real cost, small |
+| recall / faithfulness | −0.021 / −0.011 | 0.044 / 0.063 | noise |
+
+Biggest mover: *"JPMorgan's total assets and CET1 capital ratio"*, answer
+correctness +0.577 and relevancy +0.906 — another split table. The cost lands
+on two Microsoft questions, −0.500 citation accuracy each: a stitched chunk
+puts more text behind one citation number.
+
+**The precision result refutes the prediction made when writing the stage** —
+longer chunks were expected to dilute relevance, and RAGAS context precision
+instead rose, because it asks whether context is *useful for answering* and a
+table with its continuation is more useful than one without.
+
+**It does not close §7.1.** The eval phrases the Goldman question differently
+("average common *shareholders'* equity for 2025"), retrieves a different
+chunk set holding neither figure, and stays at 0.333. Expansion extends what
+was retrieved; it cannot rescue a ranking that never surfaced the table. Both
+runs are n=1 — the deltas clear the established floors, but a fresh three-run
+baseline is what it would take to republish the headline table.
+
+**Two serving-path bugs fixed the same day**, both invisible to the eval
+because the eval generates with `gpt-4o` and the demo generates with Gemini:
+`thinking_budget=0` on `gemini-2.5-flash` (its reasoning tokens were drawn
+from `max_output_tokens`, so answers truncated mid-sentence — six runs of one
+question returned 108 to 703 characters, three with no citation reached), and
+a confidence label that read **high** on a citation-free answer, because
+`_label()` forced low only on completeness 0.0 and retrieval's 0.5 weight
+carried the rest. Coverage 0.0 is now its own cap.
+
 **§7.4 decided (2026-08-12): the fabricated documents leave `sec_filings`.**
 Not executed — removal changes the corpus digest, so it is bundled with the
 next deliberate re-ingest along with §8.1 #2's page metadata. Until then §7.4's
