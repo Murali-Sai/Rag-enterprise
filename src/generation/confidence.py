@@ -193,8 +193,8 @@ def answer_completeness(answer: str, parsed: ParsedAnswer) -> float:
     return 1.0
 
 
-def _label(overall: float, completeness: float) -> str:
-    """Bucket the composite, with one override.
+def _label(overall: float, completeness: float, coverage: float) -> str:
+    """Bucket the composite, with two overrides.
 
     Completeness of zero means the answer asserted nothing — a full refusal,
     or empty text. The composite can still land in the middle there, because
@@ -202,8 +202,24 @@ def _label(overall: float, completeness: float) -> str:
     that number is meaningful (it says the chunks looked relevant and the
     model still declined) but the *label* is a claim about the answer, and
     there is no answer to be moderately confident in.
+
+    Coverage of zero on an answer that *did* assert something is the second
+    override, and it was found in production rather than reasoned about. A
+    truncated generation — claims present, citations never reached — scored
+    completeness 1.0 and coverage 0.0, and with retrieval at 0.95 the
+    composite reached 0.675 and labelled itself **high**: 0.5(0.95) +
+    0.3(0.0) + 0.2(1.0). Retrieval's weight alone can carry a label over the
+    line while the answer stands on nothing. In a system whose premise is
+    that every claim is checkable against the chunk it cites, an answer
+    citing nothing is the one thing that must never read as confident.
+
+    Capped at low rather than medium deliberately: uncited text here is
+    either truncated or ignoring the prompt's citation rule, and both are
+    reasons to distrust the text rather than to half-trust it.
     """
     if completeness == 0.0:
+        return "low"
+    if coverage == 0.0:
         return "low"
     if overall >= HIGH_THRESHOLD:
         return "high"
@@ -243,5 +259,5 @@ def score_confidence(
         retrieval=retrieval,
         coverage=coverage,
         completeness=completeness,
-        label=_label(overall, completeness),
+        label=_label(overall, completeness, coverage),
     )

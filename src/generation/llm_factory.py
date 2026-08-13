@@ -105,11 +105,26 @@ def create_llm(
 
         name = model or "gemini-2.5-flash"
         logger.info("initializing_llm", provider="gemini", model=name)
+        # thinking_budget=0 is load-bearing, not a tuning knob. Gemini 2.5
+        # reasons before answering and those thinking tokens are drawn from
+        # max_output_tokens, so a variable-length internal monologue leaves a
+        # variable-length budget for the answer itself. Measured on the live
+        # deployment: six runs of one Goldman question returned 108 to 703
+        # characters, and three of the six stopped mid-sentence before emitting
+        # a single citation — "…are as follows: For the most recent period",
+        # then nothing. The pipeline was fine every time; generation ran out of
+        # room. Raising the cap instead would buy a longer monologue as often
+        # as a longer answer, because nothing bounds the thinking half.
+        #
+        # This is a retrieval-grounded extraction task: the context is in the
+        # prompt and the answer is a sentence about it, which is exactly the
+        # shape that does not need a scratchpad.
         return ChatGoogleGenerativeAI(
             google_api_key=settings.google_api_key,
             model=name,
             temperature=0.1,
             max_output_tokens=max_tokens,
+            thinking_budget=0,
         )
 
     if provider == LLMProvider.OPENAI:

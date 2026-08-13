@@ -15,6 +15,7 @@ from langchain_core.documents import Document
 
 from src.generation.citations import parse_citations
 from src.generation.confidence import (
+    HIGH_THRESHOLD,
     answer_completeness,
     is_full_refusal,
     is_refusal,
@@ -225,6 +226,27 @@ class TestComposite:
         uncited = self._confidence("Net sales were $391.0 billion.", 0.9)
 
         assert uncited.overall < cited.overall
+
+    def test_an_uncited_answer_can_never_be_labelled_confident(self):
+        """Found in production, not reasoned about: a truncated generation
+        stopped before emitting citations, and with retrieval at 0.95 the
+        composite still reached 0.675 and read *high* — retrieval's weight
+        alone carrying a label for an answer standing on nothing."""
+        truncated = self._confidence(
+            "Goldman Sachs' total net revenues and return on average common equity are: "
+            "For the most recent period",
+            0.95,
+        )
+
+        assert truncated.coverage == 0.0
+        assert truncated.overall > HIGH_THRESHOLD  # the composite still says high
+        assert truncated.label == "low"  # the label must not
+
+    def test_the_cap_does_not_touch_properly_cited_answers(self):
+        cited = self._confidence("Net sales were $391.0 billion [1].", 0.95)
+
+        assert cited.coverage == 1.0
+        assert cited.label == "high"
 
     def test_missing_retrieval_signal_redistributes_its_weight(self):
         """Unmeasurable must not masquerade as bad: an answer that is fully
