@@ -239,6 +239,21 @@ class Settings(BaseSettings):
     rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     rerank_candidate_k: int = 20
 
+    # Table continuation — after reranking picks the final chunks, a chunk
+    # that looks like a table gets the chunk after it appended.
+    #
+    # A table that crosses a chunk boundary produces a retrieved passage whose
+    # numbers look like an answer and are not. Measured on Goldman: the chunk
+    # holding "Total | Net revenues | $58,283" also holds the *preceding*
+    # segment's 2.1% return on equity, while the firmwide 15.0% is the first
+    # row of the next chunk, unretrieved — so the answer paired a firmwide
+    # revenue with a segment return and cited both confidently.
+    #
+    # Query-time rather than a chunking change, because chunking is baked into
+    # an index: re-chunking means re-embedding and a new corpus digest, which
+    # invalidates every published figure. See src/retrieval/expansion.py.
+    table_expansion_enabled: bool = True
+
     # Hybrid search — pairs dense embedding search with a BM25 lexical index
     # and fuses the rankings (RRF). Dense handles paraphrase; BM25 handles the
     # exact-match terms filings are full of (tickers, "Item 7A", dollar

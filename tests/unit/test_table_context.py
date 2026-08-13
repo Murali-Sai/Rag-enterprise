@@ -49,6 +49,15 @@ class TestDetection:
         text = PROSE + "\nTotal capital | $ | 130,665 | $ | 128,470\n" + PROSE
         assert not looks_like_table(text)
 
+    def test_a_short_string_with_digits_in_it_is_not_a_table(self):
+        """The digit-ratio fallback needs enough text to be evidence. "doc19"
+        is two digits in five alphanumerics — 0.4 exactly, over the threshold,
+        and obviously not a table. Found when placeholder documents in the
+        retrieval tests started being treated as tables and dragged a vector
+        store into a suite that runs without one."""
+        assert not looks_like_table("doc19")
+        assert not looks_like_table("2025 | 2024")
+
 
 class TestCaptionCarry:
     def test_table_gets_the_previous_chunks_caption(self):

@@ -8,6 +8,7 @@ from src.common.logging import get_logger
 from src.config import settings
 from src.retrieval.bm25 import get_bm25_index
 from src.retrieval.entities import detect_entities, entity_filter, scope_query
+from src.retrieval.expansion import expand_table_chunks
 from src.retrieval.fusion import reciprocal_rank_fusion
 from src.retrieval.hyde import build_retrieval_query
 from src.retrieval.reranker import rerank_with_scores
@@ -271,6 +272,11 @@ class RerankingRetriever:
         self.user_roles = user_roles
         self.final_top_k = final_top_k or settings.retrieval_top_k
         self.candidate_k = candidate_k or settings.rerank_candidate_k
+        # Kept so the continuation stage below queries the same store the
+        # candidates came from — a caller that injected a store (a test, a
+        # second collection) must not have half its pipeline silently served
+        # by the configured default.
+        self._vector_store = vector_store
         self._base = base or RBACRetriever(
             user_roles=user_roles,
             vector_store=vector_store,
@@ -283,7 +289,13 @@ class RerankingRetriever:
 
     def retrieve_scored(self, query: str) -> list[ScoredDocument]:
         candidates = self._base.retrieve(query)
-        return rerank_with_scores(query, candidates, self.final_top_k)
+        selected = rerank_with_scores(query, candidates, self.final_top_k)
+        # After selection, never before: expanding candidates would hand the
+        # cross-encoder passages twice the length of what it scored the rest
+        # of the pool on, and a longer passage is a different scoring problem.
+        # The final set is also the smallest set this can run on — one Chroma
+        # get per table chunk, at most final_top_k of them.
+        return expand_table_chunks(selected, self._vector_store)
 
 
 class MultiEntityRetriever:

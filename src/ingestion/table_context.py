@@ -69,6 +69,13 @@ _MIN_TABLE_ROW_SHARE = 0.5
 # ordinary MD&A paragraphs with several dollar figures sit under 0.2.
 _MIN_DIGIT_RATIO = 0.4
 
+# …but a ratio over a handful of characters is noise, not evidence. "doc19"
+# is two digits in five alphanumerics — 0.4 exactly, and not a table. Real
+# table chunks in this corpus run 300-500 characters, and config's
+# MIN_CHUNK_CHARS already drops anything under 80, so this only excludes text
+# far too short to be a table of anything.
+_MIN_DIGIT_RATIO_CHARS = 120
+
 # How much trailing prose to carry. Enough for a caption sentence and the
 # clause before it; short enough that the table stays most of its own chunk.
 _CAPTION_TAIL_CHARS = 240
@@ -87,6 +94,8 @@ def looks_like_table(text: str) -> bool:
     rows = sum(1 for line in lines if _ROW_MARKER in line)
     if rows >= _MIN_TABLE_ROWS and rows / len(lines) >= _MIN_TABLE_ROW_SHARE:
         return True
+    if len(text) < _MIN_DIGIT_RATIO_CHARS:
+        return False
     return _digit_ratio(text) >= _MIN_DIGIT_RATIO
 
 
