@@ -106,7 +106,11 @@ def run_rag_pipeline(question: str, user_roles: set[str]) -> dict:
             "generated": False,
         }
 
-    grounded = generate_grounded_answer(question, scored, verify=True)
+    # Same search closure the REST route passes, so a run measures the retry
+    # exactly as deployed rather than a version of the pipeline without it.
+    grounded = generate_grounded_answer(
+        question, scored, verify=True, search=lambda query: retriever.retrieve(query)
+    )
 
     return {
         "question": question,
@@ -131,6 +135,11 @@ def run_rag_pipeline(question: str, user_roles: set[str]) -> dict:
         # was never asked" — different fixes, and indistinguishable from the
         # answer text alone.
         "generated": grounded.generated,
+        # Present only when the bounded retry ran. Records its stop reason and
+        # every tool call, so a run can answer "did the agent recover anything,
+        # and did it ever turn a correct refusal into an answer" — which is the
+        # question that decides whether it ships enabled.
+        "agent": grounded.agent.as_dict() if grounded.agent else None,
     }
 
 

@@ -47,6 +47,7 @@ from langchain_core.documents import Document
 
 from src.common.logging import get_logger
 from src.config import settings
+from src.generation.agent import AgentOutcome, SearchFn, attempt_recovery
 from src.generation.chains import query_with_context
 from src.generation.citations import ParsedAnswer, parse_citations
 from src.generation.confidence import (
@@ -85,6 +86,11 @@ class GroundedAnswer:
     generated: bool = True
     """False when the low-confidence gate fired and no LLM call was made."""
 
+    agent: AgentOutcome | None = None
+    """The bounded retry, when one ran. Carries its stop reason and every tool
+    call it made, so a recovered answer can be told apart from a first-pass one
+    and a loop that hit its cap is visible rather than silent."""
+
 
 def _normalize(retrieved: list[ScoredDocument] | list[Document]) -> list[ScoredDocument]:
     if retrieved and isinstance(retrieved[0], Document):
@@ -97,6 +103,7 @@ def generate_grounded_answer(
     retrieved: list[ScoredDocument] | list[Document],
     *,
     verify: bool | None = None,
+    search: SearchFn | None = None,
 ) -> GroundedAnswer:
     """Generate an answer and everything needed to judge it.
 
@@ -109,6 +116,11 @@ def generate_grounded_answer(
             `settings.citation_verification_enabled` — off at runtime,
             because it costs one LLM call per citation on the critical path,
             and on in the eval harness, where that cost buys the metric.
+        search: Lets the bounded retry search again after a model refusal.
+            Injected rather than built here, so the agent can only ever search
+            inside the RBAC scope the caller already resolved — a retriever
+            constructed in this module would answer to nobody's roles. Omit it
+            and no recovery is attempted, whatever the setting says.
     """
     scored = _normalize(retrieved)
     documents = documents_of(scored)
@@ -180,6 +192,30 @@ def generate_grounded_answer(
     confidence = score_confidence(answer, parsed, citations, retrieval)
 
     unanswered = None
+    agent = None
+    if is_full_refusal(answer, parsed) and settings.agentic_recovery_enabled:
+        # The one refusal worth a second look: retrieval cleared the gate and
+        # the model still declined, so the chunks were on topic without
+        # holding the fact. Fails closed — anything short of a non-refusal
+        # answer leaves the original refusal exactly as it was.
+        agent = attempt_recovery(question, documents, search)
+        if agent.recovered:
+            answer = agent.answer or answer
+            documents = agent.documents or documents
+            # Re-scored from scratch against the passages the *agent's* search
+            # returned: its citations are numbered against that set, so
+            # reusing the first attempt's parse would verify claims against
+            # the wrong documents.
+            parsed = parse_citations(answer, len(documents))
+            citations = verify_citations(parsed, documents) if verify else unverified_report(parsed)
+            confidence = score_confidence(answer, parsed, citations, retrieval)
+        logger.info(
+            "agentic_recovery",
+            stopped_because=agent.stopped_because,
+            recovered=agent.recovered,
+            iterations=len(agent.steps),
+        )
+
     if is_full_refusal(answer, parsed):
         # The model's own refusal wording is kept — it says which part of the
         # question it could not cover, which the structure cannot infer — and
@@ -211,4 +247,5 @@ def generate_grounded_answer(
         citations=citations,
         confidence=confidence,
         unanswered=unanswered,
+        agent=agent,
     )

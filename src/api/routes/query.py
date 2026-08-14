@@ -225,7 +225,14 @@ async def answer_query(
     # Generate answer, parse and score its citations. All of it happens in the
     # generation layer so the eval harness measures the same code path.
     try:
-        grounded = generate_grounded_answer(clean_question, scored)
+        # The bounded retry searches through this closure rather than building
+        # a retriever of its own, so it inherits the RBAC and information-barrier
+        # scope already resolved for this caller and cannot widen it.
+        grounded = generate_grounded_answer(
+            clean_question,
+            scored,
+            search=lambda query: retriever.retrieve(query),
+        )
     except Exception as e:
         logger.error("llm_generation_failed", error=str(e), error_type=type(e).__name__)
         return QueryResponse(

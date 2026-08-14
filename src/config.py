@@ -254,6 +254,23 @@ class Settings(BaseSettings):
     # invalidates every published figure. See src/retrieval/expansion.py.
     table_expansion_enabled: bool = True
 
+    # Agentic recovery — one bounded second attempt after a model refusal,
+    # with two tools (search again, list a company's indexed sections).
+    #
+    # Off by default and gated on measurement, because of where it fires: only
+    # on `model_refused`, and most questions that reach that state are refused
+    # *correctly* — out of corpus, or genuinely not disclosed. A retry that
+    # talks itself into answering those would convert refusal correctness,
+    # currently 0.981, into a regression. Enable it when a run shows it does
+    # not. See src/generation/agent.py.
+    agentic_recovery_enabled: bool = False
+    # Model turns, not tool calls: the loop stops after this many round trips
+    # whatever the model is doing. Two is enough to look something up and then
+    # search with what it learned.
+    agent_max_iterations: int = 2
+    # Abort a loop whose tools keep failing rather than retrying into a wall.
+    agent_max_tool_errors: int = 2
+
     # Hybrid search — pairs dense embedding search with a BM25 lexical index
     # and fuses the rankings (RRF). Dense handles paraphrase; BM25 handles the
     # exact-match terms filings are full of (tickers, "Item 7A", dollar
