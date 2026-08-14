@@ -58,6 +58,58 @@ def _resolve_retriever(mode: RetrievalMode, user: User, configured: Retriever) -
     )
 
 
+# Substrings that identify a provider refusing on billing or rate grounds
+# rather than on anything the caller did. Matched on the lowercased exception
+# text because the alternative — importing each provider's exception classes —
+# would make this module depend on every embedding backend the project can be
+# configured to use, including ones not installed.
+_QUOTA_SIGNALS = (
+    "insufficient_quota",
+    "credit_balance",
+    "no credits remaining",
+    "exceeded your current quota",
+    "rate limit",
+    "429",
+)
+_AUTH_SIGNALS = ("invalid_api_key", "incorrect api key", "unauthorized", "401")
+
+
+def _retrieval_failure(exc: Exception) -> tuple[str, str]:
+    """A truthful sentence for the reader, and a flag for the audit trail.
+
+    Three cases, because they mean different things to whoever is reading. A
+    quota failure is the demo being out of credit and is nobody's fault but
+    the owner's; an auth failure is a misconfigured deployment; anything else
+    is a real defect worth reporting as one. None of them is the user's
+    question being wrong, and the message says so rather than leaving a
+    reader to guess whether the system rejected what they asked.
+    """
+    text = f"{type(exc).__name__}: {exc}".lower()
+
+    if any(signal in text for signal in _QUOTA_SIGNALS):
+        return (
+            "Search is temporarily unavailable: this demo's embedding provider has no "
+            "quota remaining, and a question has to be embedded before the filings can "
+            "be searched. Nothing is wrong with the question or the index — the corpus "
+            "and every published measurement are unaffected. Please try again later.",
+            "retrieval_unavailable: embedding_quota_exhausted",
+        )
+
+    if any(signal in text for signal in _AUTH_SIGNALS):
+        return (
+            "Search is unavailable: the embedding provider rejected this deployment's "
+            "credentials. This is a configuration problem on the server, not a problem "
+            "with your question.",
+            "retrieval_unavailable: embedding_auth_failed",
+        )
+
+    return (
+        f"Search failed before any filings could be retrieved ({type(exc).__name__}). "
+        "This is a server-side error rather than a problem with your question.",
+        f"retrieval_unavailable: {type(exc).__name__}",
+    )
+
+
 def _retrieval_config(mode: RetrievalMode) -> RetrievalConfig:
     hybrid = (
         settings.hybrid_search_enabled
@@ -201,7 +253,46 @@ async def answer_query(
     # unscored documents rather than erroring.
     retriever = _resolve_retriever(payload.retrieval_mode, user, retriever)
     retrieval_config = _retrieval_config(payload.retrieval_mode)
-    scored = retrieve_scored(retriever, clean_question)
+
+    # Retrieval reaches the embedding provider before it reaches the index, and
+    # that call is the one external dependency on the serving path with no
+    # fallback: the shipped index is 1536-dimensional, so a deployment cannot
+    # quietly switch to the local 384-dimensional embedder without rebuilding
+    # the corpus. Generation has had a handler since the beginning; this one was
+    # missing, and the gap surfaced the way gaps do — the OpenAI balance hit
+    # zero and every query on a public demo returned a bare
+    # "Internal Server Error" with no indication of what had failed or whether
+    # the system was broken. Costing $0.000005 to embed a question is not a
+    # reason to skip the error path around it.
+    try:
+        scored = retrieve_scored(retriever, clean_question)
+    except Exception as e:
+        reason, flag = _retrieval_failure(e)
+        logger.error("retrieval_failed", error=str(e), error_type=type(e).__name__, flag=flag)
+        # A query that failed is still a query that was asked, and 17a-4 has no
+        # exception for the ones that errored. Recorded with zero documents
+        # accessed, which is the true statement about what this query reached.
+        log_query_audit(
+            user_id=user.id,
+            username=user.username,
+            user_roles=list(user.role_names),
+            query=payload.question,
+            retrieved_departments=[],
+            documents_accessed=0,
+            guardrail_flags=[*guardrail_flags, flag],
+            information_barriers_applied=barrier_names,
+            response_length=len(reason),
+        )
+        return QueryResponse(
+            answer=reason,
+            sources=[],
+            query=payload.question,
+            guardrail_flags=[*guardrail_flags, flag],
+            accessible_departments=departments,
+            information_barriers=structured_barriers,
+            retrieval=retrieval_config,
+        )
+
     documents = [item.document for item in scored]
 
     # Record the barriers in the audit trail's own flattened form. Kept
