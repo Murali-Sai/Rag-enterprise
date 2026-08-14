@@ -368,6 +368,20 @@ Off by default at runtime (one LLM call per citation, on the critical path); the
 
 **Structured "I don't know"** (`src/generation/insufficient.py`). Below `INSUFFICIENT_CONTEXT_THRESHOLD` the system returns the passages it consulted and the filings worth opening manually, *before* spending a generation call. The same structure is attached when the model itself declines over good retrieval — a different failure, pointing at a corpus or chunking gap rather than a retrieval one.
 
+**One bounded agentic retry** (`src/generation/agent.py`). Three things make this system decline and only one deserves a second look. `ambiguous_entity` is decided mechanically before generation and is correct. `low_retrieval_confidence` means nothing scored above the gate, so there is nothing to re-read. `model_refused` — retrieval cleared the gate and the model still declined — is the one where a differently-phrased search might land somewhere better, so the loop runs there and nowhere else.
+
+Two tools: `search_filings(query)` re-runs retrieval on a rephrased query, and `list_sections(ticker)` is a metadata-only lookup of what is indexed for a company. The search callable is **injected by the caller** rather than built inside the module, so the retry inherits the RBAC and information-barrier scope already resolved for that user and cannot widen it.
+
+Bounded three ways, because an unbounded agent is a billing incident:
+
+| Bound | Setting | What it stops |
+|---|---|---|
+| Model turns | `AGENT_MAX_ITERATIONS` (2) | A model that keeps calling tools and never answers |
+| Tool failures | `AGENT_MAX_TOOL_ERRORS` (2) | A loop retrying into a wall — a vector store that is down stays down |
+| Provider support | — | A provider that cannot bind tools degrades to "no recovery attempted" instead of raising |
+
+Tool exceptions become *observations the model can react to*, never propagated: a traceback there would turn a refusal — which is a valid answer — into a 500. And the loop **fails closed**: anything short of a non-refusal answer leaves the original refusal exactly as it was, and a recovered answer is re-parsed and re-verified against the passages the agent's own search returned, since its citations are numbered against that set and not the first attempt's.
+
 All of it lives behind `generate_grounded_answer()` in `src/generation/answer.py`, which the REST API, the MCP server, and `evaluation/run_evaluation.py` all call. The eval harness bypasses the API route entirely, so anything implemented in the route would be invisible to the measurement meant to prove it works.
 
 ## Query Dashboard (Streamlit, port 8501)
@@ -781,6 +795,70 @@ cd infra/terraform
 terraform init
 terraform apply -var-file=environments/dev.tfvars
 ```
+
+## Known Failure Modes and Their Drawbacks
+
+Each of these is measured, and each entry says *why the drawback happens* rather than only that it does. Nothing here is hypothetical.
+
+### The agentic retry costs latency and buys nothing measurable — yet
+
+**What happens.** On a `model_refused` question the loop runs, and a refused query goes from ~3.4s to roughly 8–12s.
+
+**Why it happens.** Every iteration is a full model round trip, and the loop is allowed two: the model is called, decides to call a tool, the tool runs, the observation goes back, and the model is called again. Those round trips are serial by construction — the second query depends on what the first search returned — so their latency adds rather than overlaps. The tool calls themselves are cheap (a Chroma query is milliseconds); it is the model turns that cost.
+
+**What it buys, measured.** On a full run it fired on all 13 questions that reached `model_refused`, gave up on 8, hit its iteration cap on 5, and **recovered nothing**. It also broke nothing: no correctly-refused question became an answer.
+
+**Why it recovers nothing, as far as the measurement shows.** Of the questions reaching that state, most are refused *correctly* — the company is outside the corpus, or the filer genuinely does not disclose the fact. Rephrasing a query cannot conjure a figure the index does not contain, so a well-behaved agent gives up, and that is exactly what 8 of 13 did. The 5 that hit the cap spent both turns searching without converging, which suggests two turns is too few for those — or that the remaining failures are ranking problems that a rephrase does not reach.
+
+**Why it is enabled anyway.** For the capability and the audit trail, not for a gain: every refusal now carries the tool calls that were attempted, which is diagnostic information the previous refusals did not have. Set `AGENTIC_RECOVERY_ENABLED=false` to turn it off; nothing else changes.
+
+### Rerank costs context precision
+
+**What happens.** Cross-encoder reranking buys +0.239 answer relevancy against a 0.044 floor, and costs **−0.230 context precision**.
+
+**Why it happens.** `ms-marco-MiniLM-L-6-v2` was trained on short web passages. Asked to rank 512-token slabs of financial-statement prose, it reorders confidently but not well — it is being used outside the distribution it was trained on. A financial-domain cross-encoder is the untried fix; the best one screened (`bge-reranker-base`, +0.134 overall) is **84× slower on CPU** — 4,531 ms against 54 ms per 20 candidates — because it is a larger model doing the same quadratic pair-scoring work, which would take a warm query from 3.4s to roughly 8s for every question rather than only refused ones.
+
+### Table continuation costs citation accuracy
+
+**What happens.** Appending a table's next chunk gains context precision (+0.066), coverage (+0.058) and answer correctness (+0.053), and costs **−0.026 citation accuracy** against an 0.018 floor.
+
+**Why it happens.** A stitched chunk puts more text behind a single citation number. The model cites `[5]`, and `[5]` is now two chunks joined — so a claim drawn from the appended half is judged against a passage containing material the model did not use, and the judge is stricter about that pairing than it was about the tighter original.
+
+### Large filings retrieve worse than small ones
+
+**What happens.** Per-company context recall correlates with filing size at Spearman **ρ = −0.8**. Goldman Sachs (2,888 chunks) and JPMorgan (3,122) score far below Apple (460).
+
+**Why it happens.** `rerank_candidate_k` is a fixed 20 regardless of filing size — 4.3% of Apple's chunks but 0.7% of Goldman's. A proportional budget was swept and **rejected**: Goldman gained (0.067 → 0.167 at k=100) while Tesla *lost* 0.056 and the overall figure stayed flat, because a larger pool is also more opportunity for a weak ranker to promote the wrong chunk. The binding constraint is the ranker, not the budget. **Caveat**: n=5 companies, and size is confounded with sector — both large filings are banks.
+
+### One Goldman question retrieves nothing useful at any k
+
+**What happens.** "Quantitative disclosures about market risk" wants seven figures. All seven are indexed. At k=100, six never enter the candidate set.
+
+**Why it happens.** They live in bare number tables — `CET1 capital | $ | 104,297 | …` — with no thematic vocabulary, because the splitter severs each table's caption into the previous chunk (one was cut mid-word: *"The table below presents inf"*). A bi-encoder embeds a table of numbers nowhere near a question phrased in words. Two caption-restoring chunking strategies were built and both made things **worse**: a caption says what a table is *about*, not which figures it holds, so it surfaces thematically-adjacent wrong tables that displace the figure-bearing prose.
+
+### Faithfulness does not mean correctness
+
+**What happens.** The system once answered Goldman's return on average common equity as **2.1%**, cited, verified as supported, at high confidence. The firmwide figure is **15.0%**.
+
+**Why it happens.** 2.1% is the Platform Solutions *segment*, and it sat in the same retrieved chunk as the firmwide revenue figure because a table crossed a chunk boundary. Faithfulness asks whether a claim is attributable to the retrieved context — and it was. Every automated signal passes when retrieval hands the model the wrong half of a table. Fixed by table continuation, but the general lesson stands: **grounded is not true**, and a faithfulness score cannot detect this class of error.
+
+### The demo generates with a different model than the evaluation measures
+
+**What happens.** Evaluation generates with `gpt-4o`; the live demo generates with Gemini 2.5 Flash.
+
+**Why it happens.** The demo is public and unauthenticated, and `gpt-4o` at roughly $0.012 per query is an uncapped meter on a public URL. The cost of that split is real: **two production bugs the evaluation could not see** — Gemini's thinking tokens consuming the output budget and truncating answers mid-sentence, and a confidence label reading "high" on a citation-free answer. Retrieval is identical in both, so every retrieval number transfers; generation numbers should be read as "measured on gpt-4o".
+
+### Rate limiting is not what caps cost
+
+**What happens.** The limiter allows 20 queries/minute, and it is trivially bypassed.
+
+**Why it happens.** It keys on the first `X-Forwarded-For` hop, which any client can spoof, and the demo credentials are published on the landing page, so a token is free to mint. Storage is in-memory, so limits are per-instance. **`autoscaling.knative.dev/maxScale = 1` is the actual cost cap** — one instance at ~3.4s per query cannot serve more than about 25,000 queries a day, so the worst case is bounded by physics rather than by policy. Both properties were traded knowingly on a portfolio budget.
+
+### Under sustained use the demo exhausts its free tier
+
+**What happens.** Rapid successive queries eventually return `ResourceExhausted` instead of an answer.
+
+**Why it happens.** Gemini's free tier has per-minute and per-day request quotas, and the demo shares one API key across all visitors. It degrades correctly rather than crashing — the error is caught, retrieved sources are still returned, and confidence is reported as `null` rather than invented — but the answer is missing until the quota resets.
 
 ## Interview Talking Points
 

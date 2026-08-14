@@ -8,6 +8,7 @@ import json
 from datetime import UTC, datetime
 
 from evaluation.eval_config import EVAL_EMBEDDING_MODEL, EVAL_QUESTIONS_PATH, RESULTS_DIR
+from evaluation.hit_rate import hit_rate
 
 RAGAS_METRIC_NAMES = (
     "faithfulness",
@@ -26,7 +27,15 @@ CITATION_METRIC_NAMES = ("citation_accuracy", "citation_coverage", "confidence")
 # The axis a question with no answer is scored on. Computed here, from the
 # structure of the refusal — no LLM call, see _refusal_correctness.
 BEHAVIOUR_METRIC_NAMES = ("refusal_correctness",)
-METRIC_NAMES = RAGAS_METRIC_NAMES + CITATION_METRIC_NAMES + BEHAVIOUR_METRIC_NAMES
+# Literal retrieval check, also free: are the ground truth's figures actually
+# in the retrieved passages? Reported here so one command covers hit rate,
+# faithfulness and answer relevancy together, and computed by the same module
+# scripts/eval_retrieval_free.py uses, so the cheap screen and the paid run can
+# never disagree about what the number means. See evaluation/hit_rate.py.
+RETRIEVAL_METRIC_NAMES = ("retrieval_hit_rate",)
+METRIC_NAMES = (
+    RAGAS_METRIC_NAMES + CITATION_METRIC_NAMES + BEHAVIOUR_METRIC_NAMES + RETRIEVAL_METRIC_NAMES
+)
 
 # What a question expects the system to do. Absent means "answer" — every
 # question written before v4 is answerable by construction.
@@ -446,12 +455,29 @@ def _build_per_question(
                 **{metric: ragas_by_index.get(i, {}).get(metric) for metric in RAGAS_METRIC_NAMES},
                 **{metric: result.get(metric) for metric in CITATION_METRIC_NAMES},
                 "refusal_correctness": _refusal_correctness(result, item),
+                # None for a question whose ground truth carries no figure, and
+                # for one expected to be refused — there is no answer whose
+                # numbers should have been retrieved, and scoring those 0.0
+                # would report a retrieval failure that did not happen.
+                "retrieval_hit_rate": (
+                    hit_rate(item.get("ground_truth", ""), result.get("contexts") or [])
+                    if expected_behavior(item) == ANSWER
+                    else None
+                ),
                 # Which path declined, when one did. low_retrieval_confidence
                 # means the gate fired before generation and no LLM call was
                 # spent; model_refused means retrieval looked fine and the
                 # model still declined. They point at different fixes.
                 "refusal_reason": (result.get("unanswered") or {}).get("reason"),
                 "generated": result.get("generated"),
+                # The bounded retry's stop reason and tool calls, when it ran.
+                # Carried here rather than only in the pipeline result because
+                # this is the row that gets saved: the first run with the agent
+                # enabled recorded thirteen loops in the logs and none in the
+                # result file, which reads exactly like a feature that never
+                # fired. A stage that cannot be seen in a result file cannot be
+                # measured from one.
+                "agent": result.get("agent"),
             }
         )
     return rows

@@ -257,13 +257,22 @@ class Settings(BaseSettings):
     # Agentic recovery — one bounded second attempt after a model refusal,
     # with two tools (search again, list a company's indexed sections).
     #
-    # Off by default and gated on measurement, because of where it fires: only
-    # on `model_refused`, and most questions that reach that state are refused
-    # *correctly* — out of corpus, or genuinely not disclosed. A retry that
-    # talks itself into answering those would convert refusal correctness,
-    # currently 0.981, into a regression. Enable it when a run shows it does
-    # not. See src/generation/agent.py.
-    agentic_recovery_enabled: bool = False
+    # On, and the measurement that decided it is worth stating: over one full
+    # run it fired on all 13 questions that reached `model_refused`, gave up on
+    # 8, hit its iteration cap on 5, and **recovered nothing**. It also broke
+    # nothing — no correctly-refused question became an answer, which was the
+    # risk, since most questions reaching that state are refused correctly.
+    # Refusal correctness moved 0.981 → 0.963, one question, inside its 0.019
+    # floor, and the question that moved (Microsoft R&D) flipped in the *first*
+    # pass — the loop only ever converts a refusal into an answer, so it cannot
+    # have caused it.
+    #
+    # So this is enabled for the capability and the audit trail, not for a
+    # measured gain: it costs up to two extra model round trips on a refused
+    # question and has yet to earn one back. See the README's "known failure
+    # modes" for the reasoning behind each drawback, and src/generation/agent.py
+    # for why it fails closed.
+    agentic_recovery_enabled: bool = True
     # Model turns, not tool calls: the loop stops after this many round trips
     # whatever the model is doing. Two is enough to look something up and then
     # search with what it learned.

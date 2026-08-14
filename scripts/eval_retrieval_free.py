@@ -55,44 +55,18 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from evaluation.hit_rate import figures, hit
 from src.config import settings
 from src.generation.confidence import retrieval_confidence
 from src.retrieval.retriever import get_retriever, retrieve_scored
 
 DATASET = Path("evaluation/datasets/eval_questions_v4.json")
 
-# A figure worth matching on. Standalone years are excluded: "2025" appears in
-# every chunk of a 2025 filing, so counting it would score every question a hit
-# regardless of what was retrieved.
-_FIGURE = re.compile(r"\d[\d,]*\.?\d*%?")
-_YEAR = re.compile(r"^(19|20)\d{2}$")
-
-
-def figures(text: str) -> list[str]:
-    """Ground-truth numbers distinctive enough to be evidence of retrieval."""
-    found = []
-    for raw in _FIGURE.findall(text):
-        token = raw.rstrip(".,")
-        bare = token.replace(",", "").replace(".", "").rstrip("%")
-        if len(bare) < 3 or _YEAR.match(token):
-            continue
-        found.append(token)
-    return sorted(set(found))
-
 
 def expected_tickers(item: dict) -> list[str]:
     """Tickers the question is about, from its source_filing field."""
     source = item.get("source_filing") or ""
     return sorted({match for match in re.findall(r"\b[A-Z]{1,5}\b", source) if match != "K"})
-
-
-def hit(figure: str, blob: str) -> bool:
-    """Is this figure present in the retrieved text?
-
-    Matched with and without thousands separators, because a filing may write
-    58,283 where a ground truth wrote 58283.
-    """
-    return figure in blob or figure.replace(",", "") in blob
 
 
 def main() -> None:
